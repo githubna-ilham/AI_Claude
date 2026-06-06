@@ -1,19 +1,19 @@
 # Module 1 — Mengenal LLM & Claude
 
-**Durasi**: 90 menit
+**Durasi belajar**: ±90 menit
 **Posisi**: Modul pembuka Day 1
-**Mode**: Penjelasan + demo langsung + diskusi singkat
+**Format**: Baca konsep → coba sendiri → refleksi
 
 ---
 
 ## Apa yang Akan Anda Bisa Setelah Modul Ini
 
-Setelah modul ini selesai, Anda diharapkan bisa:
+Setelah selesai membaca dan mempraktikkan modul ini, Anda akan bisa:
 
 1. **Menjelaskan** bagaimana LLM bekerja — pakai analogi yang masuk akal, tidak perlu rumus.
 2. **Memilih** model Claude yang tepat (Opus, Sonnet, Haiku) sesuai kebutuhan — mana yang cepat, mana yang murah, mana yang pintar.
 3. **Mengenali** 4 keterbatasan utama LLM (ngarang, info kadaluarsa, batas memori, bias) dan cara mengatasinya lewat prompt.
-4. **Mendiskusikan** kapan harus pakai model "pemikir" vs model "cepat" untuk kasus bisnis Anda.
+4. **Memutuskan** kapan harus pakai model "pemikir" vs model "cepat" untuk kasus bisnis Anda sendiri.
 
 ---
 
@@ -180,23 +180,40 @@ Karena tugas dasar LLM adalah **"lanjutkan kalimat dengan probabilitas tertinggi
 
 ---
 
-## Demo Langsung (15 menit)
+## Coba Sendiri (15 menit)
 
-**Tujuan**: Tunjukkan ke peserta perbedaan respons Claude — dengan dan tanpa "kasih sumber".
+Daripada hanya membaca teori, **buka claude.ai sekarang** dan ikuti 4 eksperimen berikut. Tujuannya: rasakan sendiri bedanya prompt biasa vs prompt yang ditulis dengan benar.
 
-### Langkah Demo
+### Eksperimen A — Bertanya Tanpa Sumber
 
-1. Buka **claude.ai**, pilih model Sonnet.
-2. **Demo A — tanpa kasih sumber**:
-   Prompt: `Siapa CEO Multimatics saat ini dan kapan beliau menjabat?`
-   → Amati: model mungkin ngarang, atau bilang tidak tahu. Catat.
-3. **Demo B — dengan kasih sumber**:
-   Tempel 1 paragraf dari website Multimatics, lalu prompt:
-   `Berdasarkan teks di atas saja, siapa CEO Multimatics dan kapan menjabat? Kalau tidak disebut, jawab "TIDAK DISEBUTKAN".`
-4. **Demo C — token counter**: buka https://platform.openai.com/tokenizer, ketik "Multimatics" → tunjukkan bahwa 1 kata = beberapa token.
-5. **Demo D — bandingkan model**: jalankan 1 soal logika cerita di **Haiku vs Sonnet vs Opus** lewat Console Workbench.
+Buka **claude.ai**, pilih model Sonnet, lalu kirim:
 
-Diskusikan: kenapa jawabannya beda? Apa implikasinya untuk biaya & kecepatan?
+```
+Siapa CEO Multimatics saat ini dan kapan beliau menjabat?
+```
+
+Amati jawabannya. Apakah model ngarang? Atau jujur bilang tidak tahu? Catat respons Anda.
+
+### Eksperimen B — Bertanya dengan Sumber
+
+Kunjungi website Multimatics, copy 1 paragraf "About Us", lalu prompt:
+
+```
+Berdasarkan teks di atas saja, siapa CEO Multimatics dan kapan menjabat?
+Kalau tidak disebut di teks, jawab "TIDAK DISEBUTKAN".
+```
+
+Bandingkan dengan Eksperimen A. Apa bedanya?
+
+### Eksperimen C — Lihat Token dengan Mata Sendiri
+
+Buka https://platform.openai.com/tokenizer, ketik nama Anda dan beberapa kata bahasa Indonesia. Lihat berapa token yang terhitung — ini akan jadi dasar perhitungan biaya saat Anda pakai API nanti.
+
+### Eksperimen D — Bandingkan 3 Model Claude
+
+Buka https://console.anthropic.com (Workbench), jalankan 1 soal logika cerita yang sama di **Haiku, Sonnet, dan Opus**. Bandingkan: jawaban siapa paling cepat? Siapa paling masuk akal? Berapa selisih biayanya?
+
+**Refleksi**: kenapa jawabannya beda? Apa implikasinya buat pilihan Anda di pekerjaan nyata?
 
 ---
 
@@ -290,23 +307,17 @@ Tiket: "Aplikasi crash setiap saya buka menu profil"
 
 ---
 
-## Hands-on Lab
+## Latihan & Refleksi
 
-Modul 1 ini sifatnya **konseptual** — jadi belum ada lab khusus. Aktivitas hands-on dimulai di Module 2 (Lab 01).
-
-Sebagai gantinya, gunakan [`diskusi.md`](./diskusi.md) — berisi *ice breaker* + 3 pertanyaan diskusi kelompok.
-
----
-
-## Wrap-up & Q&A
-
-Refleksi yang bisa Anda jawab sendiri di akhir sesi:
+Modul 1 ini sifatnya **konseptual** — belum ada lab coding. Tapi sebelum lanjut ke Module 2, pastikan Anda bisa menjawab 5 pertanyaan refleksi berikut (tulis jawaban Anda di buku catatan, atau diskusikan dengan teman sebelah):
 
 1. Kalau Claude itu pada dasarnya "mesin tebak kata berbasis probabilitas", **apa konsekuensinya** terhadap cara Anda menulis instruksi?
 2. **Kapan** Anda akan pilih Haiku (lebih murah & cepat) dibanding Sonnet untuk pekerjaan Anda?
 3. Sebutkan **1 pekerjaan harian** Anda yang bisa berbahaya kalau LLM-nya ngarang. Apa cara mengantisipasinya?
 4. **Kenapa** context window besar tidak otomatis = jawaban lebih bagus?
 5. Apa beda **"reasoning" LLM vs "reasoning" manusia** menurut pemahaman Anda sekarang?
+
+Untuk diskusi kelompok yang lebih terstruktur, lihat [`diskusi.md`](./diskusi.md).
 
 ---
 
