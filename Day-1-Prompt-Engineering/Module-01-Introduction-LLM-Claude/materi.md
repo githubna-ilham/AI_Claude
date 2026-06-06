@@ -17,6 +17,76 @@ Setelah selesai membaca dan mempraktikkan modul ini, Anda akan mampu:
 
 ---
 
+## 0. Pengantar: Dari Program Biasa hingga LLM
+
+Sebelum membahas LLM secara langsung, mari pahami terlebih dahulu **rangkaian konsep** yang membawa kita ke titik ini. LLM tidak muncul tiba-tiba — ia merupakan hasil dari evolusi panjang dunia komputasi.
+
+```mermaid
+flowchart LR
+    A[Program Biasa<br/>aturan eksplisit] --> B[Machine Learning<br/>belajar dari data]
+    B --> C[Deep Learning<br/>jaringan saraf]
+    C --> D[Generative AI<br/>menghasilkan konten baru]
+    D --> E[NLP<br/>fokus bahasa]
+    E --> F[LLM<br/>model bahasa raksasa]
+```
+
+### 0.1 Program Biasa vs Machine Learning
+
+**Program komputer tradisional** bekerja dengan aturan eksplisit yang ditulis oleh manusia. Misalnya, program kalkulator: jika Anda menekan `2 + 3`, programmer telah menulis perintah eksplisit "jika operator adalah `+`, jumlahkan kedua angka". Komputer hanya mengikuti aturan.
+
+Pendekatan ini bekerja dengan baik untuk masalah yang aturannya jelas dan terbatas. Namun bagaimana cara menulis aturan eksplisit untuk membedakan **foto kucing** dan **foto anjing**? Jutaan baris kode pun belum tentu cukup, karena setiap kucing dan anjing memiliki bentuk, warna, dan pose yang berbeda-beda.
+
+Di sinilah **Machine Learning (ML)** hadir. Alih-alih menulis aturan, Anda memberikan **ribuan contoh** kepada komputer: "ini foto kucing, ini foto anjing", dan komputer belajar sendiri pola yang membedakan keduanya.
+
+| Pendekatan | Cara kerja | Cocok untuk |
+|------------|------------|-------------|
+| **Program biasa** | Manusia menulis aturan secara eksplisit | Masalah dengan aturan jelas (kalkulator, sistem akuntansi) |
+| **Machine Learning** | Komputer belajar pola dari banyak contoh | Masalah dengan pola kompleks (pengenalan gambar, prediksi cuaca) |
+
+### 0.2 Tiga Jenis Utama Machine Learning
+
+ML memiliki tiga pendekatan utama:
+
+1. **Supervised Learning** — belajar dari contoh berlabel. Ibarat anak yang diajarkan dengan kartu bergambar: "ini apel", "ini jeruk". Setelah melihat ribuan contoh, anak dapat mengenali apel dan jeruk sendiri.
+2. **Unsupervised Learning** — belajar dari data tanpa label. Komputer diberi banyak data lalu diminta menemukan pola atau kelompok dengan sendirinya. Ibarat membagi siswa ke dalam beberapa kelompok belajar berdasarkan kemiripan tanpa diberitahu kriteria.
+3. **Reinforcement Learning** — belajar melalui coba-coba dengan sistem hadiah dan hukuman. Ibarat melatih anjing: jika duduk saat diperintahkan, beri makanan; jika tidak, tidak ada hadiah. Lama-kelamaan anjing belajar mana perilaku yang benar.
+
+### 0.3 Deep Learning — ML dengan Jaringan Saraf
+
+**Deep Learning** adalah cabang ML yang menggunakan **jaringan saraf tiruan** *(artificial neural network)* — struktur matematis yang terinspirasi dari cara kerja otak manusia. "Deep" merujuk pada jumlah lapisan yang banyak (puluhan hingga ratusan lapisan).
+
+Deep Learning menjadi pemicu lompatan besar dalam AI sejak tahun 2012, karena mampu menangani data yang sangat kompleks seperti gambar resolusi tinggi, suara, dan teks panjang.
+
+### 0.4 Generative AI — AI yang Mampu "Mencipta"
+
+Awalnya, AI hanya bisa **mengklasifikasi** ("ini foto kucing") atau **memprediksi** ("besok hujan"). Lalu muncullah **Generative AI** — AI yang mampu **menghasilkan konten baru** yang sebelumnya tidak pernah ada: gambar, musik, video, dan tentu saja, teks.
+
+Contoh nyata:
+- **DALL·E, Midjourney**: menghasilkan gambar dari deskripsi teks.
+- **GPT, Claude, Gemini**: menghasilkan teks dari instruksi.
+- **Suno, ElevenLabs**: menghasilkan musik dan suara.
+
+### 0.5 NLP — Fokus pada Bahasa
+
+**Natural Language Processing (NLP)** adalah cabang AI yang khusus mempelajari **bahasa manusia**. Tugas-tugas NLP mencakup penerjemahan, analisis sentimen, ringkasan dokumen, dan chatbot.
+
+NLP klasik (sebelum 2017) bergantung pada aturan linguistik dan model statistik sederhana. Hasilnya kaku dan terbatas — misalnya, Google Translate tahun 2010 sering menerjemahkan dengan janggal.
+
+### 0.6 LLM — Pertemuan dari Semua Konsep di Atas
+
+**LLM (Large Language Model)** adalah hasil pertemuan dari seluruh konsep di atas:
+
+- **Machine Learning**: belajar dari data, bukan dari aturan.
+- **Deep Learning**: menggunakan jaringan saraf dengan jutaan hingga miliaran parameter.
+- **Generative AI**: menghasilkan teks baru, bukan sekadar mengklasifikasi.
+- **NLP**: fokus pada pemahaman dan produksi bahasa.
+
+Yang membuat LLM "besar" *(large)* adalah skalanya: dilatih dari triliunan kata, dengan miliaran parameter, menggunakan arsitektur khusus bernama **Transformer** (yang akan dibahas di Section 2).
+
+Inilah teknologi yang ada di balik Claude, ChatGPT, Gemini, dan kawan-kawan. Mari kita bahas lebih dalam.
+
+---
+
 ## 1. Apa Itu LLM?
 
 **LLM (Large Language Model)** pada intinya adalah **mesin penebak kata berikutnya — dalam skala raksasa**.
