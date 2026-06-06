@@ -106,7 +106,7 @@ AI_Claude/
 - [ ] Install editor (Cursor / VS Code direkomendasikan)
 - [ ] Buat akun Anthropic Console: https://console.anthropic.com
 - [ ] Dapatkan API key dari fasilitator (atau generate sendiri, top-up minimal $5)
-- [ ] Clone repo materi: `git clone <url-repo-materi>`
+- [ ] Clone repo materi: `git clone https://github.com/githubna-ilham/AI_Claude.git`
 - [ ] `pip install anthropic chromadb` (atau ekuivalen Node.js)
 - [ ] Isi pretest (deadline H-3)
 
