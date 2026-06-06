@@ -25,8 +25,8 @@ Bayangkan fitur *autocomplete* di keyboard HP Anda. Saat Anda mengetik "selamat"
 
 Tiga hal yang membuat LLM modern (Claude, ChatGPT, Gemini) berbeda dari autocomplete biasa di HP:
 
-| Properti | Penjelasan sederhana |
-|----------|---------------------|
+| Ciri Khas | Penjelasan sederhana |
+|-----------|---------------------|
 | **Skala raksasa** | Dilatih dari triliunan kata: seluruh internet, jutaan buku, miliaran baris kode. Ibarat membaca semua perpustakaan di dunia. |
 | **Belajar dari contoh dalam prompt** *(in-context learning)* | Anda kasih 2-3 contoh di prompt, model langsung "nangkep" polanya tanpa harus dilatih ulang. |
 | **Mengikuti instruksi** *(instruction following)* | Setelah dilatih khusus, model paham kalau Anda nulis "ringkas ini jadi 3 poin", ya dia akan ringkas jadi 3 poin. |
