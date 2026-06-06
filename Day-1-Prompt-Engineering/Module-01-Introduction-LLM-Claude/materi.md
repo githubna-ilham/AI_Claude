@@ -23,13 +23,45 @@ Setelah selesai membaca dan mempraktikkan modul ini, Anda akan bisa:
 
 Bayangkan fitur *autocomplete* di keyboard HP Anda. Saat Anda mengetik "selamat", HP menebak kata berikutnya: "pagi", "siang", "malam", "datang". LLM bekerja persis seperti itu — hanya saja **jauh lebih besar dan jauh lebih pintar konteks**. Ia tidak hanya menebak 1 kata, tapi terus-menerus menebak kata demi kata sampai membentuk paragraf, esai, bahkan kode program.
 
-Tiga hal yang membuat LLM modern (Claude, ChatGPT, Gemini) berbeda dari autocomplete biasa di HP:
+Tapi kalau LLM cuma "autocomplete raksasa", kenapa bisa nulis esai dan jawab pertanyaan rumit? Karena ada **3 hal yang bikin dia jauh lebih hebat** dari autocomplete HP:
 
-| Ciri Khas | Penjelasan sederhana |
-|-----------|---------------------|
-| **Skala raksasa** | Dilatih dari triliunan kata: seluruh internet, jutaan buku, miliaran baris kode. Ibarat membaca semua perpustakaan di dunia. |
-| **Belajar dari contoh dalam prompt** *(in-context learning)* | Anda kasih 2-3 contoh di prompt, model langsung "nangkep" polanya tanpa harus dilatih ulang. |
-| **Mengikuti instruksi** *(instruction following)* | Setelah dilatih khusus, model paham kalau Anda nulis "ringkas ini jadi 3 poin", ya dia akan ringkas jadi 3 poin. |
+### Ciri Khas #1 — Skala Raksasa (banyak banget yang sudah "dibaca")
+
+- **Autocomplete HP**: hanya hafal pola dari pesan-pesan yang pernah Anda ketik.
+- **LLM**: dilatih dari **triliunan kata** — seluruh Wikipedia, jutaan buku, miliaran baris kode program, artikel berita, forum diskusi, dst.
+
+**Akibatnya**: LLM "tahu" banyak hal — dari resep rendang sampai sintaks Python — karena pernah membaca semuanya. Ibarat seseorang yang sudah baca seluruh isi perpustakaan terbesar di dunia.
+
+### Ciri Khas #2 — Bisa Belajar dari Contoh di Prompt *(in-context learning)*
+
+- **Autocomplete HP**: tidak bisa Anda "ajari" hal baru di tempat. Pola lama, gitu-gitu aja.
+- **LLM**: Anda kasih **2-3 contoh** di prompt, dia langsung paham pola yang Anda mau — tanpa perlu "dilatih ulang" dari nol.
+
+**Contoh nyata**: kalau Anda mau dia ubah judul jadi gaya formal, cukup tulis:
+
+```
+Ubah judul berikut jadi gaya formal:
+"Cara cepet kaya raya" → "Strategi Akumulasi Kekayaan yang Efisien"
+"Tips diet ampuh" → "Panduan Penurunan Berat Badan yang Efektif"
+"Trik nge-hack belajar" →
+```
+
+LLM langsung "nangkep" polanya dan lanjut: `"Teknik Optimalisasi Proses Pembelajaran"`. Padahal Anda tidak pernah ngajarin dia istilah "ubah ke formal" — dia paham hanya dari **2 contoh** di atas.
+
+### Ciri Khas #3 — Bisa Diperintah dengan Bahasa Manusia *(instruction following)*
+
+- **Autocomplete HP**: tidak ngerti kalau Anda ketik "tolong ringkas pesan ini jadi 3 poin" — dia cuma nebak kata berikutnya, bukan ngikutin perintah.
+- **LLM**: setelah **dilatih khusus** dengan jutaan contoh pasangan "instruksi → jawaban yang benar", dia jadi paham kalau Anda nulis:
+
+```
+Ringkas paragraf ini jadi 3 poin pakai bahasa formal.
+```
+
+…dia benar-benar akan **ringkas jadi 3 poin** — bukan sekadar melanjutkan kalimat Anda. Inilah yang membuat LLM bisa dipakai sebagai "asisten" — Anda kasih instruksi, dia ikuti.
+
+---
+
+**Ringkasannya**: autocomplete HP cuma nebak kata berikutnya berbasis pola sederhana. LLM melakukan hal yang sama secara teknis, **tapi** dengan: (1) pengetahuan jauh lebih luas, (2) kemampuan adaptasi dari contoh di prompt, dan (3) kemampuan mengikuti instruksi natural manusia. Inilah yang membuatnya terasa "pintar".
 
 ### Bagaimana Cara Kerjanya? (Alur Sederhana)
 
