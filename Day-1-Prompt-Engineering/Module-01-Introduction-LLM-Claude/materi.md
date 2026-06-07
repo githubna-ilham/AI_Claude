@@ -202,15 +202,49 @@ Konteks gabungan ini akan menjadi dasar prediksi kata berikutnya.
 
 ### Langkah 5 — Hitung Probabilitas Kata Berikutnya
 
-Setelah konteks dipahami, model menghasilkan **probabilitas** untuk setiap kemungkinan kata berikutnya dari seluruh kamusnya. Misalnya:
+Bayangkan model sebagai **seorang pakar yang ditanya pertanyaan terbuka**. Alih-alih langsung menjawab satu kata, ia diharuskan **memberi persentase keyakinan untuk SETIAP kata di dalam kamusnya** — puluhan hingga ratusan ribu pilihan kata sekaligus.
+
+Itulah yang terjadi di Langkah 5. Untuk pertanyaan kita `"Apa ibu kota Indonesia?"`, model akan menghasilkan tabel **probabilitas** yang kira-kira terlihat seperti ini:
 
 ```
-"Jakarta"  → 92%
-"Bandung"  → 3%
-"Surabaya" → 2%
-"Indonesia" → 1%
+Kata kandidat   | Probabilitas (keyakinan model)
+----------------|-------------------------------
+"Jakarta"       | 92%
+"Bandung"       | 3%
+"Surabaya"      | 2%
+"Indonesia"     | 1%
+"makanan"       | 0,001%
+"tabel"         | 0,0001%
 ... (puluhan ribu kandidat lain dengan probabilitas sangat kecil)
+----------------|-------------------------------
+Total           | 100%
 ```
+
+**Tiga hal penting untuk dipahami:**
+
+#### a. Setiap kata di kamus dapat skor
+
+Ya, **semua** kata di kamus model dinilai — bukan hanya 4–5 kandidat populer. Kata "tabel", "ungu", bahkan kata-kata yang sama sekali tidak relevan, tetap mendapat skor (meski sangat kecil, mendekati 0%). Hanya saja, beberapa kata mendominasi dengan probabilitas tinggi karena **konteks kalimat** mengarahkan ke sana.
+
+#### b. Konteks menentukan distribusi probabilitas
+
+Probabilitas tinggi pada kata `"Jakarta"` bukan kebetulan. Model telah membaca jutaan kalimat selama pelatihan yang mengandung frasa "ibu kota Indonesia" lalu diikuti kata "Jakarta". Itulah sebabnya pola ini sangat kuat di "memori" model.
+
+Coba bandingkan dengan pertanyaan lain:
+
+| Pertanyaan | Kandidat probabilitas tertinggi |
+|------------|--------------------------------|
+| `"Apa ibu kota Indonesia?"` | `"Jakarta"` (sekitar 92%) |
+| `"Apa makanan khas Padang?"` | `"Rendang"` (sekitar 65%), `"Sate"` (15%), `"Gulai"` (10%) |
+| `"Selamat pagi, apa kabar"` | `"?"` (40%), `"hari"` (20%), `"Anda"` (15%), `"semua"` (10%) |
+
+Lihat — semakin spesifik pertanyaannya, semakin terkonsentrasi probabilitas pada satu jawaban. Semakin terbuka pertanyaannya, semakin tersebar probabilitas ke banyak kandidat.
+
+#### c. Probabilitas tinggi bukan jaminan jawaban benar
+
+Inilah akar masalah **halusinasi**. Model selalu menghasilkan kata dengan probabilitas tertinggi, meskipun jawabannya **secara faktual salah**. Misalnya, jika Anda bertanya `"Siapa CEO Multimatics?"` dan informasi itu tidak ada dalam data pelatihan, model akan tetap menghasilkan nama tertentu dengan probabilitas tertinggi — kemungkinan besar berdasarkan **pola umum nama eksekutif perusahaan IT Indonesia**, bukan fakta sebenarnya.
+
+Itulah mengapa **memberi sumber asli** (grounding, yang dibahas di Section 5) menjadi penting: sumber tersebut "mengubah lanskap probabilitas" agar kata-kata yang muncul di sumber mendapat skor lebih tinggi dibanding tebakan acak.
 
 ### Langkah 6 — Pilih Satu Kata (Sampling)
 
