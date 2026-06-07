@@ -69,6 +69,156 @@ flowchart LR
 - Editor: VS Code atau Cursor.
 - Akses internet yang stabil.
 
+---
+
+## Mulai dari Sini — Setup Project Day 2
+
+Day 2 adalah hari pertama Anda benar-benar **menulis kode** menggunakan Claude API. Ikuti langkah-langkah berikut sekali saja di awal hari, kemudian Anda siap masuk ke Module 5 hingga 9 tanpa hambatan teknis.
+
+### Step 1 — Buat Folder Project
+
+Buat folder kerja untuk seluruh lab Day 2:
+
+```bash
+mkdir -p ~/ai-claude-day-2
+cd ~/ai-claude-day-2
+```
+
+> 💡 Anda dapat memberi nama folder bebas. Folder ini akan menampung lab 04 hingga 07.
+
+### Step 2 — Siapkan Virtual Environment Python
+
+Virtual environment memisahkan dependensi project Anda dari instalasi Python sistem, sehingga tidak terjadi konflik versi.
+
+```bash
+# Buat virtual environment
+python -m venv .venv
+
+# Aktifkan virtual environment
+# macOS / Linux:
+source .venv/bin/activate
+
+# Windows PowerShell:
+# .venv\Scripts\Activate.ps1
+```
+
+Setelah aktif, prompt terminal Anda akan diawali dengan `(.venv)`. Itu tandanya Anda sudah berada di dalam environment yang terisolasi.
+
+### Step 3 — Install Dependensi
+
+```bash
+pip install anthropic python-dotenv
+```
+
+Dua paket utama yang akan Anda gunakan sepanjang Day 2:
+- **`anthropic`** — SDK resmi untuk berkomunikasi dengan Claude API.
+- **`python-dotenv`** — utility untuk memuat variabel rahasia (seperti API key) dari file `.env`.
+
+### Step 4 — Konfigurasi API Key
+
+Buat file `.env` di root folder project Anda:
+
+```bash
+touch .env
+```
+
+Isi `.env` dengan API key Anda (ganti placeholder dengan key yang sebenarnya):
+
+```env
+ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+Lalu buat file `.gitignore` untuk memastikan `.env` **tidak terbawa** saat Anda commit ke Git:
+
+```bash
+echo ".env" >> .gitignore
+echo ".venv/" >> .gitignore
+echo "__pycache__/" >> .gitignore
+```
+
+> ⚠️ **Penting**: API key adalah kredensial rahasia. Jika tidak sengaja ter-commit ke repository publik, Anthropic akan menonaktifkannya secara otomatis dan Anda harus generate ulang.
+
+### Step 5 — Smoke Test (Verifikasi Setup)
+
+Sebelum lanjut, pastikan setup Anda benar-benar berfungsi. Buat file `smoke-test.py`:
+
+```python
+import os
+from anthropic import Anthropic
+from dotenv import load_dotenv
+
+load_dotenv()
+client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+
+response = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=128,
+    messages=[
+        {"role": "user", "content": "Sebutkan dalam 1 kalimat: apa itu AI Agent?"}
+    ],
+)
+
+print(response.content[0].text)
+```
+
+Jalankan:
+
+```bash
+python smoke-test.py
+```
+
+**Hasil yang diharapkan**: muncul 1 kalimat jawaban dari Claude di terminal.
+
+Jika error muncul, cek dulu:
+- API key di `.env` sudah benar dan tanpa spasi ekstra.
+- Virtual environment sudah aktif (lihat `(.venv)` di prompt).
+- Koneksi internet stabil.
+
+### Step 6 — Struktur Folder Project yang Disarankan
+
+Untuk kerapian, susun folder kerja Anda seperti ini saat mengerjakan lab:
+
+```
+~/ai-claude-day-2/
+├── .env                    ← API key (jangan di-commit)
+├── .gitignore              ← daftar file yang diabaikan Git
+├── .venv/                  ← virtual environment
+├── smoke-test.py           ← script verifikasi setup
+├── lab-04-prompt-pack/     ← Lab Module 5
+│   └── ...
+├── lab-05-pipeline/        ← Lab Module 6
+│   └── ...
+├── lab-06-tool-calling/    ← Lab Module 8
+│   └── ...
+└── lab-07-build-agent/     ← Lab Module 9 (capstone)
+    └── ...
+```
+
+Setiap lab akan memiliki instruksi sendiri di `README.md`-nya masing-masing. Anda cukup membuat subfolder baru saat mulai lab, lalu ikuti panduan di sana.
+
+### Step 7 — Siap Memulai Module 5
+
+Setelah Step 1 hingga 5 berhasil, Anda siap masuk ke materi pertama:
+
+📖 [Module 5 — Prompt for Business Use Cases](./Module-05-Prompt-for-Business-Use-Cases/materi.md)
+
+Aktivitas di Module 5 akan dimulai dengan membaca materi konsep, lalu lanjut ke [`lab-04-use-case-prompt-pack`](./Module-05-Prompt-for-Business-Use-Cases/lab-04-use-case-prompt-pack/).
+
+---
+
+### Ringkasan Cepat — Checklist Sebelum Mulai Module 5
+
+- [ ] Folder project Day 2 sudah dibuat.
+- [ ] Virtual environment Python aktif (`(.venv)` muncul di prompt).
+- [ ] Paket `anthropic` dan `python-dotenv` terpasang.
+- [ ] File `.env` berisi `ANTHROPIC_API_KEY` yang valid.
+- [ ] File `.gitignore` memuat `.env` dan `.venv/`.
+- [ ] `smoke-test.py` berhasil dijalankan dan menampilkan respons dari Claude.
+
+Jika semua tercentang ✅ — Anda siap belajar dengan tenang sepanjang Day 2.
+
+---
+
 ## Catatan untuk Fasilitator
 
 - Mock data (FAQ helpdesk, sampel tiket, mock response cuaca/DB) sudah disiapkan trainer di folder `assets/` pada setiap lab.
