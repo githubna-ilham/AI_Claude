@@ -281,16 +281,18 @@ Surabaya    | 0%
 
 Distribusi tetap, sampling dilakukan secara acak namun tertimbang. "Jakarta" sangat mungkin muncul, tetapi sesekali "Bandung" atau "Surabaya" pun dapat terpilih.
 
-**Saat `temperature = 1.5` (kreatif):**
+**Saat `temperature = 1.0` (maksimum, kreatif):**
 
-Distribusi **diratakan**. "Jakarta" tidak lagi dominan. Kata-kata di luar 3 besar pun memiliki peluang signifikan untuk muncul — kadang menghasilkan jawaban kreatif, kadang ngawur.
+Distribusi **diratakan**. "Jakarta" tidak lagi dominan. Kata-kata di luar 3 besar pun memiliki peluang signifikan untuk muncul — kadang menghasilkan jawaban kreatif, kadang justru tidak relevan.
 
 ```
-Jakarta     | 60%
-Bandung     | 15%
-Surabaya    | 10%
-lainnya     | 15% (bisa muncul jawaban tidak relevan)
+Jakarta     | 70%
+Bandung     | 12%
+Surabaya    | 8%
+lainnya     | 10% (bisa muncul jawaban kurang relevan)
 ```
+
+> 📌 **Catatan**: pada Anthropic API, nilai temperature dibatasi pada rentang **0 sampai 1**. Tidak ada nilai di atas 1.
 
 #### Panduan Nilai Temperature
 
@@ -298,9 +300,8 @@ lainnya     | 15% (bisa muncul jawaban tidak relevan)
 |-------------|----------------|---------------|
 | **0.0** | Deterministik penuh. Sama input = sama output. | Klasifikasi, ekstraksi data, kalkulasi, jawaban faktual — semua kasus yang **butuh konsistensi**. |
 | **0.2 – 0.4** | Hampir konsisten, sedikit variasi. | Code generation, summarization, Q&A berbasis dokumen. |
-| **0.7** *(default)* | Seimbang antara konsisten dan variatif. | Chatbot umum, percakapan, penulisan artikel. |
-| **1.0 – 1.5** | Kreatif, bervariasi tinggi. | Brainstorming ide, generasi puisi, eksplorasi kreatif. |
-| **>1.5** | Sangat liar, sering tidak masuk akal. | Jarang dipakai — biasanya untuk eksperimen. |
+| **0.5 – 0.7** | Seimbang antara konsisten dan variatif. | Chatbot umum, percakapan, penulisan artikel. |
+| **0.8 – 1.0** | Kreatif, bervariasi tinggi. | Brainstorming ide, generasi puisi, eksplorasi kreatif. |
 
 #### Contoh Perbandingan Output
 
@@ -322,11 +323,11 @@ Di balik secangkir kopi, tersimpan cerita panjang perjalanan biji dari kebun ke 
 ...
 ```
 
-**`temperature = 1.5`** (dijalankan 5x, hasilnya sangat bebas):
+**`temperature = 1.0`** (dijalankan 5x, hasilnya sangat bervariasi dan kreatif):
 ```
-Kopi bukan sekadar minuman — ia adalah ritual filosofis kosmis.
-Bayangkan sebuah dunia tanpa kopi: peradaban runtuh seketika.
-Kopi: cairan ajaib yang menari di lidah para penyair.
+Kopi bukan sekadar minuman — ia adalah ritual yang menemani jutaan pagi di seluruh dunia.
+Bayangkan sebuah dunia tanpa kopi: pagi-pagi terasa lebih sepi dan kantor lebih lesu.
+Kopi: cairan hitam pekat yang menyatukan kerinduan, percakapan, dan inspirasi.
 ...
 ```
 
