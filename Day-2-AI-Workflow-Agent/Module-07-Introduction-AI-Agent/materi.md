@@ -1,45 +1,49 @@
 # Module 7 — Introduction to AI Agent
 
-**Durasi:** 90 menit
+**Durasi belajar:** ±90 menit
 **Posisi:** Day 2, sesi siang setelah istirahat
-**Prasyarat:** Modul 6 (peserta paham workflow & prompt chaining)
+**Prasyarat:** Module 6 (Anda sudah memahami workflow dan prompt chaining)
+**Format:** Baca konsep → diskusi & sketsa arsitektur → refleksi
 
 ---
 
-## Learning Outcomes
+## Apa yang Akan Anda Bisa Setelah Modul Ini
 
-Setelah modul ini, peserta mampu:
+Setelah selesai membaca dan mempraktikkan modul ini, Anda akan mampu:
 
-1. Mendefinisikan **AI Agent** dan membedakannya secara tegas dari chatbot dan workflow.
-2. Menjelaskan **arsitektur dasar agent**: planner, executor, tools, memory, observation loop.
-3. Menerapkan konsep **goal-oriented** vs **reactive** systems pada problem nyata.
-4. Mendesain alur **planning & reasoning** sederhana (ReAct-style: Thought → Action → Observation).
-5. Menjelaskan konsep **AI memory** (short-term, long-term, semantic) dan trade-off-nya.
+1. **Mendefinisikan** apa itu *AI Agent* dan membedakannya secara tegas dari chatbot maupun workflow.
+2. **Menjelaskan** arsitektur dasar agent: *planner*, *executor*, *tools*, *memory*, dan *observation loop*.
+3. **Menerapkan** konsep *goal-oriented* vs *reactive* pada problem nyata di tempat kerja Anda.
+4. **Mendesain** alur *planning & reasoning* sederhana bergaya ReAct: *Thought → Action → Observation*.
+5. **Menjelaskan** konsep *AI memory* (short-term, long-term, semantic) beserta trade-off-nya.
 
 ---
 
 ## Konsep Inti
 
-### 1. Definisi: Apa itu AI Agent?
+### 1. Definisi: Apa Itu AI Agent?
 
-**AI Agent** = sistem berbasis LLM yang:
-1. Menerima **goal** (bukan sekadar prompt task).
-2. **Memilih action** secara otonom (call tool, jawab user, klarifikasi).
-3. Mengamati hasil (**observation**) dan **iterasi** sampai goal tercapai (atau berhenti dengan alasan).
+**AI Agent** adalah sistem berbasis LLM yang memiliki tiga karakter berikut:
 
-> Singkat: *Agent = loop di mana model memutuskan langkah berikutnya berdasarkan state saat ini.*
+1. Menerima sebuah **goal** (bukan sekadar prompt task).
+2. **Memilih action** secara otonom — memanggil tool, menjawab pengguna, atau meminta klarifikasi.
+3. Mengamati hasil *(observation)* dan **beriterasi** sampai goal tercapai (atau berhenti dengan alasan yang jelas).
+
+> Singkatnya: *Agent = sebuah loop di mana model memutuskan langkah berikutnya berdasarkan state saat ini.*
 
 ### 2. Chatbot vs Workflow vs Agent
 
+Agar Anda tidak salah memilih arsitektur, perhatikan perbedaan ketiganya:
+
 | Aspek | Chatbot | Workflow | Agent |
 |---|---|---|---|
-| Input | Pesan user | Trigger + data | Goal |
-| Kontrol alur | User-driven | Developer-driven | Model-driven |
-| Loop iterasi | Tidak (1 reply/turn) | Tidak (linear) | Ya (sampai goal/limit) |
-| Tool use | Jarang | Developer pilih | Model pilih |
-| Memory | Context window | Stateless antar run | Eksplisit (short + long term) |
-| Predictability | Tinggi | Tinggi | Sedang–rendah |
-| Use case | FAQ, info | Proses bisnis | Task open-ended |
+| Input | Pesan pengguna | Trigger + data | Goal |
+| Kontrol alur | Dipandu pengguna | Dipandu developer | Dipandu model |
+| Loop iterasi | Tidak (1 balasan per giliran) | Tidak (linear) | Ya (sampai goal/limit) |
+| Penggunaan tool | Jarang | Developer yang memilih | Model yang memilih |
+| Memory | Sebatas context window | Stateless antar run | Eksplisit (short + long term) |
+| Predictability | Tinggi | Tinggi | Sedang – rendah |
+| Use case | FAQ, info | Proses bisnis | Tugas open-ended |
 
 ### 3. Arsitektur Agent
 
@@ -64,29 +68,31 @@ flowchart TB
     LTM -.-> P
 ```
 
-Komponen kunci:
+Komponen-komponen kunci yang akan Anda kenal sepanjang Day 2:
 
-- **Planner**: LLM yang membaca state, memutuskan next action.
-- **Tools**: fungsi-fungsi konkret (API call, DB query, file ops).
-- **Executor**: kode yang menjalankan tool, kembalikan observation ke LLM.
+- **Planner** — LLM yang membaca state lalu memutuskan aksi berikutnya.
+- **Tools** — fungsi-fungsi konkret seperti API call, query database, atau operasi file.
+- **Executor** — kode yang menjalankan tool dan mengembalikan *observation* ke LLM.
 - **Memory**:
-  - *Short-term*: history percakapan dalam context window.
-  - *Long-term*: ringkasan, vector DB, structured KB — di luar context window, di-retrieve bila perlu.
-- **Termination policy**: max iterations, budget, atau goal-reached check.
+  - *Short-term*: riwayat percakapan yang masih berada di dalam context window.
+  - *Long-term*: ringkasan, vector database, atau structured knowledge base — disimpan di luar context window dan di-*retrieve* saat diperlukan.
+- **Termination policy** — batas iterasi maksimum, budget, atau pengecekan goal-reached.
 
 ### 4. Goal-Oriented vs Reactive
 
+Perbedaan keduanya dapat Anda bayangkan seperti berikut:
+
 | Reactive | Goal-Oriented |
 |---|---|
-| Jawab apa yang ditanya | Bekerja menuju target |
-| Stateless tiap pesan | Mempertahankan state goal |
-| Cocok: Q&A | Cocok: "Susun jadwal meeting tim minggu depan" |
+| Menjawab apa yang ditanyakan saja | Bekerja menuju sebuah target |
+| Stateless di setiap pesan | Mempertahankan state goal |
+| Cocok untuk Q&A | Cocok untuk "Susun jadwal meeting tim minggu depan" |
 
-Agent biasanya **goal-oriented + reactive** (responsif ke input baru tapi tetap mengejar goal).
+Agent yang baik biasanya bersifat **goal-oriented sekaligus reactive** — responsif terhadap input baru, namun tetap mengejar goal utama.
 
-### 5. Planning & Reasoning (ReAct-style loop)
+### 5. Planning & Reasoning (ReAct-style Loop)
 
-Pola **Thought → Action → Observation** (ReAct):
+Salah satu pola berpikir agent yang populer adalah **ReAct** *(Reasoning + Acting)*. Polanya: **Thought → Action → Observation**:
 
 ```
 Thought: Saya perlu tahu cuaca Jakarta dulu.
@@ -99,43 +105,47 @@ Thought: Goal tercapai. Jawab ke user.
 Final:   "Saya sudah kirim rekomendasi jadwal indoor."
 ```
 
-Di Claude API, pola ini direpresentasikan dengan **tool_use** + **tool_result** blocks. Tidak perlu format "Thought:/Action:" eksplisit — model sudah menghasilkan struktur ini lewat tool_use blocks.
+Di Claude API, pola ini direpresentasikan melalui blok **tool_use** dan **tool_result**. Anda tidak perlu menulis format "Thought:/Action:" secara eksplisit — model sudah menghasilkan struktur tersebut secara otomatis melalui blok tool_use.
 
 ### 6. AI Memory
+
+Memory adalah bagian yang sering luput diperhatikan, padahal kritis untuk agent yang bekerja lintas sesi:
 
 | Tipe | Lokasi | Lifetime | Cara akses |
 |---|---|---|---|
 | Short-term | Context window | 1 sesi | Otomatis (history) |
-| Working scratchpad | Context window | Sesi / sub-task | Model menulis catatan |
+| Working scratchpad | Context window | Sesi atau sub-task | Model menulis catatan |
 | Long-term episodic | DB / file | Lintas sesi | Retrieval (RAG) |
 | Semantic / KB | Vector DB | Permanen | Embedding search |
 | Procedural | Code/tools | Permanen | Tool definitions |
 
-Trade-off:
-- Context window penuh → mahal & latency naik.
-- Long-term memory → butuh retrieval & risk stale data.
-- *Best practice*: simpan ringkasan + ID; full content di-fetch on demand.
+Trade-off yang perlu Anda pertimbangkan:
+- Context window yang penuh → biaya naik dan latensi membengkak.
+- Long-term memory → butuh mekanisme retrieval dan berisiko data basi.
+- *Best practice*: simpan ringkasan + ID; konten lengkapnya di-fetch hanya saat dibutuhkan.
 
 ### 7. Termination & Safety
 
-Agent **harus** punya:
+Agent **wajib** memiliki pengaman berikut sebelum Anda lepas ke produksi:
 
-- **Max iterations** (mis. 10) untuk hindari infinite loop.
-- **Budget cap** (token / dollar) per task.
-- **Tool whitelist** — model tidak boleh "imajinasikan" tool.
-- **Human-in-the-loop** untuk action irreversible (kirim email ke customer, transfer dana).
+- **Max iterations** (misalnya 10) untuk menghindari infinite loop.
+- **Budget cap** (token atau dolar) per tugas.
+- **Tool whitelist** — model tidak boleh "membayangkan" tool yang tidak terdaftar.
+- **Human-in-the-loop** untuk aksi yang tidak bisa dibatalkan, misalnya mengirim email ke pelanggan atau melakukan transfer dana.
 
 ---
 
-## Demo Live (15 menit)
+## Praktik Mandiri (15 menit)
 
-Trainer **tidak menulis kode penuh** di modul ini (kode penuh di Modul 8-9). Sebagai gantinya:
+Pada modul ini Anda **tidak menulis kode penuh** — kode penuh akan dibahas di Module 8 dan 9. Sebagai gantinya, lakukan latihan whiteboard berikut:
 
-1. **Whiteboard exercise**: minta 1 peserta sebutkan goal ("Pesankan saya tiket kereta Jakarta–Bandung besok pagi"). Trainer gambar loop ReAct di whiteboard, isi bersama peserta.
-2. **Tunjukkan trace agent** (cetak dari log agent sederhana yang trainer siapkan offline) — peserta lihat sequence Thought/Action/Observation nyata.
-3. **Diskusi "Where would this break?"**: minta peserta identifikasi 3 failure mode (tool error, goal ambigu, infinite loop).
-4. **Compare**: tunjukkan code workflow Lab-05 → tunjukkan kalau yang sama dipakai sebagai agent: bedanya di siapa yang memutuskan urutan.
-5. **Memory demo singkat**: tampilkan agent yang ingat preferensi user dari interaksi sebelumnya (mock dengan dict).
+1. **Pilih satu goal** dari pekerjaan Anda yang cukup kompleks, misalnya: *"Pesankan saya tiket kereta Jakarta–Bandung besok pagi."*
+2. **Gambar loop ReAct** untuk goal tersebut. Tuliskan kemungkinan *Thought → Action → Observation* di setiap iterasi.
+3. **Identifikasi failure mode**: di titik mana agent ini paling mungkin gagal? Tool error? Goal ambigu? Infinite loop?
+4. **Bandingkan dengan workflow**: jika tugas yang sama diselesaikan sebagai workflow, apa yang berbeda? Siapa yang menentukan urutan?
+5. **Sketsa memory**: data apa saja yang perlu Anda ingat lintas interaksi? Pendek atau panjang?
+
+Hasil sketsa ini dapat Anda diskusikan dengan rekan sebelah untuk mendapat satu butir umpan balik.
 
 ---
 
@@ -159,7 +169,7 @@ def agent_loop(goal: str, tools: list, max_iter=10):
     return "[STOP] Max iterations reached."
 ```
 
-Catatan: di Modul 8, fungsi `llm_decide` direpresentasikan sebagai `client.messages.create(..., tools=[...])` dan keputusan model muncul sebagai `tool_use` content block.
+Catatan: di Module 8, fungsi `llm_decide` direpresentasikan sebagai `client.messages.create(..., tools=[...])` dan keputusan model muncul sebagai content block `tool_use`.
 
 ### Contoh 2 — Memory Sketch (Python)
 
@@ -185,28 +195,30 @@ class SimpleMemory:
         return self.long.get(key)
 ```
 
-> **Paralel JS**: kelas sama; pakai `class SimpleMemory { ... }`. Konsep memory tidak language-specific.
+> **Paralel JS**: struktur kelasnya sama. Gunakan `class SimpleMemory { ... }`. Konsep memory tidak terikat pada bahasa pemrograman tertentu.
 
 ---
 
 ## Hands-on Lab
 
-Modul ini **tidak memiliki lab tersendiri** — peserta mempraktikkan agent loop pada Lab 06 (tool calling) dan Lab 07 (build agent end-to-end).
+Modul ini **tidak memiliki lab tersendiri** — Anda akan mempraktikkan konsep agent loop pada Lab 06 (tool calling) dan Lab 07 (build agent end-to-end).
 
-Aktivitas tertulis singkat (10 menit, di kelas):
-- Setiap peserta gambar arsitektur agent untuk *satu use case di pekerjaannya*.
-- Identifikasi: goal, tools yang dibutuhkan, jenis memory, termination policy.
-- Share dengan teman sebelah, beri 1 feedback.
+Sebagai gantinya, lakukan aktivitas tertulis singkat (10 menit):
+- Gambar arsitektur agent untuk **satu use case** di pekerjaan Anda.
+- Identifikasi: goal, tools yang dibutuhkan, jenis memory, dan termination policy.
+- Bagikan ke rekan sebelah dan berikan satu butir umpan balik.
 
 ---
 
-## Wrap-up & Q&A
+## Latihan & Refleksi
 
-1. Apa **satu kalimat** definisi AI Agent yang Anda pakai untuk menjelaskan ke atasan non-teknis?
-2. Use case mana di organisasi Anda yang **memang butuh agent**, bukan workflow?
-3. Apa risiko terbesar membiarkan model memilih urutan action sendiri? Bagaimana mitigasinya?
-4. Kenapa termination policy itu wajib?
-5. Sebutkan 2 contoh kapan long-term memory perlu, dan 2 contoh kapan short-term saja cukup.
+Sebelum melanjutkan ke Module 8, pastikan Anda mampu menjawab kelima pertanyaan berikut:
+
+1. Apa **satu kalimat** definisi AI Agent yang akan Anda pakai untuk menjelaskan kepada atasan non-teknis?
+2. Use case mana di organisasi Anda yang **benar-benar membutuhkan agent**, bukan sekadar workflow?
+3. Apa risiko terbesar membiarkan model memilih urutan aksi sendiri? Bagaimana mitigasinya?
+4. Mengapa termination policy itu wajib?
+5. Sebutkan dua contoh kapan long-term memory diperlukan, dan dua contoh kapan short-term saja sudah cukup.
 
 ---
 

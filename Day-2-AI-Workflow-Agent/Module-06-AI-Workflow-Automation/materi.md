@@ -1,20 +1,21 @@
 # Module 6 — AI Workflow Automation
 
-**Durasi:** 90 menit
-**Posisi:** Day 2, sesi kedua setelah Modul 5
-**Prasyarat:** Modul 5 (peserta sudah bisa menulis prompt produksi single-step)
+**Durasi belajar:** ±90 menit
+**Posisi:** Day 2, modul kedua setelah Module 5
+**Prasyarat:** Module 5 (Anda sudah mampu menulis prompt produksi single-step)
+**Format:** Baca konsep → praktik mandiri → lab terintegrasi
 
 ---
 
-## Learning Outcomes
+## Apa yang Akan Anda Bisa Setelah Modul Ini
 
-Setelah modul ini, peserta mampu:
+Setelah selesai membaca dan mempraktikkan modul ini, Anda akan mampu:
 
-1. Mendefinisikan **AI Workflow** dan membedakannya dengan single-call prompt maupun agent.
-2. Mendesain **multi-step pipeline** dengan teknik *prompt chaining* dan *task decomposition*.
-3. Mengintegrasikan **tool eksternal** (API call, DB query, file I/O) sebagai langkah dalam pipeline.
-4. Menangani **error per step** (validasi output, retry, fallback) sehingga pipeline production-grade.
-5. Memutuskan kapan workflow cukup, kapan butuh agent.
+1. **Mendefinisikan** apa itu *AI Workflow* dan membedakannya dengan single-call prompt maupun agent.
+2. **Mendesain** *multi-step pipeline* menggunakan teknik *prompt chaining* dan *task decomposition* (pemecahan tugas).
+3. **Mengintegrasikan** tool eksternal (API call, query database, file I/O) sebagai langkah di dalam pipeline.
+4. **Menangani** kesalahan per langkah (validasi output, retry, fallback) sehingga pipeline Anda layak produksi.
+5. **Memutuskan** kapan workflow sudah cukup, dan kapan Anda benar-benar memerlukan sebuah agent.
 
 ---
 
@@ -22,20 +23,22 @@ Setelah modul ini, peserta mampu:
 
 ### 1. Definisi: Workflow vs Single Prompt vs Agent
 
+Sebelum membangun apa pun, ada baiknya Anda paham letak workflow di antara dua kerabatnya:
+
 | Aspek | Single Prompt | AI Workflow | AI Agent |
 |---|---|---|---|
-| Jumlah call ke LLM | 1 | N (deterministik) | N (model decides) |
-| Urutan step | — | Ditentukan developer | Ditentukan model |
-| Tool usage | Tidak | Ya, di step tertentu | Ya, model pilih tool |
-| Cocok untuk | Task atomic | Proses bisnis terstruktur | Task open-ended |
+| Jumlah call ke LLM | 1 | N (deterministik) | N (ditentukan model) |
+| Urutan langkah | — | Ditentukan developer | Ditentukan model |
+| Penggunaan tool | Tidak | Ya, di langkah tertentu | Ya, model memilih tool |
+| Cocok untuk | Tugas atomic | Proses bisnis terstruktur | Tugas open-ended |
 | Predictability | Tinggi | Tinggi | Sedang |
 | Cost control | Mudah | Mudah | Lebih sulit |
 
-**Rule of thumb:** mulai dari **workflow**. Naikkan ke **agent** hanya jika urutan step tidak bisa diprediksi.
+**Rule of thumb:** mulai dari **workflow** terlebih dahulu. Naikkan ke **agent** hanya jika urutan langkah memang tidak mungkin diprediksi di awal.
 
 ### 2. Prompt Chaining
 
-Output prompt A → input prompt B. Setiap step punya satu *concern*:
+Konsepnya sederhana: output prompt A menjadi input prompt B. Setiap langkah hanya mengurus satu *concern*:
 
 ```mermaid
 flowchart LR
@@ -48,59 +51,68 @@ flowchart LR
     S3 -.error.-> E
 ```
 
-Keuntungan:
-- **Akurasi naik**: tiap step fokus, model tidak overload.
-- **Debug mudah**: bisa inspeksi output per step.
-- **Cost optimization**: step ringan pakai Haiku, step berat pakai Sonnet.
+Tiga keuntungan utama yang akan Anda rasakan:
+
+- **Akurasi naik** — setiap langkah fokus pada satu hal, sehingga model tidak kewalahan.
+- **Debugging mudah** — Anda dapat memeriksa output di setiap langkah secara terpisah.
+- **Cost optimization** — langkah ringan dapat menggunakan Haiku, sedangkan langkah berat menggunakan Sonnet.
 
 ### 3. Pola Workflow Umum
+
+Ada beberapa pola yang akan sering Anda temui dan pakai ulang:
 
 | Pola | Deskripsi | Contoh |
 |---|---|---|
 | **Sequential chain** | Linear A→B→C | Extract → Enrich → Report |
-| **Parallel fan-out** | 1 input → N step paralel | 1 dokumen → ringkasan + sentimen + topik (paralel) |
-| **Router / Branch** | Klasifikasi dulu, lalu pilih cabang | Tiket masuk → klasifikasi → handler kategori |
-| **Loop / Iterate** | Step diulang sampai kondisi terpenuhi | Refine draft sampai panjang < 500 kata |
-| **Map-reduce** | Apply per chunk, lalu gabungkan | Ringkas 100-halaman: ringkas per bab → ringkas global |
+| **Parallel fan-out** | 1 input → N langkah paralel | 1 dokumen → ringkasan + sentimen + topik (paralel) |
+| **Router / Branch** | Klasifikasi terlebih dahulu, lalu memilih cabang | Tiket masuk → klasifikasi → handler kategori |
+| **Loop / Iterate** | Langkah diulang hingga kondisi terpenuhi | Memperbaiki draft sampai panjangnya di bawah 500 kata |
+| **Map-reduce** | Memproses per potongan, lalu menggabungkan | Meringkas dokumen 100 halaman: ringkas per bab → ringkas global |
 
-### 4. Tool Integration di Workflow
+### 4. Integrasi Tool di dalam Workflow
 
-Workflow bukan cuma rangkaian prompt — biasanya disisipi *non-LLM steps*:
+Workflow bukan hanya sekadar rangkaian prompt — biasanya juga disisipi langkah-langkah *non-LLM*:
 
-- API call (cuaca, kurs, CRM lookup).
-- DB query (lookup customer, lookup SKU).
-- File I/O (baca PDF, simpan PDF).
-- Validator / regex / schema check.
+- Panggilan API (cuaca, kurs, CRM lookup).
+- Query database (lookup customer, lookup SKU).
+- File I/O (membaca PDF, menyimpan PDF).
+- Validator, regex, atau pengecekan schema.
 
-Di **workflow**, *developer* yang memutuskan kapan call tool ini. Di **agent** (Modul 8), model yang memutuskan.
+Pada **workflow**, *Anda* sebagai developer yang menentukan kapan tool dipanggil. Pada **agent** (yang akan dibahas di Module 8), model yang menentukan.
 
-### 5. Error Handling per Step
+### 5. Error Handling per Langkah
 
-Untuk tiap step, sediakan minimal:
+Untuk setiap langkah, siapkan minimal empat hal berikut:
 
-1. **Validasi output** (JSON parseable? field lengkap?).
-2. **Retry policy** (max 2 retry, exponential backoff).
-3. **Fallback** (model lebih murah / default response / human handover).
-4. **Logging**: simpan input, output, latency, token usage per step.
+1. **Validasi output** — apakah JSON bisa di-parse? Apakah field lengkap?
+2. **Kebijakan retry** — maksimal 2 retry dengan *exponential backoff*.
+3. **Fallback** — gunakan model yang lebih ekonomis, respons default, atau eskalasi ke manusia.
+4. **Logging** — simpan input, output, latensi, dan penggunaan token di setiap langkah.
 
-### 6. Cost & Latency Optimization
+### 6. Optimasi Biaya dan Latensi
 
-- **Model mixing**: step klasifikasi → Haiku; step generasi panjang → Sonnet.
-- **Caching**: system prompt panjang yang berulang → manfaatkan prompt caching.
-- **Parallelize** jika step independen.
-- **Streaming** untuk step akhir yang user-facing.
+Beberapa teknik praktis yang dapat Anda terapkan:
+
+- **Model mixing** — langkah klasifikasi menggunakan Haiku; langkah generasi panjang menggunakan Sonnet.
+- **Caching** — system prompt panjang yang berulang dapat memanfaatkan *prompt caching*.
+- **Parallelize** langkah-langkah yang saling independen.
+- **Streaming** pada langkah akhir yang menampilkan hasil ke pengguna.
 
 ---
 
-## Demo Live (15 menit)
+## Praktik Mandiri (15 menit)
 
-Trainer mendemokan **pipeline 3-step** end-to-end:
+Mari Anda jalankan sendiri sebuah pipeline 3-langkah dari awal hingga akhir. Skenarionya: dari paragraf customer feedback hingga ringkasan eksekutif.
 
-1. **Input**: paragraf customer feedback campuran.
-2. **Step 1 (Extract)**: ambil daftar produk yang disebut + sentimen per produk → JSON.
-3. **Step 2 (Enrich)**: untuk tiap produk, mock-lookup ke "DB" (dictionary) → dapat SKU + kategori.
+### Langkah-Langkahnya
+
+1. **Input**: siapkan satu paragraf customer feedback yang menyebut beberapa produk dengan sentimen yang bercampur.
+2. **Step 1 (Extract)**: prompt yang mengambil daftar produk + sentimen per produk, output JSON.
+3. **Step 2 (Enrich)**: untuk setiap produk, lakukan mock-lookup ke "database" (cukup gunakan Python dictionary) untuk mendapatkan SKU dan kategori.
 4. **Step 3 (Generate)**: hasilkan ringkasan eksekutif markdown + rekomendasi tindak lanjut.
-5. **Tunjukkan error injection**: rusak output JSON step 1 secara sengaja → tunjukkan retry & fallback.
+5. **Eksperimen error**: rusak output JSON di Step 1 secara sengaja, lalu amati bagaimana retry dan fallback berfungsi.
+
+Refleksi: di langkah mana pipeline Anda paling rapuh? Apa yang dapat Anda perbaiki?
 
 ---
 
@@ -168,7 +180,7 @@ def classify(ticket: str) -> str:
     return call_claude(MODEL_LIGHT, sys, ticket, max_tokens=10).strip()
 
 HANDLERS = {
-    "ACCESS":   handle_access,    # masing-masing punya prompt khusus
+    "ACCESS":   handle_access,    # masing-masing memiliki prompt khusus
     "HARDWARE": handle_hardware,
     "SOFTWARE": handle_software,
     "NETWORK":  handle_network,
@@ -180,7 +192,7 @@ def route_and_handle(ticket: str):
     return HANDLERS.get(label, HANDLERS["OTHER"])(ticket)
 ```
 
-> **Paralel JS**: sama persis, `Promise.all` untuk parallel fan-out, `try/catch` untuk retry.
+> **Paralel JS**: pola yang sama persis. Gunakan `Promise.all` untuk parallel fan-out dan `try/catch` untuk mekanisme retry.
 
 ---
 
@@ -188,17 +200,19 @@ def route_and_handle(ticket: str):
 
 Lanjut ke: [`lab-05-multi-step-pipeline/`](./lab-05-multi-step-pipeline/)
 
-Peserta membangun pipeline 3-step (extract → enrich → report) dengan error handling per step.
+Pada lab ini Anda akan membangun pipeline 3-langkah (extract → enrich → report) dengan *error handling* di setiap langkah.
 
 ---
 
-## Wrap-up & Q&A
+## Latihan & Refleksi
 
-1. Kapan Anda pilih **single prompt** dibanding multi-step workflow? (jawab: ketika task atomic, input pendek, akurasi cukup)
-2. Apa risiko terbesar dari chain panjang? (cascading failure, latency tinggi, cost membengkak)
-3. Bagaimana strategi pilih model per step? (klasifikasi/extract ringan → Haiku; generasi & reasoning → Sonnet)
-4. Apa bedanya **workflow** vs **agent** dari sudut pandang predictability?
-5. Sebutkan 2 cara handle JSON invalid di tengah pipeline.
+Sebelum melanjutkan ke Module 7, pastikan Anda mampu menjawab kelima pertanyaan berikut:
+
+1. Kapan Anda akan memilih **single prompt** dibandingkan multi-step workflow? (Petunjuk: ketika tugas atomic, input pendek, dan akurasinya sudah cukup.)
+2. Apa risiko terbesar dari sebuah chain yang panjang? (Petunjuk: cascading failure, latensi tinggi, biaya membengkak.)
+3. Bagaimana strategi Anda memilih model untuk setiap langkah? (Petunjuk: klasifikasi/ekstraksi ringan → Haiku; generasi dan reasoning → Sonnet.)
+4. Apa bedanya **workflow** dan **agent** jika dilihat dari sudut pandang *predictability*?
+5. Sebutkan dua cara untuk menangani JSON invalid di tengah pipeline.
 
 ---
 

@@ -10,21 +10,21 @@
 
 ## Ringkasan Day 3
 
-Setelah Day 1 (fundamental prompt engineering) dan Day 2 (agent & tool use), Day 3 mengangkat peserta dari level "prototype di playground" ke level "production AI application". Peserta akan membangun chat app berbasis Claude, menambahkan kemampuan retrieval-augmented generation (RAG) untuk knowledge grounding, dan akhirnya menggabungkan semuanya menjadi Enterprise AI Assistant siap-pakai dengan pertimbangan cost, observability, dan scaling.
+Setelah Day 1 (fundamental prompt engineering) dan Day 2 (agent & tool use), Day 3 akan membawa Anda dari level "prototype di playground" menuju level "production AI application". Anda akan membangun chat app berbasis Claude, menambahkan kemampuan retrieval-augmented generation (RAG) untuk knowledge grounding, dan pada akhirnya menggabungkan semuanya menjadi sebuah Enterprise AI Assistant yang siap pakai — lengkap dengan pertimbangan biaya, observability, dan skalabilitas.
 
-Day 3 sangat hands-on: 3 module materi + 4 lab implementasi. Peserta yang berlatar non-developer (PM, analyst) tetap dapat mengikuti karena setiap lab menyediakan skeleton kode dan checkpoint review.
+Day 3 sangat menekankan praktik: tersedia 3 modul materi dan 4 lab implementasi. Jika latar belakang Anda bukan developer (misalnya PM atau analyst), Anda tetap dapat mengikuti karena setiap lab menyediakan kerangka kode awal dan titik pemeriksaan (checkpoint) untuk peninjauan.
 
 ---
 
-## Learning Outcomes
+## Apa yang Akan Anda Bisa Setelah Day Ini
 
-Pada akhir Day 3, peserta akan mampu:
+Setelah selesai membaca dan mempraktikkan seluruh materi Day 3, Anda akan mampu:
 
-1. **Mendesain arsitektur AI application** end-to-end (frontend, backend, state, observability) dengan Claude sebagai reasoning core.
+1. **Mendesain arsitektur AI application** end-to-end (frontend, backend, state, observability) dengan Claude sebagai inti reasoning.
 2. **Mengimplementasikan chat app** dengan session management, conversation history, dan streaming response.
 3. **Membangun RAG pipeline** lengkap: ingestion → chunking → embedding → vector store → retrieval → augmented prompt.
-4. **Memilih komponen RAG** (vector DB, embedding model, chunking strategy) berdasarkan kebutuhan use case.
-5. **Mengoptimalkan AI application** dari sisi performance, biaya, dan skalabilitas (caching, batching, model routing, rate limiting).
+4. **Memilih komponen RAG** (vector DB, embedding model, strategi chunking) berdasarkan kebutuhan use case Anda.
+5. **Mengoptimalkan AI application** dari sisi performa, biaya, dan skalabilitas (caching, batching, model routing, rate limiting).
 6. **Menggabungkan chat + RAG + tool use** menjadi Enterprise AI Assistant dengan audit log dan cost tracking.
 
 ---
@@ -43,9 +43,9 @@ Build AI App         RAG Architecture     Advanced / Enterprise
 
 | Module | Topik utama | Durasi materi | Lab |
 |--------|-------------|---------------|-----|
-| 10 | AI application architecture, frontend integration, chat interface, backend AI integration, session & context management | 120 menit | Lab 08 — Chat App |
-| 11 | RAG architecture, embeddings, vector DB, semantic search, knowledge retrieval, document ingestion pipeline | 120 menit | Lab 09 — RAG Pipeline, Lab 10 — Document Ingestion |
-| 12 | Internal AI assistant, knowledge management, automation, performance & cost optimization, scaling | 90 menit | Lab 11 — Enterprise AI Assistant |
+| 10 | Arsitektur AI application, integrasi frontend, chat interface, integrasi backend AI, manajemen session & context | 120 menit | Lab 08 — Chat App |
+| 11 | Arsitektur RAG, embeddings, vector DB, semantic search, knowledge retrieval, pipeline ingestion dokumen | 120 menit | Lab 09 — RAG Pipeline, Lab 10 — Document Ingestion |
+| 12 | Internal AI assistant, knowledge management, automation, optimasi performa & biaya, scaling | 90 menit | Lab 11 — Enterprise AI Assistant |
 
 ---
 
@@ -62,23 +62,23 @@ Build AI App         RAG Architecture     Advanced / Enterprise
 | 14.00 – 15.00 | Lab 09 — RAG Pipeline (60') |
 | 15.00 – 15.15 | Coffee break |
 | 15.15 – 16.00 | Lab 10 — Document Ingestion (45') |
-| 16.00 – 17.00 | Module 12 — materi + Lab 11 walkthrough |
+| 16.00 – 17.00 | Module 12 — materi + walkthrough Lab 11 |
 | 17.00 – 17.15 | Wrap-up Day 3 & briefing Day 4 |
 
-> Lab 11 sebagian dilanjutkan sebagai pekerjaan rumah / kelanjutan ke Day 4 (deployment).
+> Lab 11 sebagian dapat Anda lanjutkan sebagai pekerjaan rumah atau diteruskan ke Day 4 (deployment).
 
 ---
 
 ## Prasyarat Teknis
 
 - Python 3.11+
-- API key Anthropic (sudah disiapkan dari Day 1)
-- Optional: API key Voyage AI atau OpenAI (untuk embeddings)
+- API key Anthropic (sudah Anda siapkan sejak Day 1)
+- Opsional: API key Voyage AI atau OpenAI (untuk embeddings)
 - Docker Desktop (untuk pgvector opsional) atau Chroma lokal
 - Editor: VS Code atau Cursor
 - Browser modern untuk frontend chat
 
-Install dependencies dasar:
+Pasang dependensi dasar:
 
 ```bash
 pip install anthropic fastapi uvicorn chromadb voyageai \
@@ -92,19 +92,21 @@ pip install anthropic fastapi uvicorn chromadb voyageai \
 
 | Use case | Model |
 |----------|-------|
-| Reasoning utama, RAG synthesis | `claude-sonnet-4-5` |
-| Chat ringan, classification, rerank | `claude-haiku-4-5` |
+| Reasoning utama, sintesis RAG | `claude-sonnet-4-5` |
+| Chat ringan, klasifikasi, rerank | `claude-haiku-4-5` |
 | Embedding (mitra Anthropic) | `voyage-3` |
 | Embedding offline | `sentence-transformers/all-MiniLM-L6-v2` |
 
-> Catatan: Anthropic **tidak menyediakan model embedding sendiri**. Untuk embedding gunakan Voyage AI (rekomendasi resmi Anthropic), OpenAI, atau model open-source.
+> Catatan: Anthropic **tidak menyediakan model embedding sendiri**. Untuk kebutuhan embedding, Anda dapat menggunakan Voyage AI (rekomendasi resmi Anthropic), OpenAI, atau model open-source.
 
 ---
 
-## Checklist Persiapan Fasilitator
+## Checklist Persiapan
 
-- [ ] Vector DB Chroma sudah ter-install di mesin peserta
-- [ ] Sample dataset (PDF kebijakan HR, CSV FAQ, DOCX SOP) tersedia di `lab-10`
-- [ ] Cost dashboard Anthropic console di-share screen
-- [ ] Backup API key proxy jika rate limit
-- [ ] Slack/Discord channel untuk Q&A async
+Sebelum sesi dimulai, pastikan hal-hal berikut sudah siap di lingkungan Anda:
+
+- [ ] Vector DB Chroma sudah terpasang di mesin Anda
+- [ ] Sample dataset (PDF kebijakan HR, CSV FAQ, DOCX SOP) tersedia di folder `lab-10`
+- [ ] Dashboard biaya pada Anthropic console dapat Anda akses
+- [ ] API key cadangan tersedia untuk berjaga-jaga jika terjadi rate limit
+- [ ] Channel Slack/Discord untuk tanya-jawab asinkron sudah Anda bergabungi

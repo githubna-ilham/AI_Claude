@@ -7,21 +7,21 @@ Hari ini: **Day 2 (8 jam efektif, 480 menit + break)**
 
 ## Ringkasan Day 2
 
-Day 2 menjembatani dari **prompt craft** (Day 1) menuju **sistem otomatis** dan **AI Agent berbasis Claude API**. Peserta belajar bagaimana prompt yang baik dirangkai menjadi *workflow*, lalu di-upgrade menjadi *agent* yang bisa mengambil keputusan dan memanggil tool. Diakhiri dengan implementasi end-to-end mini-agent helpdesk IT.
+Day 2 menjembatani perjalanan Anda dari **prompt craft** (Day 1) menuju **sistem otomatis** dan **AI Agent berbasis Claude API**. Di sini Anda akan belajar bagaimana prompt yang baik dirangkai menjadi *workflow*, lalu di-upgrade menjadi *agent* yang mampu mengambil keputusan dan memanggil tool eksternal. Sebagai puncaknya, Anda akan mengimplementasikan sebuah mini-agent helpdesk IT secara end-to-end.
 
-## Target Audiens
+## Untuk Siapa Materi Ini?
 
-Software Developer, AI/ML Engineer, Data Analyst, Product Manager, Innovation Team, IT Architect. Materi disusun dengan dua jalur: konsep (untuk PM/IT Architect) dan implementasi (untuk Developer/ML Engineer).
+Materi ini ditujukan bagi Software Developer, AI/ML Engineer, Data Analyst, Product Manager, Innovation Team, dan IT Architect. Materi disusun dengan dua jalur: jalur konsep (cocok untuk PM/IT Architect) dan jalur implementasi (cocok untuk Developer/ML Engineer). Anda dapat memilih kedalaman sesuai peran Anda.
 
-## Learning Outcomes (Day 2)
+## Apa yang Akan Anda Bisa Setelah Day 2
 
-Setelah menyelesaikan Day 2, peserta mampu:
+Setelah menyelesaikan Day 2, Anda akan mampu:
 
-1. Menerjemahkan kebutuhan bisnis (customer service, dokumen, laporan, analisis, internal KB) menjadi *prompt pack* siap pakai.
-2. Merancang **multi-step AI workflow** dengan teknik *prompt chaining*, *task delegation*, dan *error handling* per step.
+1. Menerjemahkan kebutuhan bisnis (customer service, dokumen, laporan, analisis, internal knowledge base) menjadi *prompt pack* siap pakai.
+2. Merancang **multi-step AI workflow** dengan teknik *prompt chaining*, *task delegation*, dan *error handling* di setiap langkah.
 3. Membedakan **Chatbot vs Workflow vs Agent**, serta memahami arsitektur agent (planner, executor, memory, tools).
-4. Mengimplementasikan **tool calling / function calling** pada Claude API untuk agent yang mampu mengambil aksi terhadap sistem eksternal.
-5. Membangun **AI Agent end-to-end** dengan Claude API (autentikasi, conversation loop, tool execution, basic deployment posture).
+4. Mengimplementasikan **tool calling / function calling** pada Claude API agar agent Anda mampu mengambil aksi terhadap sistem eksternal.
+5. Membangun **AI Agent end-to-end** menggunakan Claude API: autentikasi, conversation loop, eksekusi tool, hingga deployment posture dasar.
 
 ## Alur Modul
 
@@ -35,20 +35,20 @@ Setelah menyelesaikan Day 2, peserta mampu:
 
 Total konten: **480 menit** (8 jam) + 60 menit break/QA fleksibel.
 
-## Jadwal Sampel
+## Contoh Jadwal Sehari
 
 | Waktu | Aktivitas |
 |---|---|
-| 08.30 – 09.00 | Recap Day 1 + warm-up |
+| 08.30 – 09.00 | Recap Day 1 + pemanasan |
 | 09.00 – 10.30 | Module 5 + Lab 04 (paralel) |
 | 10.30 – 10.45 | Coffee break |
 | 10.45 – 12.15 | Module 6 + Lab 05 |
 | 12.15 – 13.15 | Istirahat siang |
-| 13.15 – 14.45 | Module 7 (banyak diskusi & whiteboard) |
+| 13.15 – 14.45 | Module 7 (banyak diskusi & sesi whiteboard) |
 | 14.45 – 15.00 | Coffee break |
 | 15.00 – 16.30 | Module 8 + Lab 06 |
 | 16.30 – 18.30 | Module 9 + Lab 07 (capstone) |
-| 18.30 – 18.45 | Wrap-up Day 2 + preview Day 3 |
+| 18.30 – 18.45 | Penutup Day 2 + pratinjau Day 3 |
 
 ## Diagram Alur Day 2
 
@@ -64,16 +64,16 @@ flowchart LR
 
 ## Prasyarat Teknis
 
-- Python 3.10+ terinstall, `pip install anthropic python-dotenv`.
-- Anthropic API key (peserta atau shared trainer key). **Selalu** simpan di `.env`, jangan hardcode.
-- Editor: VS Code / Cursor.
-- Akses internet stabil.
+- Python 3.10+ sudah terpasang, beserta `pip install anthropic python-dotenv`.
+- Anthropic API key (milik Anda pribadi atau shared trainer key). **Selalu** simpan API key di `.env`, jangan pernah ditanam langsung di kode.
+- Editor: VS Code atau Cursor.
+- Akses internet yang stabil.
 
-## Catatan Fasilitator
+## Catatan untuk Fasilitator
 
-- Mock data (FAQ helpdesk, sample tickets, mock weather/DB response) disiapkan trainer di folder `assets/` per lab.
-- Default model: `claude-sonnet-4-5`. Gunakan `claude-haiku-4-5` untuk task ringan & demo cepat agar hemat token.
-- Selalu mulai sesi lab dengan reminder: **API key disimpan di env var, tidak commit ke git.**
+- Mock data (FAQ helpdesk, sampel tiket, mock response cuaca/DB) sudah disiapkan trainer di folder `assets/` pada setiap lab.
+- Model default: `claude-sonnet-4-5`. Untuk tugas ringan dan demo cepat, gunakan `claude-haiku-4-5` agar lebih hemat token.
+- Selalu awali sesi lab dengan pengingat: **API key disimpan di environment variable, tidak boleh ter-commit ke git.**
 
 ## Struktur Folder
 

@@ -1,20 +1,21 @@
 # Module 5 — Prompt for Business Use Cases
 
-**Durasi:** 90 menit
-**Posisi:** Day 2, sesi pertama setelah recap Day 1
+**Durasi belajar:** ±90 menit
+**Posisi:** Day 2, modul pertama setelah recap Day 1
 **Modul prasyarat:** Day 1 (Prompt Engineering Fundamentals)
+**Format:** Baca konsep → praktik mandiri → lab terintegrasi
 
 ---
 
-## Learning Outcomes
+## Apa yang Akan Anda Bisa Setelah Modul Ini
 
-Setelah modul ini, peserta mampu:
+Setelah selesai membaca dan mempraktikkan modul ini, Anda akan mampu:
 
-1. Memetakan **kebutuhan bisnis** ke pola prompt yang tepat (klasifikasi, generasi, ekstraksi, summarization, Q&A).
-2. Merancang prompt produksi untuk **5 use case kunci**: customer service, document automation, report generation, data analysis, internal knowledge assistant.
-3. Menyusun **prompt template** yang reusable dengan variabel input (placeholder) dan output yang terstruktur (JSON / Markdown).
-4. Menulis **test cases** untuk mengevaluasi kualitas prompt (akurasi, konsistensi, hallucination check).
-5. Mengidentifikasi *guardrails* dan *fallback* untuk prompt yang dipakai pengguna akhir.
+1. **Memetakan** kebutuhan bisnis ke pola prompt yang tepat — klasifikasi, generasi, ekstraksi, summarization, atau Q&A.
+2. **Merancang** prompt produksi untuk **lima use case kunci**: customer service, document automation, report generation, data analysis, dan internal knowledge assistant.
+3. **Menyusun** *prompt template* yang dapat dipakai ulang, lengkap dengan variabel input (placeholder) dan output terstruktur (JSON atau Markdown).
+4. **Menulis** *test cases* untuk mengevaluasi kualitas prompt dari sisi akurasi, konsistensi, dan ketahanan terhadap halusinasi.
+5. **Mengidentifikasi** *guardrails* dan *fallback* yang diperlukan ketika prompt Anda dipakai pengguna akhir.
 
 ---
 
@@ -22,42 +23,46 @@ Setelah modul ini, peserta mampu:
 
 ### 1. Dari "Prompt Iseng" ke "Prompt Produksi"
 
-Prompt produksi harus memiliki lima elemen:
+Prompt yang dipakai untuk eksplorasi sehari-hari boleh saja seadanya. Namun jika prompt akan dipakai dalam sistem produksi yang melayani pelanggan atau pengguna internal, ada **lima elemen** yang sebaiknya selalu hadir:
 
 | Elemen | Penjelasan | Contoh |
 |---|---|---|
-| **Role** | Persona / sudut pandang model | "You are a senior support agent for fintech XYZ." |
-| **Context** | Latar masalah, kebijakan, batasan | SLA 24 jam, hanya bahasa Indonesia, tidak janjikan refund |
-| **Task** | Instruksi spesifik | "Tulis balasan empati + langkah konkret" |
-| **Input** | Data dinamis | Email customer, ticket body |
-| **Output format** | Struktur deterministik | JSON dengan field `tone`, `reply`, `next_action` |
+| **Role** | Persona atau sudut pandang yang Anda berikan kepada model | "Anda adalah senior support agent untuk fintech XYZ." |
+| **Context** | Latar masalah, kebijakan, dan batasan yang berlaku | SLA 24 jam, hanya Bahasa Indonesia, tidak boleh menjanjikan refund |
+| **Task** | Instruksi spesifik yang harus dijalankan | "Tulis balasan empati ditambah langkah konkret." |
+| **Input** | Data dinamis yang menjadi bahan pengerjaan | Email customer, isi tiket |
+| **Output format** | Struktur output yang deterministik | JSON dengan field `tone`, `reply`, `next_action` |
+
+Kelima elemen ini ibarat fondasi rumah. Bisa saja Anda membangun rumah tanpa fondasi yang lengkap, namun risikonya menjadi jauh lebih tinggi.
 
 ### 2. Lima Use Case Bisnis Inti
 
+Bagian ini merangkum pola, risiko, dan output untuk lima skenario yang paling sering muncul di organisasi.
+
 #### a. AI Customer Service
-- **Pola**: empathy → acknowledge → action → next step.
-- **Risk**: hallucinated policy, salah janji, leaking PII.
-- **Output**: balasan email/chat + label *escalate? yes/no*.
+- **Pola**: empati → akui masalah → tindakan → langkah berikutnya.
+- **Risiko**: model mengarang kebijakan, salah berjanji, atau membocorkan PII (Personally Identifiable Information).
+- **Output**: balasan email/chat ditambah label *escalate? yes/no*.
 
 #### b. Document Automation
-- **Pola**: ekstrak field terstruktur dari dokumen (invoice, kontrak, KTP, formulir).
-- **Risk**: format dokumen variatif, OCR noise.
-- **Output**: JSON dengan field standar + confidence/flag.
+- **Pola**: ekstraksi field terstruktur dari dokumen seperti invoice, kontrak, KTP, atau formulir.
+- **Risiko**: format dokumen yang sangat variatif, ditambah noise dari hasil OCR.
+- **Output**: JSON berisi field standar, dilengkapi confidence atau flag.
 
 #### c. Report Generation
-- **Pola**: data numerik → narasi insight + rekomendasi.
-- **Risk**: model "mengarang" angka. Solusi: kasih data eksplisit di prompt, larang invent number.
-- **Output**: laporan markdown / slide bullet.
+- **Pola**: dari data numerik menjadi narasi insight ditambah rekomendasi.
+- **Risiko**: model "mengarang" angka. Solusinya: berikan data secara eksplisit di dalam prompt, lalu larang model menciptakan angka baru.
+- **Output**: laporan dalam format markdown atau bullet untuk slide presentasi.
 
 #### d. Data Analysis Assistant
-- **Pola**: user tanya bahasa natural → AI interpretasi + summarize hasil query.
-- **Risk**: salah interpretasi metrik. Solusi: sertakan kamus metrik (data dictionary) di system prompt.
-- **Output**: narasi + tabel + caveat.
+- **Pola**: pengguna bertanya dengan bahasa natural → AI menginterpretasi dan meringkas hasil query.
+- **Risiko**: salah menginterpretasi metrik. Solusinya: sertakan kamus metrik (data dictionary) di dalam system prompt.
+- **Output**: narasi, tabel, dan catatan asumsi *(caveat)*.
 
 #### e. Internal Knowledge Assistant
-- **Pola**: Q&A atas SOP, HR policy, technical wiki. (Biasanya pakai RAG; di modul ini fokus pada prompt-nya, bukan retrieval-nya.)
-- **Risk**: jawab di luar KB (out-of-scope hallucination).
-- **Output**: jawaban + sitasi sumber + `confidence`.
+- **Pola**: Q&A atas SOP, kebijakan HR, atau technical wiki. Biasanya menggunakan RAG (Retrieval-Augmented Generation, teknik menggabungkan pencarian dokumen dengan LLM); pada modul ini fokus Anda adalah pada *prompt*-nya, bukan pada mekanisme retrieval.
+- **Risiko**: model menjawab di luar cakupan knowledge base *(out-of-scope hallucination)*.
+- **Output**: jawaban + sitasi sumber + nilai `confidence`.
 
 ### 3. Anatomi Prompt Template
 
@@ -81,31 +86,39 @@ flowchart TB
     V -->|invalid| RETRY[Retry / Fallback]
 ```
 
+Perhatikan bahwa **system prompt** dan **user prompt** memiliki peran berbeda. System prompt menetapkan aturan main yang relatif stabil; user prompt membawa konteks dan input yang berubah-ubah tiap permintaan.
+
 ### 4. Output Format yang "Production-Friendly"
 
-- **JSON** untuk konsumsi sistem hilir. Gunakan instruksi tegas: `Respond ONLY with valid JSON, no prose.` + contoh skema.
-- **Markdown** untuk konsumsi manusia (laporan, email).
-- **XML tags** untuk multi-section output, gampang di-parse: `<reply>...</reply><escalate>true</escalate>`.
+Bentuk output yang Anda pilih sebaiknya disesuaikan dengan siapa yang akan mengonsumsinya:
 
-### 5. Guardrails dasar
+- **JSON** — untuk konsumsi sistem hilir. Gunakan instruksi tegas seperti: *"Respond ONLY with valid JSON, no prose."* dan sertakan contoh skema.
+- **Markdown** — untuk konsumsi manusia, misalnya laporan atau email.
+- **XML tags** — untuk output multi-bagian yang mudah di-parse, contohnya: `<reply>...</reply><escalate>true</escalate>`.
 
-- **Refusal phrasing**: kalau di luar scope → tetap sopan, arahkan eskalasi.
-- **PII handling**: instruksi *jangan ulang* data sensitif dalam respons.
-- **No hallucinated numbers / policies**: instruksi "Jika tidak yakin, katakan 'tidak yakin' alih-alih menebak."
+### 5. Guardrails Dasar
+
+*Guardrails* adalah aturan pengaman yang mencegah model melakukan hal yang tidak Anda inginkan. Tiga guardrail dasar yang wajib dipertimbangkan:
+
+- **Refusal phrasing** — jika permintaan berada di luar cakupan, model tetap merespons dengan sopan dan mengarahkan ke jalur eskalasi.
+- **PII handling** — instruksikan model agar tidak mengulang data sensitif dalam respons.
+- **No hallucinated numbers or policies** — instruksi seperti *"Jika tidak yakin, katakan 'tidak yakin' alih-alih menebak."*
 
 ---
 
-## Demo Live (15 menit)
+## Praktik Mandiri (15 menit)
 
-Trainer mendemokan use case **Customer Service Reply Generator** dari nol:
+Sebelum lanjut ke contoh kode, mari Anda rasakan sendiri evolusi sebuah prompt customer service dari yang seadanya hingga yang siap produksi. Skenarionya: **Customer Service Reply Generator**.
 
-1. **Tunjukkan email customer mentah** (komplain pengiriman terlambat).
-2. **Iterasi v1**: prompt seadanya → "Reply this email." Hasil: generic, tanpa empati, kadang janji refund.
-3. **Iterasi v2**: tambahkan role + policy (no refund promise) + output JSON `{tone, reply_id, body, escalate}`.
-4. **Iterasi v3**: tambahkan few-shot 2 contoh tone "calm" vs "angry".
-5. **Test edge case**: email kosong / sarkasme / bahasa campur → lihat apakah model graceful.
+### Langkah-Langkahnya
 
-Trainer narasi: di setiap iterasi, jelaskan **kenapa** output membaik.
+1. **Siapkan email customer mentah**, misalnya komplain mengenai pengiriman yang terlambat.
+2. **Iterasi v1**: tulis prompt seadanya — *"Reply this email."* Amati hasilnya. Kemungkinan besar generik, tanpa empati, dan kadang menjanjikan refund.
+3. **Iterasi v2**: tambahkan role + policy (tidak menjanjikan refund) + format output JSON `{tone, reply_id, body, escalate}`. Amati perbedaannya.
+4. **Iterasi v3**: tambahkan dua contoh *few-shot* untuk membedakan tone "calm" dan "angry". Amati apakah konsistensi tone membaik.
+5. **Uji edge case**: kirim email kosong, sarkasme, atau bahasa campur. Apakah model tetap *graceful*?
+
+Pada setiap iterasi, tanyakan kepada diri Anda: **mengapa** output membaik? Hipotesis apa yang Anda uji?
 
 ---
 
@@ -147,7 +160,7 @@ if __name__ == "__main__":
     print(reply("Pesanan saya sudah 5 hari belum sampai. Saya kecewa."))
 ```
 
-> **Paralel JS**: Pakai `@anthropic-ai/sdk`. Pola identik: `client.messages.create({ model, system, messages })`.
+> **Paralel JS**: gunakan `@anthropic-ai/sdk`. Polanya identik: `client.messages.create({ model, system, messages })`.
 
 ### Contoh 2 — Meeting Notes → Action Items (Python)
 
@@ -170,7 +183,7 @@ def extract_actions(notes: str) -> str:
     return r.content[0].text
 ```
 
-### Contoh 3 — Klasifikasi Tiket Helpdesk (prompt-only, no code)
+### Contoh 3 — Klasifikasi Tiket Helpdesk (prompt-only, tanpa kode)
 
 ```
 System: Anda klasifikator tiket IT. Kategori valid:
@@ -189,18 +202,18 @@ Jika confidence < 0.6, set category="OTHER".
 
 Lanjut ke: [`lab-04-use-case-prompt-pack/`](./lab-04-use-case-prompt-pack/)
 
-Peserta menyusun **prompt pack** (3 use case) lengkap dengan test cases. Belum perlu coding, tapi boleh divalidasi via web Console Anthropic atau script kecil.
+Pada lab ini Anda akan menyusun sebuah **prompt pack** berisi tiga use case lengkap dengan *test cases*. Anda belum perlu menulis kode; validasi dapat dilakukan melalui Anthropic Console di browser atau script kecil di terminal.
 
 ---
 
-## Wrap-up & Q&A
+## Latihan & Refleksi
 
-Pertanyaan refleksi untuk peserta:
+Sebelum melanjutkan ke Module 6, pastikan Anda mampu menjawab kelima pertanyaan berikut. Anda dapat menuliskan jawabannya di buku catatan atau mendiskusikannya dengan rekan:
 
-1. Di organisasi Anda, use case mana yang **paling ROI tinggi** untuk dimulai? Kenapa?
-2. Bedanya output JSON vs Markdown untuk customer service — kapan pilih yang mana?
-3. Bagaimana Anda *mengetahui* prompt Anda sudah cukup baik untuk produksi? (jawaban kunci: test set + metrics + human review)
-4. Bagaimana menangani prompt yang kadang menghasilkan JSON invalid?
+1. Di organisasi Anda, use case mana yang paling tinggi ROI-nya untuk dimulai? Mengapa?
+2. Apa bedanya output JSON dan Markdown untuk customer service — kapan Anda akan memilih yang mana?
+3. Bagaimana cara Anda *mengetahui* sebuah prompt sudah cukup baik untuk masuk produksi? (Petunjuk: test set + metrik + human review.)
+4. Bagaimana strategi Anda menangani prompt yang sesekali menghasilkan JSON invalid?
 5. Apa risiko terbesar memasang prompt customer service ke production tanpa guardrails?
 
 ---

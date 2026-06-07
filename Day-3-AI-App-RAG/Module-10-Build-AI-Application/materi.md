@@ -1,36 +1,36 @@
 # Module 10 — Build AI Application
 
-**Durasi**: 120 menit (60' materi + 60' lab walkthrough)
+**Durasi belajar**: 120 menit (60' materi + 60' praktik lab)
 **Bagian dari**: Day 3 — AI App Development + RAG
 **Lab terkait**: [lab-08-chat-app](./lab-08-chat-app/README.md)
 
 ---
 
-## Learning Outcomes
+## Apa yang Akan Anda Bisa Setelah Modul Ini
 
-Pada akhir module ini peserta akan mampu:
+Setelah selesai membaca dan mempraktikkan modul ini, Anda akan mampu:
 
 1. Menjelaskan **arsitektur referensi AI application** berbasis Claude (frontend, backend, state store, observability).
-2. Mengimplementasikan **chat interface** dengan streaming dan pengelolaan conversation history.
+2. Mengimplementasikan **chat interface** dengan streaming dan pengelolaan riwayat percakapan.
 3. Mengelola **session & context window** secara efisien (trimming, summarization, system prompt).
-4. Memilih pola **frontend integration** yang sesuai (Streamlit untuk PoC, React/Next.js untuk produksi).
-5. Menulis **backend AI integration** yang aman: secret handling, error handling, retry, timeout.
+4. Memilih pola **integrasi frontend** yang paling sesuai (Streamlit untuk PoC, React/Next.js untuk produksi).
+5. Menulis **integrasi backend AI** yang aman: secret handling, error handling, retry, dan timeout.
 
 ---
 
 ## 1. Konsep Inti
 
-### 1.1 Mengapa "AI Application" bukan sekadar "wrap API"?
+### 1.1 Mengapa "AI Application" Bukan Sekadar "Wrap API"?
 
-Banyak tim memulai dari "panggil endpoint Claude lalu tampilkan teks". Ini bekerja untuk demo, tapi tidak untuk produksi. AI application yang matang harus menjawab:
+Banyak tim memulai perjalanan AI dengan pola sederhana: "panggil endpoint Claude lalu tampilkan teksnya". Pola ini cukup untuk demo, namun belum cukup untuk produksi. AI application yang matang perlu menjawab pertanyaan-pertanyaan berikut:
 
 | Pertanyaan | Komponen |
 |------------|----------|
-| Siapa user, dan apa konteks percakapannya? | Session & auth |
-| Bagaimana history disimpan dan dibatasi? | Context management |
-| Apa yang terjadi saat API gagal/timeout/rate-limited? | Resilience layer |
-| Bagaimana memantau quality, cost, dan latency? | Observability |
-| Bagaimana respon model di-render incremental? | Streaming layer |
+| Siapa pengguna, dan apa konteks percakapannya? | Session & auth |
+| Bagaimana riwayat percakapan disimpan dan dibatasi? | Context management |
+| Apa yang terjadi ketika API gagal, timeout, atau terkena rate limit? | Resilience layer |
+| Bagaimana memantau kualitas, biaya, dan latensi? | Observability |
+| Bagaimana respons model ditampilkan secara bertahap (incremental)? | Streaming layer |
 
 ### 1.2 Arsitektur Referensi
 
@@ -47,73 +47,74 @@ flowchart LR
     BE -.stream.-> FE
 ```
 
-Catatan penting:
-- **Streaming** terjadi dua arah: dari Anthropic ke backend (SSE), lalu backend ke frontend (SSE/WebSocket).
-- **History store** memisahkan state dari proses backend — penting saat scaling horizontal.
-- **Prompt builder** adalah titik tunggal injeksi system prompt, tool definitions, dan (nanti) context RAG.
+Beberapa catatan penting yang perlu Anda perhatikan:
+
+- **Streaming** terjadi dua arah: dari Anthropic ke backend (SSE), kemudian dari backend ke frontend (SSE/WebSocket).
+- **History store** memisahkan state dari proses backend — hal ini menjadi penting saat Anda melakukan scaling horizontal.
+- **Prompt builder** berperan sebagai titik tunggal untuk menyisipkan system prompt, definisi tool, dan (nanti) konteks RAG.
 
 ### 1.3 Lapisan State
 
 | Lapisan | Isi | Lifetime | Contoh storage |
 |---------|-----|----------|----------------|
-| Ephemeral | Streaming buffer, partial token | per-request | RAM |
-| Session | Conversation history, user prefs | jam — hari | Redis, Postgres |
-| Long-term memory | Fact tentang user, ringkasan | minggu — selamanya | Vector DB + Postgres |
+| Ephemeral | Buffer streaming, partial token | per-request | RAM |
+| Session | Riwayat percakapan, preferensi pengguna | jam — hari | Redis, Postgres |
+| Long-term memory | Fakta tentang pengguna, ringkasan | minggu — selamanya | Vector DB + Postgres |
 | Knowledge base | Dokumen perusahaan | bulan — selamanya | Vector DB (RAG) |
 
-Pada module ini fokus pada **session** dan **long-term memory ringan**. Knowledge base dibahas di Module 11.
+Pada modul ini, Anda akan fokus pada **session** dan **long-term memory ringan**. Knowledge base akan dibahas terpisah di Module 11.
 
-### 1.4 Context Window Management
+### 1.4 Manajemen Context Window
 
-Claude Sonnet 4.5 mendukung context window besar (≥ 200K token, varian 1M tersedia), tapi mengisi context dengan history mentah itu mahal dan lambat. Strategi yang umum:
+Claude Sonnet 4.5 mendukung context window yang besar (≥ 200K token, dengan varian 1M token tersedia). Namun mengisi context dengan riwayat mentah secara membabi buta akan menjadi mahal dan lambat. Beberapa strategi umum yang dapat Anda terapkan:
 
-1. **Sliding window** — simpan N pesan terakhir.
-2. **Summarization** — ringkas history lama menjadi 1 system note.
-3. **Hybrid** — N pesan terakhir + summary pesan sebelumnya.
-4. **Retrieval over history** — embed history, retrieve yang relevan (lihat Module 11).
+1. **Sliding window** — menyimpan N pesan terakhir.
+2. **Summarization** — meringkas riwayat lama menjadi satu catatan sistem.
+3. **Hybrid** — N pesan terakhir digabung dengan ringkasan pesan sebelumnya.
+4. **Retrieval over history** — embed riwayat, lalu retrieve bagian yang relevan saja (akan dibahas di Module 11).
 
-Aturan praktis: untuk chat assistant umum, sliding window 10–20 turn + summary cukup baik. Aktifkan **prompt caching** di system prompt agar bagian statis tidak dihitung ulang.
+Aturan praktis: untuk chat assistant umum, kombinasi sliding window 10–20 turn + summary biasanya sudah cukup baik. Aktifkan juga **prompt caching** pada system prompt agar bagian statis tidak dihitung ulang setiap kali.
 
-### 1.5 Frontend Integration: Pilihan
+### 1.5 Pilihan Integrasi Frontend
 
 | Pilihan | Cocok untuk | Catatan |
 |---------|-------------|---------|
-| Streamlit | Internal tool, PoC, data team | Cepat, Python only, streaming OK |
-| Gradio | Demo ML, research | Mudah share via space |
-| Next.js + React | Produk customer-facing | Butuh state management, SSE/WebSocket |
-| Slack/Teams bot | Internal assistant | Channel-level session, async |
+| Streamlit | Internal tool, PoC, tim data | Cepat, Python saja, streaming didukung |
+| Gradio | Demo ML, riset | Mudah dibagikan via Hugging Face Space |
+| Next.js + React | Produk customer-facing | Memerlukan state management, SSE/WebSocket |
+| Bot Slack/Teams | Asisten internal | Session per channel, asinkron |
 
-Pola SSE (Server-Sent Events) lebih sederhana dari WebSocket untuk one-way streaming dari server ke client.
+Pola SSE (Server-Sent Events) cenderung lebih sederhana dibandingkan WebSocket untuk kebutuhan streaming satu arah dari server ke client.
 
-### 1.6 Backend AI Integration: Checklist
+### 1.6 Checklist Integrasi Backend AI
 
-- Simpan API key di **environment variable** (`ANTHROPIC_API_KEY`), bukan di repo.
-- Bungkus call dengan **timeout** (mis. 60s) dan **exponential backoff** untuk error 429/5xx.
-- Log setiap request dengan: `request_id`, `model`, `input_tokens`, `output_tokens`, `latency_ms`, `cost_usd`.
-- Pisahkan **system prompt** ke file (mis. `prompts/system.md`) agar reviewable.
-- Gunakan **prompt caching** untuk system prompt statis & dokumen besar (TTL 5 menit).
+- Simpan API key di **environment variable** (`ANTHROPIC_API_KEY`), jangan disimpan di repo.
+- Bungkus pemanggilan API dengan **timeout** (misalnya 60 detik) dan **exponential backoff** untuk error 429/5xx.
+- Catat setiap request dengan informasi: `request_id`, `model`, `input_tokens`, `output_tokens`, `latency_ms`, `cost_usd`.
+- Pisahkan **system prompt** ke dalam file tersendiri (misalnya `prompts/system.md`) agar mudah ditinjau.
+- Manfaatkan **prompt caching** untuk system prompt yang statis serta dokumen besar (TTL 5 menit).
 
 ---
 
-## 2. Demo Live
+## 2. Praktik Mandiri
 
-Skenario: bangun chat app minimal dengan FastAPI + HTML, fitur streaming dan history.
+Skenario: Anda akan membangun chat app minimal dengan FastAPI + HTML, lengkap dengan fitur streaming dan history.
 
-**Langkah:**
+**Langkah-langkah:**
 
-1. **Setup proyek** — buat folder, virtualenv, install `anthropic`, `fastapi`, `uvicorn`.
-2. **Backend `main.py`** — endpoint `POST /chat` menerima `{session_id, message}`, simpan history in-memory, kirim ke Claude dengan `stream=True`, kembalikan SSE.
-3. **Frontend `index.html`** — input box, fetch ke `/chat`, render token streaming via `EventSource`.
-4. **Tambah session reset** — endpoint `POST /reset/{session_id}` untuk demo "lupa percakapan".
-5. **Tambah summarization** — saat history > 20 turn, panggil Haiku untuk ringkas 10 turn lama.
+1. **Siapkan proyek** — buat folder, virtualenv, lalu pasang `anthropic`, `fastapi`, dan `uvicorn`.
+2. **Backend `main.py`** — buat endpoint `POST /chat` yang menerima `{session_id, message}`, menyimpan riwayat di memori, mengirim ke Claude dengan `stream=True`, lalu mengembalikan respons SSE.
+3. **Frontend `index.html`** — buat input box, lakukan fetch ke `/chat`, dan render token streaming melalui `EventSource`.
+4. **Tambahkan session reset** — endpoint `POST /reset/{session_id}` untuk mendemonstrasikan fitur "lupa percakapan".
+5. **Tambahkan summarization** — ketika riwayat melebihi 20 turn, panggil Haiku untuk meringkas 10 turn lama.
 
-Fasilitator mendemokan langkah 1–3 live, lalu peserta replikasi di Lab 08 dan menambahkan langkah 4–5.
+Anda dapat melakukan langkah 1–3 terlebih dahulu sebagai latihan dasar, kemudian mengembangkannya di Lab 08 dengan menambahkan langkah 4–5.
 
 ---
 
 ## 3. Contoh Konkret
 
-### 3.1 Backend FastAPI dengan streaming
+### 3.1 Backend FastAPI dengan Streaming
 
 ```python
 # backend/main.py
@@ -189,7 +190,7 @@ async function send() {
 </script>
 ```
 
-### 3.3 Summarization sliding-window
+### 3.3 Summarization Sliding-Window
 
 ```python
 def maybe_summarize(history: list[dict]) -> list[dict]:
@@ -206,7 +207,7 @@ def maybe_summarize(history: list[dict]) -> list[dict]:
     return [{"role": "user", "content": f"[Ringkasan sebelumnya]: {summary}"}] + tail
 ```
 
-### 3.4 Error handling & retry
+### 3.4 Error Handling & Retry
 
 ```python
 from anthropic import APIError, RateLimitError
@@ -232,19 +233,19 @@ def call_with_retry(**kwargs):
 
 [Lab 08 — Chat App](./lab-08-chat-app/README.md)
 
-Peserta akan menyelesaikan: backend FastAPI + frontend, streaming, session reset, optional summarization. Estimasi 90 menit.
+Di lab ini, Anda akan menyelesaikan: backend FastAPI + frontend, streaming, session reset, serta summarization (opsional). Estimasi waktu pengerjaan sekitar 90 menit.
 
 ---
 
-## 5. Wrap-up & Q&A
+## 5. Latihan & Refleksi
 
-Pertanyaan refleksi:
+Sebelum melanjutkan ke Module 11, sempatkan diri Anda untuk merenungkan pertanyaan-pertanyaan berikut:
 
-1. Apa perbedaan kapasitas dan biaya antara menyimpan history 50 turn mentah vs sliding window + summary?
-2. Kapan memilih Streamlit dibanding Next.js untuk frontend AI app?
-3. Bagaimana Anda mendesain session store agar tahan terhadap restart backend?
-4. Risiko apa yang muncul jika API key dipakai langsung di frontend? Bagaimana mitigasinya?
-5. Bagaimana mengukur "kualitas" chat assistant, di luar latency dan biaya?
+1. Apa perbedaan kapasitas dan biaya antara menyimpan riwayat 50 turn mentah dibandingkan menggunakan sliding window + summary?
+2. Kapan sebaiknya Anda memilih Streamlit dibandingkan Next.js untuk frontend AI app?
+3. Bagaimana Anda akan mendesain session store agar tetap andal saat backend di-restart?
+4. Risiko apa yang muncul jika API key digunakan langsung di sisi frontend? Bagaimana cara Anda memitigasinya?
+5. Bagaimana cara mengukur "kualitas" sebuah chat assistant, di luar metrik latensi dan biaya?
 
 ---
 
