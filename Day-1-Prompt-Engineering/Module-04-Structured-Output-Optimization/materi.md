@@ -1,50 +1,54 @@
 # Module 4 — Structured Output & Optimization
 
-**Durasi**: 90 menit
-**Posisi**: Modul penutup Day 1; bridge ke Day 2 (API & integrasi).
-**Mode**: Lecture + lab terintegrasi (60 menit teori → 30 menit lab in-class).
+**Durasi belajar**: ±90 menit
+**Posisi**: Modul penutup Day 1; jembatan menuju Day 2 (API & integrasi).
+**Format**: Baca konsep → praktik mandiri → lab terintegrasi (60 menit teori → 30 menit lab).
 
 ---
 
-## Learning Outcomes
+## Apa yang Akan Anda Bisa Setelah Modul Ini
 
-Setelah modul ini, peserta mampu:
+Setelah selesai membaca dan mempraktikkan modul ini, Anda akan mampu:
 
-1. **Mendesain** prompt yang menghasilkan JSON valid dengan schema yang ditentukan, siap dikonsumsi sistem hilir.
+1. **Mendesain** prompt yang menghasilkan JSON valid sesuai schema yang ditentukan — siap dikonsumsi sistem hilir.
 2. **Mengendalikan** output Claude melalui prefill, stop sequence, dan format constraint.
-3. **Menyusun** proses iteratif prompt refinement berbasis test set, bukan one-shot tweak.
-4. **Membangun** framework evaluasi prompt yang mencakup: kriteria sukses, rubrik, error handling, dan regression test.
-5. **Menyiapkan** fondasi handoff ke Day 2 (integrasi API & otomasi evaluasi).
+3. **Menyusun** proses iteratif perbaikan prompt berbasis test set, bukan sekadar tebakan satu kali jadi.
+4. **Membangun** kerangka evaluasi prompt yang mencakup: kriteria sukses, rubrik penilaian, error handling, dan regression test.
+5. **Menyiapkan** fondasi untuk handoff ke Day 2 (integrasi API & otomasi evaluasi).
 
 ---
 
 ## 1. Mengapa Structured Output?
 
-Output natural language enak dibaca manusia, tapi sulit dikonsumsi sistem. Begitu Claude masuk pipeline produksi (CRM, ETL, ticketing), Anda hampir selalu butuh **structured output** — JSON, XML, atau CSV.
+Output dalam bentuk natural language memang nyaman dibaca manusia. Namun, ketika Claude masuk ke pipeline produksi (CRM, ETL, sistem ticketing), output bebas berbentuk paragraf justru menjadi masalah — sulit diolah, sulit divalidasi, dan rentan inkonsistensi.
 
-**Manfaat**:
-- Parsing deterministik (no regex magic).
-- Validasi schema otomatis.
-- Mudah di-versioning + observability.
-- Cocok untuk tool use (Day 3).
+Di sinilah **structured output** berperan: JSON, XML, atau CSV — format terstruktur yang dapat **diparsing secara otomatis dan dipercaya** oleh sistem.
 
-**Tantangan**:
-- LLM tidak natively output JSON — ia mengeluarkan token. JSON valid = disiplin prompt + validation.
-- Field optional vs required harus eksplisit.
-- Halusinasi field yang tidak diminta = beban downstream.
+### Manfaat Utama
+
+- **Parsing deterministik** — tidak perlu regex yang rumit untuk mengambil data.
+- **Validasi schema otomatis** — output bisa langsung dicek menggunakan JSON Schema, Pydantic, atau Zod.
+- **Mudah di-versioning dan diaudit** — perubahan format dapat dilacak antar versi prompt.
+- **Cocok untuk tool use** — fondasi untuk AI Agent yang akan dibahas di Day 3.
+
+### Tantangan yang Perlu Anda Pahami
+
+- **Claude tidak secara bawaan menghasilkan JSON.** Yang dihasilkan model adalah token demi token. JSON yang valid datang dari kombinasi **prompt yang disiplin + lapisan validasi**.
+- **Field optional vs required** harus dinyatakan secara eksplisit, agar Claude tidak mengarang struktur.
+- **Halusinasi field tambahan** (yang tidak diminta) akan menjadi beban bagi sistem hilir Anda.
 
 ---
 
-## 2. JSON Output Generation — Best Practices
+## 2. JSON Output Generation — Praktik Terbaik
 
-### Prinsip
+### Prinsip Dasar
 
-1. **Tampilkan schema secara literal** di prompt.
-2. **Tunjukkan contoh JSON** lengkap (few-shot).
-3. **Spesifikkan tipe data** dan format (mis. tanggal `YYYY-MM-DD`).
-4. **Tetapkan null/default** untuk field optional.
-5. **Larang field tambahan** secara eksplisit.
-6. **Wrap dengan delimiter** (`<json>` tag) atau **prefill** `{` untuk memaksa JSON.
+1. **Tampilkan schema secara literal** di dalam prompt — jangan hanya dijelaskan dalam kalimat.
+2. **Sertakan contoh JSON lengkap** sebagai few-shot reference.
+3. **Spesifikkan tipe data** dan format yang diharapkan (misalnya tanggal dalam format `YYYY-MM-DD`).
+4. **Tetapkan nilai default atau null** untuk field opsional, sehingga Claude tahu kapan boleh kosong.
+5. **Larang field tambahan** secara eksplisit, agar tidak ada properti liar di output.
+6. **Bungkus output dengan delimiter** (`<json>` tag) atau gunakan **prefill** `{` untuk mengarahkan Claude langsung ke JSON.
 
 ### Template Skeleton
 
@@ -70,10 +74,10 @@ Ekstrak data invoice dari teks berikut.
 </schema>
 
 <rules>
-- Output hanya JSON valid, tanpa narasi.
-- Field yang tidak ditemukan, set null (jangan dihilangkan).
-- Jangan tambah field di luar schema.
-- Angka tanpa pemisah ribuan & tanpa simbol mata uang.
+- Output hanya JSON valid, tanpa narasi tambahan.
+- Field yang tidak ditemukan, isi dengan null (jangan dihilangkan).
+- Jangan tambahkan field di luar schema.
+- Angka tanpa pemisah ribuan dan tanpa simbol mata uang.
 </rules>
 
 <text>
@@ -81,188 +85,200 @@ Ekstrak data invoice dari teks berikut.
 </text>
 ```
 
-### Prefill Trick
+### Trik Prefill
 
-Pada API (atau Workbench), prefill assistant message dengan `{` untuk memaksa output JSON dari token pertama:
+Pada Claude API atau Console Workbench, Anda dapat **pre-isi (prefill)** awal balasan dari assistant dengan karakter `{` untuk memaksa Claude langsung memulai output dengan JSON, tanpa preamble seperti "Berikut hasilnya:":
 
 ```
-user:    {prompt seperti di atas}
+user:     {prompt seperti di atas}
 assistant: {
 ```
 
-Ini menjamin model melanjutkan dengan JSON, bukan preamble seperti "Berikut hasilnya:".
+Trik ini sangat efektif menghindari narasi pengantar yang merusak parsing JSON.
 
 ### Stop Sequence
 
-Set stop sequence `}` jika JSON Anda flat dan single-object, untuk menghindari token tambahan. Hati-hati pada JSON nested — bisa terpotong.
+Anda dapat mengatur **stop sequence** `}` jika JSON yang Anda harapkan adalah single-object flat. Claude akan berhenti menghasilkan token setelah `}` pertama muncul. Namun, **berhati-hatilah pada JSON nested** — bisa terpotong di tengah jalan jika stop sequence tidak dipilih dengan tepat.
 
 ---
 
-## 3. Controlled Responses
+## 3. Mengendalikan Karakter Respons
 
-### Length Control
+Selain format, Anda juga dapat mengendalikan **karakter dan perilaku output** secara terperinci.
+
+### Pengendalian Panjang
 
 ```text
-- Maks 3 kalimat.
+- Maksimal 3 kalimat.
 - Antara 100–150 kata.
 - Tepat 5 bullet.
 ```
 
-### Vocabulary Control
+### Pengendalian Vocabulary
 
 ```text
-- Hanya gunakan istilah di <glossary>.
-- Hindari jargon: "synergize", "leverage", "ecosystem".
+- Hanya gunakan istilah yang tersedia di <glossary>.
+- Hindari jargon seperti: "synergize", "leverage", "ecosystem".
 ```
 
-### Tone Control
+### Pengendalian Tone
 
 ```text
 - Tone profesional, lugas, tidak menggurui.
-- Gunakan 2nd person ("Anda"), bukan 3rd person.
+- Gunakan kata ganti orang kedua ("Anda"), bukan orang ketiga.
 ```
 
-### Refusal Control
+### Pengendalian Penolakan (Refusal)
 
 ```text
 - Jika permintaan di luar topik {DOMAIN}, jawab dengan JSON:
   {"status": "out_of_scope", "reason": "..."}
-- Jika informasi tidak cukup, jawab:
+- Jika informasi yang dibutuhkan tidak cukup, jawab:
   {"status": "insufficient_info", "missing_fields": [...]}
 ```
 
+Pengendalian penolakan sangat penting untuk **sistem produksi** — Anda perlu memastikan model tidak memaksakan jawaban ketika data tidak cukup.
+
 ---
 
-## 4. Prompt Refinement — Iterative Loop
+## 4. Iteratif Memperbaiki Prompt
 
-Prompt engineering = experimental. Treat seperti A/B testing.
+Prompt engineering bersifat **eksperimental**. Anggap saja seperti A/B testing: Anda membuat hipotesis, menguji, lalu menyimpulkan berdasarkan data — bukan menebak.
 
 ```mermaid
 flowchart LR
-    A[Draft v1] --> B[Run di test set]
-    B --> C{Akurasi cukup?}
-    C -->|tidak| D[Analisis error pattern]
-    D --> E[Edit hipotesis tunggal]
+    A[Draft v1] --> B[Jalankan di test set]
+    B --> C{Akurasi sudah cukup?}
+    C -->|belum| D[Analisis pola kesalahan]
+    D --> E[Edit 1 hipotesis tunggal]
     E --> A
-    C -->|ya| F[Freeze v1.0]
-    F --> G[Regression suite]
+    C -->|sudah| F[Bekukan v1.0]
+    F --> G[Buat regression suite]
 ```
 
-### Aturan Refinement
+### Aturan Penting saat Memperbaiki Prompt
 
-1. **Satu perubahan per iterasi**. Multi-change = tidak bisa attribute improvement.
-2. **Test set tetap** lintas iterasi.
-3. **Catat hipotesis** ("saya pikir tambah contoh negatif akan menaikkan recall negatif").
-4. **Jangan over-fit** ke 1–2 sampel; ukur di test set 20–50 sampel.
+1. **Satu perubahan per iterasi.** Jika Anda mengubah banyak hal sekaligus, Anda tidak akan tahu **perubahan mana yang sebenarnya berdampak**.
+2. **Test set tetap** lintas iterasi. Gunakan set yang sama agar pengukuran adil.
+3. **Catat hipotesis tertulis** setiap kali melakukan perubahan. Contoh: *"Saya menduga penambahan contoh negatif akan meningkatkan recall pada kelas negatif."*
+4. **Hindari over-fitting** ke 1–2 sampel. Pengukuran yang valid memerlukan test set minimal 20–50 sampel.
 
 ---
 
-## 5. Prompt Testing Strategy
+## 5. Strategi Pengujian Prompt
 
 ### Hierarki Test Set
 
-| Tier        | Ukuran | Tujuan                                   |
-|-------------|--------|------------------------------------------|
-| Smoke set   | 3–5    | Quick sanity di setiap edit              |
-| Eval set    | 20–50  | Pengukuran akurasi sebenarnya            |
-| Regression  | 50–200 | Cegah regression saat upgrade model/prompt|
-| Adversarial | 10–30  | Edge case: sarkasme, slang, ambigu       |
+| Tier        | Ukuran | Tujuan                                                  |
+|-------------|--------|--------------------------------------------------------|
+| **Smoke**   | 3–5    | Pengecekan cepat di setiap edit                        |
+| **Eval**    | 20–50  | Pengukuran akurasi yang representatif                  |
+| **Regression** | 50–200 | Mencegah penurunan kualitas saat upgrade model/prompt |
+| **Adversarial** | 10–30 | Menguji edge case: sarkasme, slang, ambiguitas        |
 
-### Metrik
+### Metrik yang Perlu Dipantau
 
-- **Akurasi** (klasifikasi).
-- **Precision / Recall / F1** (klasifikasi multi-class).
-- **JSON validity rate** (% output yang parse).
-- **Field completeness rate** (% required field terisi).
-- **Schema conformance** (% output yang match schema).
-- **Manual quality score** (1–5 likert untuk task generatif).
+- **Akurasi** — untuk task klasifikasi.
+- **Precision / Recall / F1** — untuk klasifikasi multi-kelas.
+- **JSON validity rate** — persentase output yang berhasil di-parse.
+- **Field completeness rate** — persentase field required yang terisi.
+- **Schema conformance** — persentase output yang sesuai schema.
+- **Manual quality score** — skala 1–5 (Likert) untuk task generatif yang sulit diukur otomatis.
 
 ---
 
-## 6. Error Handling — di Level Prompt
+## 6. Error Handling di Level Prompt
 
-Error tidak hanya di kode; sering muncul di output Claude. Anti-pattern: silently let it pass.
+Kesalahan tidak hanya terjadi di kode — sering kali muncul juga di output Claude. **Anti-pola yang harus dihindari**: membiarkan output yang tidak valid lewat begitu saja tanpa penanganan.
 
-### Pola Error Handling
+### Pola Error Handling yang Direkomendasikan
 
 ```text
 <rules>
 - Jika input tidak mengandung data yang diperlukan:
   Output: {"error": "missing_input", "details": "..."}
-- Jika ada konflik data (mis. total ≠ subtotal+tax):
+- Jika ada konflik data (misal: total ≠ subtotal + tax):
   Output: {"error": "data_inconsistency", "details": "..."}
 - Jika bahasa input tidak dikenali:
   Output: {"error": "language_unsupported", "detected": "..."}
-- Jika request berada di luar scope:
+- Jika permintaan berada di luar scope:
   Output: {"error": "out_of_scope"}
 </rules>
 ```
 
-### Validation Layer (preview Day 2)
+### Lapisan Validasi (Pratinjau Day 2)
 
-Setelah parsing JSON, validasi dengan schema (mis. Pydantic, JSON Schema, Zod). Jika gagal validasi:
-1. Log raw output.
-2. Retry dengan prompt yang menyertakan error feedback.
-3. Setelah N retry, fallback ke human review.
+Setelah JSON di-parse, Anda perlu **memvalidasi dengan schema** (Pydantic untuk Python, JSON Schema universal, atau Zod untuk TypeScript). Jika validasi gagal, alur penanganannya:
+
+1. **Catat raw output** untuk keperluan debugging.
+2. **Retry dengan prompt yang menyertakan error feedback** — model akan memperbaiki dirinya sendiri.
+3. **Setelah N kali retry**, fallback ke **human review** sebagai pengaman terakhir.
 
 ---
 
-## 7. Prompt Evaluation Framework
+## 7. Kerangka Evaluasi Prompt
 
-Framework yang siap dibawa ke organisasi peserta:
+Berikut kerangka yang siap Anda bawa pulang ke organisasi:
 
-| Aspek            | Pertanyaan kunci                                              |
-|------------------|---------------------------------------------------------------|
-| Goal             | Apa metric bisnis yang akan berubah?                          |
-| Test set         | Siapa kurator? Berapa ukuran? Bagaimana labeling?             |
-| Baseline         | Model + prompt mana yang jadi pembanding?                     |
-| Criteria         | Threshold lulus (mis. 90% akurasi + JSON validity 99%)?        |
-| Versioning       | Di mana prompt disimpan? Bagaimana review?                    |
-| Monitoring       | Bagaimana drift dideteksi di produksi?                        |
-| Error handling   | Apa SLA untuk human escalation?                               |
+| Aspek           | Pertanyaan kunci                                                |
+|-----------------|----------------------------------------------------------------|
+| **Tujuan**      | Metric bisnis apa yang akan berubah?                            |
+| **Test set**    | Siapa yang mengkurasi? Berapa ukurannya? Bagaimana label-nya?   |
+| **Baseline**    | Model dan prompt mana yang menjadi pembanding?                   |
+| **Kriteria**    | Threshold lulus (misal: 90% akurasi + 99% JSON validity)?        |
+| **Versioning**  | Di mana prompt disimpan? Bagaimana proses review-nya?            |
+| **Monitoring**  | Bagaimana drift kualitas dideteksi di lingkungan produksi?       |
+| **Error handling** | Apa SLA untuk eskalasi ke human review?                       |
 
 ### Checklist Pre-Production
 
-- [ ] Schema JSON ter-dokumentasi.
-- [ ] Test set ≥ 50 sampel terlabel.
-- [ ] Akurasi ≥ threshold di smoke + eval.
+- [ ] Schema JSON sudah terdokumentasi dengan jelas.
+- [ ] Test set sekurang-kurangnya 50 sampel terlabel.
+- [ ] Akurasi sudah memenuhi threshold di smoke + eval.
 - [ ] JSON validity rate ≥ 99%.
-- [ ] Adversarial set teruji.
-- [ ] Prompt versioned di Git dengan owner.
-- [ ] Rollback plan & feature flag.
+- [ ] Adversarial set sudah diuji.
+- [ ] Prompt sudah ter-versioning di Git, dengan pemilik yang jelas.
+- [ ] Rollback plan dan feature flag sudah disiapkan.
 
 ---
 
-## Demo Live (10 menit)
+## Praktik Mandiri (10 menit)
 
-**Skenario**: ekstraksi invoice teks → JSON.
+Daripada hanya membaca teori, mari coba alur perbaikan prompt secara langsung. Anda akan melihat sendiri bagaimana **setiap iterasi membawa peningkatan terukur**.
 
-### Langkah
+**Skenario**: ekstraksi data invoice dari teks bebas menjadi JSON.
 
-1. Buka Console Workbench, Sonnet 4.x, `temperature=0`.
-2. **Iteration v0**: prompt naïf "ekstrak data invoice ini".
-   - Amati: format JSON tidak konsisten, field acak.
-3. **Iteration v1**: tambah schema eksplisit + rules + `<text>` wrapping.
-   - Amati: JSON lebih baik tapi mungkin masih ada narasi pengantar.
-4. **Iteration v2**: tambah prefill `{` dan rule "output hanya JSON".
-   - Amati: clean JSON, parsable.
-5. **Iteration v3**: tambah error handling untuk total ≠ subtotal+tax.
-   - Test dengan invoice yang totalnya salah → model mengeluarkan error JSON.
-6. Tunjukkan log perbedaan v0 → v3. Diskusikan: setiap iterasi = hipotesis tunggal.
+### Langkah-Langkahnya
+
+1. **Setup**: Buka Console Workbench, pilih model Sonnet, atur `temperature=0`.
+
+2. **Iterasi v0** — Prompt naif:
+   ```
+   Ekstrak data invoice ini.
+   ```
+   Amati hasilnya. Kemungkinan besar: format JSON tidak konsisten, field acak.
+
+3. **Iterasi v1** — Tambahkan schema eksplisit, aturan, dan pembungkus `<text>`. Amati: JSON sudah lebih baik, tetapi mungkin masih ada narasi pengantar.
+
+4. **Iterasi v2** — Tambahkan prefill `{` dan aturan "output hanya JSON". Amati: JSON sudah bersih dan dapat diparsing.
+
+5. **Iterasi v3** — Tambahkan error handling untuk kasus `total ≠ subtotal + tax`. Uji dengan invoice yang totalnya salah, lihat apakah Claude mengeluarkan JSON error sesuai pola.
+
+6. Bandingkan log dari v0 sampai v3. Perhatikan: **setiap iterasi mewakili satu hipotesis tunggal** yang dapat Anda evaluasi efeknya secara terisolasi.
 
 ---
 
-## Contoh Konkret: Poor → Good → Better
+## Contoh Konkret: Prompt Kurang Baik → Baik → Lebih Baik
 
-### Contoh 1 — Extract JSON dari Email
+### Contoh 1 — Ekstraksi Data dari Email
 
 ```text
-[POOR]
-Ekstrak data dari email ini dan kasih JSON: {email}
+[KURANG BAIK]
+Ekstrak data dari email ini dan berikan JSON: {email}
 ```
 
 ```text
-[GOOD]
+[BAIK]
 Ekstrak data berikut dari <email> dan output dalam JSON dengan field:
 sender_name, sender_email, subject, intent, action_required.
 
@@ -272,7 +288,7 @@ sender_name, sender_email, subject, intent, action_required.
 ```
 
 ```text
-[BETTER]
+[LEBIH BAIK]
 <task>
 Ekstrak data dari <email> ke JSON sesuai <schema>.
 </task>
@@ -290,10 +306,10 @@ Ekstrak data dari <email> ke JSON sesuai <schema>.
 </schema>
 
 <rules>
-- Output hanya JSON valid, tanpa narasi sebelum atau sesudah.
-- Field tidak ditemukan = null (jangan hilangkan key).
-- confidence = estimasi kepercayaan terhadap intent.
-- Jika email kosong atau tidak parseable: {"error": "invalid_input"}.
+- Output hanya JSON valid, tanpa narasi sebelum maupun sesudah.
+- Field yang tidak ditemukan, isi dengan null (jangan hilangkan key).
+- confidence = estimasi tingkat keyakinan model terhadap intent.
+- Jika email kosong atau tidak dapat diparsing: {"error": "invalid_input"}.
 </rules>
 
 <email>
@@ -301,15 +317,15 @@ Ekstrak data dari <email> ke JSON sesuai <schema>.
 </email>
 ```
 
-### Contoh 2 — Klasifikasi dengan Confidence
+### Contoh 2 — Klasifikasi dengan Tingkat Keyakinan
 
 ```text
-[POOR]
+[KURANG BAIK]
 Tiket ini kategorinya apa? "Sistem timeout terus"
 ```
 
 ```text
-[GOOD]
+[BAIK]
 Klasifikasikan tiket ke {BUG, FEATURE, QUESTION} dengan format:
 {"category": "...", "confidence": "high|medium|low"}
 
@@ -317,9 +333,9 @@ Tiket: "Sistem timeout terus"
 ```
 
 ```text
-[BETTER]
+[LEBIH BAIK]
 <task>
-Klasifikasikan tiket support ke kategori dan severity.
+Klasifikasikan tiket support ke kategori dan tingkat severity.
 </task>
 
 <schema>
@@ -327,36 +343,36 @@ Klasifikasikan tiket support ke kategori dan severity.
   "category": "BUG | FEATURE_REQUEST | QUESTION | COMPLAINT",
   "severity": "LOW | MEDIUM | HIGH | CRITICAL",
   "confidence": "number 0-1",
-  "rationale": "string, maks 25 kata",
+  "rationale": "string, maksimal 25 kata",
   "needs_human_review": "boolean"
 }
 </schema>
 
 <rules>
 - Set needs_human_review = true jika confidence < 0.7.
-- Severity CRITICAL hanya untuk production outage atau security incident.
+- Severity CRITICAL hanya untuk production outage atau insiden keamanan.
 - Output JSON saja.
 </rules>
 
 <ticket>Sistem timeout terus</ticket>
 ```
 
-### Contoh 3 — Generate dengan Validation
+### Contoh 3 — Generasi dengan Validasi Sumber
 
 ```text
-[POOR]
+[KURANG BAIK]
 Buat 5 pertanyaan FAQ dari produk: {desc}
 ```
 
 ```text
-[GOOD]
-Buat 5 pertanyaan FAQ + jawabannya dari deskripsi produk:
+[BAIK]
+Buat 5 pertanyaan FAQ beserta jawabannya dari deskripsi produk:
 {desc}
 Format JSON: [{"q": "...", "a": "..."}]
 ```
 
 ```text
-[BETTER]
+[LEBIH BAIK]
 <task>
 Buat FAQ dari <product_description>.
 </task>
@@ -376,9 +392,9 @@ Buat FAQ dari <product_description>.
 
 <rules>
 - Tepat 5 FAQ.
-- Setiap jawaban WAJIB punya source_quote (kutipan harfiah dari deskripsi).
-- Jika tidak ada source untuk pertanyaan, JANGAN buat FAQ itu — kurangi jumlah.
-- Hindari yes/no questions.
+- Setiap jawaban WAJIB disertai source_quote (kutipan harfiah dari deskripsi).
+- Jika tidak ada sumber yang mendukung untuk pertanyaan tertentu, JANGAN buat FAQ tersebut — kurangi jumlah.
+- Hindari pertanyaan yes/no.
 - Distribusi kategori: minimal 2 FEATURE.
 </rules>
 
@@ -387,26 +403,28 @@ Buat FAQ dari <product_description>.
 </product_description>
 ```
 
-Pattern source_quote = **anti-hallucination** + auditable.
+Pola `source_quote` adalah **strategi anti-halusinasi** yang sangat kuat — model dipaksa menunjuk bukti spesifik, sehingga output mudah diaudit.
 
 ---
 
 ## Hands-on Lab
 
-[`lab-03-json-output-evaluation/`](./lab-03-json-output-evaluation/) — Tulis prompt untuk parsing invoice teks ke structured JSON. Lengkap dengan rubrik evaluasi (validitas JSON, kelengkapan field, akurasi).
+[`lab-03-json-output-evaluation/`](./lab-03-json-output-evaluation/) — Tulis prompt untuk parsing invoice teks menjadi JSON terstruktur. Dilengkapi rubrik evaluasi (validitas JSON, kelengkapan field, akurasi).
 
 **Durasi**: 60 menit
-**Mode**: Individual; share results di akhir.
+**Mode**: Individual, lalu berbagi hasil di akhir sesi.
 
 ---
 
-## Wrap-up & Q&A
+## Latihan & Refleksi
 
-1. Mengapa prefill `{` lebih reliable dibanding instruksi "output hanya JSON"?
-2. Apa beda "JSON valid" dengan "schema-conformant"?
-3. Bagaimana Anda mendesain test set untuk task ekstraksi invoice?
-4. Bagaimana mendeteksi prompt drift di produksi setelah upgrade model?
-5. Kapan Anda akan menyerahkan validasi ke layer kode, dan kapan ke prompt itu sendiri?
+Sebelum melanjutkan ke Day 2, pastikan Anda mampu menjawab lima pertanyaan refleksi berikut:
+
+1. Mengapa **prefill `{`** lebih reliable dibanding instruksi "output hanya JSON"?
+2. Apa perbedaan antara **"JSON valid"** dan **"schema-conformant"**?
+3. Bagaimana Anda akan mendesain **test set** untuk task ekstraksi invoice di organisasi Anda?
+4. Bagaimana cara mendeteksi **prompt drift** di lingkungan produksi setelah upgrade model?
+5. Kapan Anda akan menyerahkan validasi ke **lapisan kode**, dan kapan ke **prompt itu sendiri**?
 
 ---
 
