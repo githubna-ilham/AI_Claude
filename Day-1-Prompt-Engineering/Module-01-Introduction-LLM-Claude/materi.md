@@ -630,6 +630,8 @@ Untuk diskusi kelompok yang lebih terstruktur, lihat [`diskusi.md`](./diskusi.md
 - Anthropic — *Introduction to Claude*: https://docs.anthropic.com/en/docs/intro-to-claude
 - Anthropic — *Models overview*: https://docs.anthropic.com/en/docs/about-claude/models
 - Anthropic — *Glossary*: https://docs.anthropic.com/en/docs/resources/glossary
-- *Attention Is All You Need* (Vaswani et al., 2017): https://arxiv.org/abs/1706.03762
+- *Attention Is All You Need* (Vaswani et al., 2017) — paper asli Transformer: https://arxiv.org/abs/1706.03762
+  - Pengantar visual (direkomendasikan untuk pemula): https://jalammar.github.io/illustrated-transformer/
+  - Versi beranotasi dengan kode PyTorch: http://nlp.seas.harvard.edu/2018/04/03/attention.html
 - Anthropic — *Constitutional AI*: https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback
 - Anthropic — *Reducing hallucinations*: https://docs.anthropic.com/en/docs/test-and-evaluate/strengthen-guardrails/reduce-hallucinations
