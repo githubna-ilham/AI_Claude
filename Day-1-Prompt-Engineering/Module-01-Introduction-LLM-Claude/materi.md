@@ -147,6 +147,87 @@ flowchart LR
     G --> I[Jawaban final<br/>'Jakarta']
 ```
 
+Mari kita telusuri setiap langkah menggunakan contoh nyata. Anggap Anda mengirim pertanyaan: **"Apa ibu kota Indonesia?"**
+
+### Langkah 1 — Tokenizer: Memecah Teks menjadi Potongan Kecil
+
+LLM tidak membaca kalimat utuh. Komponen bernama **Tokenizer** memecah teks Anda menjadi **token** (potongan kecil). Hasilnya kira-kira:
+
+```
+"Apa ibu kota Indonesia?"
+   ↓
+["Apa", " ibu", " kota", " Indonesia", "?"]
+```
+
+Setiap potongan inilah yang nantinya diproses oleh model.
+
+### Langkah 2 — Token IDs: Ubah Setiap Potongan menjadi Angka
+
+Komputer hanya memahami angka, bukan huruf. Setiap token kemudian dikonversi menjadi **nomor unik** (semacam nomor KTP-nya kata):
+
+```
+"Apa"        → 5821
+" ibu"       → 14209
+" kota"      → 9305
+" Indonesia" → 42118
+"?"          → 30
+```
+
+Daftar konversi ini disebut **vocabulary** — kamus angka milik model yang berisi puluhan ribu hingga ratusan ribu entri.
+
+### Langkah 3 — Embedding: Ubah Angka menjadi Koordinat
+
+Nomor unik saja belum cukup. Model perlu memahami **arti** dan **hubungan** antar kata. Maka, setiap nomor token diubah menjadi **embedding** — sebuah daftar panjang angka (biasanya 1.000 hingga 12.000 angka) yang merepresentasikan posisi kata tersebut di "peta makna".
+
+Analoginya: bayangkan setiap kata memiliki **koordinat GPS** dalam ruang multidimensi. Kata-kata yang artinya mirip akan duduk berdekatan di peta tersebut:
+
+```
+"raja"      → koordinat berdekatan dengan "ratu", "pangeran", "kerajaan"
+"kucing"    → koordinat berdekatan dengan "anjing", "hewan", "peliharaan"
+"Indonesia" → koordinat berdekatan dengan "Jakarta", "Asia", "negara"
+```
+
+### Langkah 4 — Transformer: Memahami Konteks
+
+Inilah "otak" sesungguhnya dari LLM. Lapisan **Transformer** memproses seluruh embedding bersama-sama dan memahami **hubungan antar kata** dalam kalimat Anda.
+
+Pada contoh kita, Transformer "menyadari" bahwa:
+- Kata "Apa" merupakan kata tanya.
+- Frasa "ibu kota" menunjukkan permintaan informasi spesifik berupa nama kota.
+- Kata "Indonesia" adalah subjek yang ditanyakan.
+
+Konteks gabungan ini akan menjadi dasar prediksi kata berikutnya.
+
+(Cara kerja Transformer secara lebih dalam akan dibahas di Section 2.)
+
+### Langkah 5 — Hitung Probabilitas Kata Berikutnya
+
+Setelah konteks dipahami, model menghasilkan **probabilitas** untuk setiap kemungkinan kata berikutnya dari seluruh kamusnya. Misalnya:
+
+```
+"Jakarta"  → 92%
+"Bandung"  → 3%
+"Surabaya" → 2%
+"Indonesia" → 1%
+... (puluhan ribu kandidat lain dengan probabilitas sangat kecil)
+```
+
+### Langkah 6 — Pilih Satu Kata (Sampling)
+
+Dari daftar probabilitas tersebut, model memilih satu kata. Pemilihan ini diatur oleh parameter **temperature**:
+- **`temperature = 0`** → selalu memilih probabilitas tertinggi (deterministik, konsisten).
+- **`temperature > 0`** → ada unsur acak; jawaban bisa bervariasi (lebih kreatif).
+
+Pada contoh kita, kata `"Jakarta"` terpilih.
+
+### Langkah 7 — Loop sampai Selesai
+
+Kata yang baru terpilih (`"Jakarta"`) ditambahkan ke konteks, kemudian seluruh proses **diulang** untuk memprediksi kata berikutnya. Begitu seterusnya, hingga model menghasilkan token khusus penanda akhir kalimat *(stop token)* atau mencapai batas panjang output yang Anda tentukan.
+
+Itulah sebabnya jawaban panjang dari Claude muncul "kata demi kata" — secara teknis memang demikianlah cara kerjanya.
+
+---
+
 Tiga hal penting yang perlu Anda ingat:
 
 - **LLM tidak benar-benar "memahami"** seperti manusia. Yang dilakukan adalah menghitung probabilitas: "kata apa yang paling mungkin muncul setelah ini?"
