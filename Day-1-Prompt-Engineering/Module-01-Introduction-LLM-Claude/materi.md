@@ -248,11 +248,97 @@ Itulah mengapa **memberi sumber asli** (grounding, yang dibahas di Section 5) me
 
 ### Langkah 6 — Pilih Satu Kata (Sampling)
 
-Dari daftar probabilitas tersebut, model memilih satu kata. Pemilihan ini diatur oleh parameter **temperature**:
-- **`temperature = 0`** → selalu memilih probabilitas tertinggi (deterministik, konsisten).
-- **`temperature > 0`** → ada unsur acak; jawaban bisa bervariasi (lebih kreatif).
+Dari daftar probabilitas tersebut, model memilih satu kata. Pemilihan ini diatur oleh parameter **temperature**. Pada contoh kita, kata `"Jakarta"` terpilih.
 
-Pada contoh kita, kata `"Jakarta"` terpilih.
+Mari pahami parameter ini lebih dalam, karena Anda akan sering menemukannya di seluruh modul berikutnya.
+
+#### Memahami Parameter Temperature
+
+Bayangkan **temperature** sebagai **tombol pengatur antara "patuh aturan" dan "berani bereksperimen"** ketika model memilih kata.
+
+Temperature **bukan** mengubah konten jawaban secara langsung. Yang diubah adalah **bentuk distribusi probabilitas** sebelum sampling. Mari kita lihat dampaknya pada contoh kita:
+
+```
+Distribusi asli untuk "Apa ibu kota Indonesia? ___"
+─────────────────────────────────────────────────────
+Jakarta     | 92%
+Bandung     | 3%
+Surabaya    | 2%
+lainnya     | 3%
+```
+
+**Saat `temperature = 0` (deterministik):**
+
+Perbedaan probabilitas **dipertajam secara ekstrem**. Pemenang langsung dianggap 100%, yang lain 0%. Model **selalu** memilih "Jakarta" — tidak ada peluang lain.
+
+```
+Jakarta     | 100% ← pasti terpilih
+Bandung     | 0%
+Surabaya    | 0%
+```
+
+**Saat `temperature = 0.7` (default umum):**
+
+Distribusi tetap, sampling dilakukan secara acak namun tertimbang. "Jakarta" sangat mungkin muncul, tetapi sesekali "Bandung" atau "Surabaya" pun dapat terpilih.
+
+**Saat `temperature = 1.5` (kreatif):**
+
+Distribusi **diratakan**. "Jakarta" tidak lagi dominan. Kata-kata di luar 3 besar pun memiliki peluang signifikan untuk muncul — kadang menghasilkan jawaban kreatif, kadang ngawur.
+
+```
+Jakarta     | 60%
+Bandung     | 15%
+Surabaya    | 10%
+lainnya     | 15% (bisa muncul jawaban tidak relevan)
+```
+
+#### Panduan Nilai Temperature
+
+| Temperature | Karakter output | Kapan dipakai |
+|-------------|----------------|---------------|
+| **0.0** | Deterministik penuh. Sama input = sama output. | Klasifikasi, ekstraksi data, kalkulasi, jawaban faktual — semua kasus yang **butuh konsistensi**. |
+| **0.2 – 0.4** | Hampir konsisten, sedikit variasi. | Code generation, summarization, Q&A berbasis dokumen. |
+| **0.7** *(default)* | Seimbang antara konsisten dan variatif. | Chatbot umum, percakapan, penulisan artikel. |
+| **1.0 – 1.5** | Kreatif, bervariasi tinggi. | Brainstorming ide, generasi puisi, eksplorasi kreatif. |
+| **>1.5** | Sangat liar, sering tidak masuk akal. | Jarang dipakai — biasanya untuk eksperimen. |
+
+#### Contoh Perbandingan Output
+
+Prompt yang sama: `"Tulis 1 kalimat pembuka untuk artikel tentang kopi."`
+
+**`temperature = 0`** (dijalankan 5x, hasilnya sama persis):
+```
+Kopi adalah salah satu minuman paling populer di dunia.
+Kopi adalah salah satu minuman paling populer di dunia.
+Kopi adalah salah satu minuman paling populer di dunia.
+... (selalu sama)
+```
+
+**`temperature = 0.7`** (dijalankan 5x, hasilnya bervariasi namun masih wajar):
+```
+Kopi adalah salah satu minuman paling populer di dunia.
+Aroma kopi pagi mampu membangkitkan semangat seharian penuh.
+Di balik secangkir kopi, tersimpan cerita panjang perjalanan biji dari kebun ke meja Anda.
+...
+```
+
+**`temperature = 1.5`** (dijalankan 5x, hasilnya sangat bebas):
+```
+Kopi bukan sekadar minuman — ia adalah ritual filosofis kosmis.
+Bayangkan sebuah dunia tanpa kopi: peradaban runtuh seketika.
+Kopi: cairan ajaib yang menari di lidah para penyair.
+...
+```
+
+#### Hal yang Sering Disalahpahami
+
+1. **`Temperature = 0` ≠ model jadi pintar.** Keterbatasan model tetap sama; tetap bisa berhalusinasi. Perbedaannya: halusinasi yang sama akan diulang secara konsisten.
+
+2. **Temperature tinggi ≠ model jadi kreatif/cerdas.** Yang terjadi: model jadi lebih berani mengambil pilihan tidak biasa. Kadang berhasil terdengar kreatif, kadang justru ngawur.
+
+3. **Untuk JSON / klasifikasi / ekstraksi data → selalu gunakan `temperature = 0`.** Anda membutuhkan output yang persis sama setiap kali, terutama saat hasilnya diproses oleh sistem otomatis.
+
+4. **Untuk membandingkan kualitas prompt** — gunakan `temperature = 0` agar perbandingan adil; variabel pengganggu (keacakan sampling) dihilangkan.
 
 ### Langkah 7 — Loop sampai Selesai
 
