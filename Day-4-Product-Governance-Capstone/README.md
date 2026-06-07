@@ -9,21 +9,21 @@
 
 ## Ringkasan Day 4
 
-Hari keempat menutup rangkaian pelatihan dengan menggeser fokus dari "bagaimana membangun" menjadi "apa yang dibangun, untuk siapa, dan dengan risiko apa". Dua modul pertama (Module 13 & 14) memberi peserta lensa **product** dan **governance** untuk menavigasi keputusan strategis seputar adopsi AI di organisasi mereka. Sesi Capstone menjadi puncak: peserta merangkai seluruh pembelajaran 3 hari sebelumnya (prompt engineering, Claude API, tool use, RAG, agentic workflow) menjadi sebuah **prototype yang bisa dipresentasikan ke stakeholder internal pasca-pelatihan**.
+Hari keempat menutup rangkaian pelatihan dengan menggeser fokus dari "bagaimana membangun" menjadi "apa yang dibangun, untuk siapa, dan dengan risiko apa". Dua modul pertama (Module 13 & 14) memberi Anda lensa **product** dan **governance** untuk menavigasi keputusan strategis seputar adopsi AI di organisasi Anda. Sesi Capstone menjadi puncak: Anda akan merangkai seluruh pembelajaran 3 hari sebelumnya (prompt engineering, Claude API, tool use, RAG, agentic workflow) menjadi sebuah **prototype yang siap dipresentasikan ke stakeholder internal pasca-pelatihan**.
 
-Day 4 bukan sekadar "wrap-up". Capstone dirancang sebagai **portfolio piece**: setiap peserta meninggalkan ruangan dengan satu use case canvas tervalidasi, satu working demo, dan satu deck pitching yang siap digunakan untuk memperjuangkan inisiatif AI di unit kerja masing-masing.
+Day 4 bukan sekadar "wrap-up". Capstone dirancang sebagai **portfolio piece**: Anda akan meninggalkan ruangan dengan satu use case canvas yang tervalidasi, satu working demo, dan satu deck pitching yang siap digunakan untuk memperjuangkan inisiatif AI di unit kerja Anda.
 
 ---
 
-## Learning Outcomes Day 4
+## Apa yang Akan Anda Bisa Setelah Day 4
 
-Setelah menyelesaikan Day 4, peserta mampu:
+Setelah selesai mengikuti Day 4, Anda akan mampu:
 
-1. **Memilih use case AI yang tepat** berdasarkan business value, feasibility, dan readiness data — bukan sekadar mengikuti tren.
+1. **Memilih use case AI yang tepat** berdasarkan business value, feasibility, dan kesiapan data — bukan sekadar mengikuti tren.
 2. **Merancang arsitektur solusi AI end-to-end** yang mempertimbangkan UX, integrasi sistem, dan biaya operasional model.
 3. **Mengidentifikasi risiko governance, bias, security, dan privacy** pada sistem berbasis LLM, serta menerapkan mitigasi konkret.
 4. **Mengenali dan menanggulangi prompt injection** (direct, indirect, jailbreak, data exfiltration) dengan pola defense yang teruji.
-5. **Mengintegrasikan prompt engineering + Claude API + RAG/Agent** menjadi satu prototype fungsional dalam satu sesi capstone.
+5. **Mengintegrasikan prompt engineering, Claude API, dan RAG/Agent** menjadi satu prototype fungsional dalam satu sesi capstone.
 6. **Mempresentasikan solusi AI** dengan struktur yang persuasif kepada decision-maker non-teknis.
 
 ---
@@ -41,11 +41,11 @@ flowchart LR
 
 | Sesi | Materi | Durasi | Output |
 |---|---|---|---|
-| 1 | Module 13 — AI Product Design | 120 menit | Use Case Canvas tiap peserta (Lab 12) |
+| 1 | Module 13 — AI Product Design | 120 menit | Use Case Canvas setiap peserta (Lab 12) |
 | Break | Coffee break | 15 menit | — |
-| 2 | Module 14 — Governance, Risk & Security | 120 menit | Responsible-AI checklist diisi |
+| 2 | Module 14 — Governance, Risk & Security | 120 menit | Responsible-AI checklist terisi |
 | Break | Ishoma | 60 menit | — |
-| 3 | Capstone Planning + Pembagian tim | 30 menit | Tim 3–4 orang, opsi project dipilih |
+| 3 | Capstone Planning + pembagian tim | 30 menit | Tim 3–4 orang, opsi project dipilih |
 | 4 | Capstone Eksekusi | 150 menit | Prototype + deck draft |
 | Break | Coffee break | 15 menit | — |
 | 5 | Capstone Presentasi (6 tim × ~30 menit) | 180 menit | Demo + Q&A juri |
@@ -55,7 +55,7 @@ flowchart LR
 
 ---
 
-## Jadwal Indikatif (Bisa Disesuaikan)
+## Jadwal Indikatif (Dapat Disesuaikan)
 
 | Waktu | Aktivitas |
 |---|---|
@@ -64,7 +64,7 @@ flowchart LR
 | 10.45–11.00 | Coffee break |
 | 11.00–13.00 | Module 14: Governance, Risk & Security |
 | 13.00–14.00 | Ishoma |
-| 14.00–14.30 | Capstone briefing & team formation |
+| 14.00–14.30 | Capstone briefing & pembentukan tim |
 | 14.30–17.00 | Capstone eksekusi (dengan coffee break 15 menit fleksibel) |
 | 17.00–17.30 | Persiapan demo akhir |
 | 17.30–20.30 | Capstone presentasi (per tim ~25–30 menit termasuk Q&A) |
@@ -100,12 +100,12 @@ Day-4-Product-Governance-Capstone/
 
 ## Prasyarat Day 4
 
-Peserta diasumsikan telah menyelesaikan:
+Anda diasumsikan telah menyelesaikan:
 - **Day 1**: Foundation LLM + prompt engineering dasar
 - **Day 2**: Claude API, tool use, structured output
-- **Day 3**: AI Agent pattern, RAG implementation, evaluasi
+- **Day 3**: AI Agent pattern, implementasi RAG, dan evaluasi
 
-Pastikan setiap peserta sudah memiliki:
+Pastikan Anda sudah memiliki:
 - API key Claude yang aktif (anthropic.com)
 - Laptop dengan Python 3.10+, virtualenv, dan editor
 - Repo template starter dari Day 3 (jika ada)
@@ -127,4 +127,4 @@ Pastikan setiap peserta sudah memiliki:
 
 ## Catatan Pedagogis
 
-Day 4 sengaja disusun **deduktif kemudian induktif**: peserta menerima kerangka berpikir (Module 13–14), lalu segera memproduksi artefak (Capstone). Hindari menambahkan teori baru di sesi capstone — fungsinya adalah konsolidasi, bukan akuisisi.
+Day 4 sengaja disusun **deduktif kemudian induktif**: Anda menerima kerangka berpikir terlebih dahulu (Module 13–14), lalu segera memproduksi artefak nyata (Capstone). Hindari menyerap teori baru di sesi capstone — fungsinya adalah konsolidasi, bukan akuisisi.
