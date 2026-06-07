@@ -419,6 +419,75 @@ LLM tidak membaca kalimat per kalimat atau kata per kata. Ia membaca **token** �
 
 ## 4. Claude — Kapabilitas dan Keterbatasan
 
+### Mengenal Claude Lebih Dekat
+
+Sebelum membahas kemampuan dan keterbatasannya, mari pahami terlebih dahulu **apa itu Claude, siapa yang menciptakannya, dan bagaimana sejarah perkembangannya**.
+
+#### Apa Itu Claude?
+
+**Claude** adalah keluarga LLM (Large Language Model) yang dikembangkan oleh **Anthropic** — sebuah perusahaan riset dan keamanan AI yang berbasis di San Francisco, Amerika Serikat. Nama "Claude" diambil sebagai penghormatan terhadap **Claude Shannon**, matematikawan dan insinyur Amerika yang dianggap sebagai "bapak teori informasi" — fondasi yang mendasari seluruh teknologi komputasi dan komunikasi digital modern.
+
+Karakter pembeda Claude dari LLM lain (seperti ChatGPT dan Gemini):
+- **Fokus pada keamanan dan etika AI** *(safety-first)* — Claude dilatih dengan pendekatan khusus bernama **Constitutional AI**, yang akan dijelaskan di bawah.
+- **Context window yang sangat panjang** — hingga 200.000 token (sekitar 500 halaman buku) pada model standar, dan hingga 1 juta token pada tier khusus.
+- **Kuat di reasoning dan coding** — sering menjadi pilihan favorit di kalangan developer profesional.
+- **Output natural dan bernuansa** — gaya bahasa Claude cenderung lebih reflektif dan jujur mengakui keterbatasannya, dibanding kompetitor.
+
+#### Siapa yang Menciptakan?
+
+Claude diciptakan oleh **Anthropic**, yang didirikan pada **tahun 2021** oleh sekelompok mantan peneliti senior OpenAI. Pendiri utamanya adalah:
+
+- **Dario Amodei** *(CEO)* — sebelumnya Vice President of Research di OpenAI.
+- **Daniela Amodei** *(President)* — adik kandung Dario, sebelumnya Vice President of Operations di OpenAI.
+- Bersama tim inti yang turut serta meninggalkan OpenAI, termasuk Tom Brown (penulis utama paper GPT-3), Jared Kaplan, Sam McCandlish, dan beberapa lainnya.
+
+Alasan utama mereka memisahkan diri: keyakinan bahwa **pengembangan AI berskala besar harus mengutamakan aspek keamanan dan dampak sosial jangka panjang**, bukan sekadar performa.
+
+Beberapa fakta penting tentang Anthropic:
+- **Status**: perusahaan riset AI swasta (bukan lembaga akademik).
+- **Pendanaan**: telah mengumpulkan miliaran dolar dari investor besar seperti Google, Amazon, Salesforce, dan lainnya.
+- **Misi resmi**: "AI safety research company" — fokus pada bagaimana membangun AI yang andal, dapat ditafsirkan, dan dapat dikendalikan.
+
+#### Sejarah Singkat Claude
+
+```mermaid
+timeline
+    title Lini Masa Claude (2021–2025)
+    2021         : Anthropic didirikan
+    2023 Maret   : Claude 1 dirilis (versi awal, akses terbatas)
+    2023 Juli    : Claude 2 — context 100K, mulai akses publik
+    2024 Maret   : Claude 3 — keluarga Opus, Sonnet, Haiku
+    2024 Juni    : Claude 3.5 Sonnet — lompatan kemampuan coding
+    2024 Oktober : Computer Use — Claude bisa kendalikan komputer
+    2025         : Claude 4.x — extended thinking, agent capabilities
+```
+
+**Tonggak-tonggak penting:**
+
+1. **2021** — Anthropic didirikan. Penelitian fokus pada **alignment AI** dan **interpretability**.
+2. **2022** — Anthropic memperkenalkan konsep **Constitutional AI** dalam paper risetnya. Pendekatan ini menjadi dasar pelatihan seluruh model Claude di masa depan.
+3. **Maret 2023** — **Claude 1** dirilis sebagai produk komersial, awalnya hanya melalui Slack dan API terbatas.
+4. **Juli 2023** — **Claude 2** diluncurkan dengan context window **100.000 token** — saat itu jauh lebih besar dari kompetitor. Akses publik mulai dibuka melalui claude.ai.
+5. **Maret 2024** — **Claude 3** memperkenalkan keluarga tiga varian: **Opus** (paling cerdas), **Sonnet** (seimbang), **Haiku** (cepat & murah). Konsep ini bertahan hingga sekarang.
+6. **Juni 2024** — **Claude 3.5 Sonnet** menjadi favorit komunitas developer karena performa coding yang sangat kuat — sering disebut "GitHub Copilot killer".
+7. **Oktober 2024** — Fitur **Computer Use** diperkenalkan — Claude mampu mengendalikan komputer (klik, ketik, scroll) untuk mengotomasi tugas-tugas visual.
+8. **2025** — Claude 4.x dengan **extended thinking** (mode berpikir mendalam) dan kemampuan **agent** yang lebih matang.
+
+#### Apa Itu Constitutional AI?
+
+**Constitutional AI (CAI)** adalah pendekatan pelatihan khusus yang dikembangkan Anthropic. Idenya sederhana: alih-alih hanya menggunakan ribuan anotator manusia untuk menilai output model (seperti pendekatan RLHF klasik), CAI memberi model **"konstitusi"** — sekumpulan prinsip etis tertulis — yang dipakai model untuk **mengevaluasi dan memperbaiki jawabannya sendiri**.
+
+Prinsip-prinsip dalam konstitusi diambil dari berbagai sumber, termasuk Deklarasi Universal Hak Asasi Manusia PBB, prinsip-prinsip etika dari perusahaan teknologi besar, dan riset filosofi.
+
+Hasilnya, Claude cenderung:
+- Lebih jujur ketika tidak yakin.
+- Lebih hati-hati dalam menanggapi permintaan berbahaya.
+- Lebih reflektif dan memberikan penjelasan etis ketika dibutuhkan.
+
+Detail lengkap tersedia di paper [*Constitutional AI: Harmlessness from AI Feedback*](https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback) (Anthropic, 2022).
+
+---
+
 ### Keluarga Model Claude
 
 Claude memiliki tiga varian utama. Ibarat menu di restoran: tersedia paket hemat, paket reguler, dan paket premium.
