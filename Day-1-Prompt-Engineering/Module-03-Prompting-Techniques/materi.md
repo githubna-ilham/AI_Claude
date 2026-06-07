@@ -20,6 +20,12 @@ Setelah modul ini, peserta mampu:
 
 ## 1. Pengantar — Spectrum Prompting
 
+### Apa Itu Spectrum Prompting?
+
+**Spectrum Prompting** adalah cara berpikir yang menempatkan berbagai teknik prompting dalam sebuah **rentang (spectrum)** — dari yang paling sederhana hingga paling kompleks. Tujuannya: agar Anda **tidak langsung menggunakan teknik kompleks** padahal teknik sederhana sudah cukup.
+
+Analoginya seperti memilih alat di kotak peralatan: untuk memasang paku, Anda tidak perlu palu godam — palu kecil sudah cukup. Begitu pula dengan prompt: untuk task sederhana, jangan langsung pakai teknik berlapis-lapis. Mulailah dari yang paling ringan.
+
 ```mermaid
 flowchart LR
     Z[Zero-Shot<br/>0 contoh] --> F[Few-Shot<br/>2-8 contoh]
@@ -29,13 +35,52 @@ flowchart LR
     S -.->|task kompleks| S
 ```
 
-**Aturan main**:
-- Mulai dari zero-shot (paling murah & cepat).
-- Naik ke few-shot ketika output tidak konsisten.
-- Naik ke CoT ketika task butuh penalaran multi-step.
-- Naik ke structured ketika ada beberapa peran/sumber yang harus dikombinasikan.
+### Mengapa Berpikir dalam Bentuk Spectrum?
 
-Naik teknik = naik biaya & latency. Pilihan harus berbasis bukti dari evaluasi (Module 4).
+Setiap teknik prompting memiliki **trade-off** antara tiga hal:
+
+1. **Biaya token** — semakin banyak teks dalam prompt, semakin tinggi biaya API.
+2. **Latency** — prompt yang lebih panjang membutuhkan waktu pemrosesan yang lebih lama.
+3. **Akurasi & konsistensi** — teknik yang lebih kompleks umumnya menghasilkan output yang lebih konsisten untuk task yang rumit.
+
+Jika Anda langsung memilih teknik paling kompleks, Anda **membayar biaya tinggi tanpa selalu mendapatkan hasil yang lebih baik**. Sebaliknya, jika Anda menggunakan teknik terlalu sederhana untuk task kompleks, akurasi akan rendah dan Anda akan terus mengulang prompt.
+
+### Empat Tingkat dalam Spectrum
+
+| Tingkat | Teknik | Karakteristik | Biaya |
+|---------|--------|--------------|-------|
+| **1** | **Zero-Shot** | Instruksi saja, tanpa contoh | Paling rendah |
+| **2** | **Few-Shot** | Instruksi + 2 hingga 8 contoh input→output | Sedang |
+| **3** | **Chain-of-Thought (CoT)** | Few-shot + minta model menjelaskan reasoning | Sedang–tinggi |
+| **4** | **Structured Prompting** | Multi-section dengan peran, sumber, dan format yang dikombinasikan | Tertinggi |
+
+Catatan penting: angka tingkat **bukan** tingkat kualitas. Tingkat 4 bukan otomatis "lebih baik" dari tingkat 1 — ia hanya **lebih cocok untuk task yang lebih kompleks**.
+
+### Aturan Naik Tingkat
+
+Pendekatan yang direkomendasikan: **mulai dari tingkat paling rendah, naik hanya jika hasilnya belum memadai.**
+
+1. **Mulai dengan Zero-Shot.** Coba lebih dulu — paling cepat, paling murah, dan banyak task umum yang sudah berhasil di tingkat ini.
+2. **Naik ke Few-Shot jika output tidak konsisten** atau format tidak sesuai harapan. Tambahkan 2–3 contoh untuk "mengunci" pola yang diinginkan.
+3. **Naik ke Chain-of-Thought jika task membutuhkan penalaran multi-step** — misalnya kalkulasi bertahap, analisis kausalitas, atau pengambilan keputusan dengan beberapa kriteria.
+4. **Naik ke Structured Prompting jika ada beberapa peran atau sumber** yang harus dikombinasikan — misalnya menggabungkan dokumen referensi, riwayat percakapan, dan aturan bisnis dalam satu prompt.
+
+### Bagaimana Memutuskan Titik Awal?
+
+Gunakan tiga pertanyaan diagnostik berikut:
+
+| Pertanyaan | Jika "ya" | Mulai dari |
+|-----------|-----------|-----------|
+| Apakah task ini umum dan well-known (ringkasan, terjemahan, klasifikasi standar)? | Ya | **Zero-Shot** |
+| Apakah ada format khusus atau taksonomi internal yang harus diikuti? | Ya | **Few-Shot** |
+| Apakah task membutuhkan reasoning bertahap atau perhitungan yang dapat salah? | Ya | **Chain-of-Thought** |
+| Apakah perlu menggabungkan beberapa peran (analis + reviewer) atau beberapa sumber dokumen? | Ya | **Structured** |
+
+### Prinsip Penting
+
+**Naik tingkat = naik biaya dan latency.** Karena itu, keputusan untuk naik tingkat harus berbasis **bukti dari evaluasi**, bukan asumsi. Module 4 (Structured Output & Evaluasi) akan membahas cara mengukur kualitas prompt secara objektif sehingga Anda tahu **kapan benar-benar perlu naik tingkat**, dan kapan teknik yang lebih sederhana sudah memadai.
+
+Bagian selanjutnya akan membahas masing-masing tingkat secara mendalam.
 
 ---
 
