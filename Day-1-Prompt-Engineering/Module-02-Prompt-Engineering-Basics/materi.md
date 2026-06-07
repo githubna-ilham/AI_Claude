@@ -288,6 +288,102 @@ Lakukan secara berurutan:
 4. Output dalam format tabel dengan kolom: klausul, mismatch, rekomendasi.
 ```
 
+### Contoh Prompt — Task yang Baik dalam Praktik
+
+Berikut tiga skenario yang menunjukkan bagaimana instruksi yang spesifik mengarahkan model ke hasil yang berkualitas.
+
+#### Contoh 1 — Verb Action yang Jelas
+
+```text
+<context>
+Artikel berita: "Bank Indonesia menaikkan suku bunga acuan sebesar 25 basis poin
+menjadi 6,25%. Keputusan ini merespons inflasi inti yang meningkat ke 2,9% YoY
+dan pelemahan rupiah ke level 16.200 per dolar. Gubernur BI menyatakan
+kebijakan ini bersifat preemptive untuk menjaga stabilitas nilai tukar."
+</context>
+
+<task>
+Lakukan tiga hal berikut secara berurutan:
+1. Identifikasi 3 fakta numerik utama dari artikel.
+2. Tuliskan dalam 1 kalimat: alasan utama BI menaikkan suku bunga.
+3. Prediksi 1 dampak jangka pendek bagi UMKM (maksimal 30 kata).
+</task>
+```
+
+**Mengapa contoh ini bagus:**
+- Verb action konkret: **identifikasi**, **tuliskan**, **prediksi** — bukan "bahas" atau "jelaskan" yang ambigu.
+- Granularitas jelas: 3 fakta, 1 kalimat, 30 kata.
+- Setiap langkah punya **output spesifik** yang bisa diverifikasi.
+
+---
+
+#### Contoh 2 — Decomposition untuk Task Kompleks
+
+```text
+<context>
+{tempel teks kontrak vendor IT — 5 halaman}
+</context>
+
+<policy>
+Kebijakan Internal Pengadaan IT:
+- Termin pembayaran maksimal 60 hari setelah serah terima.
+- Garansi minimal 12 bulan untuk semua hardware.
+- Klausul force majeure wajib mencakup gangguan listrik dan internet.
+- Penalti keterlambatan: 0,1% per hari, maksimal 5% dari nilai kontrak.
+</policy>
+
+<task>
+Lakukan secara berurutan:
+1. Baca <context> dan identifikasi klausul yang relevan dengan: pembayaran, garansi, force majeure, penalti.
+2. Bandingkan tiap klausul dengan ketentuan di <policy>.
+3. Tandai mismatch dan jelaskan singkat (maksimal 30 kata per mismatch).
+4. Berikan rekomendasi revisi yang sesuai kebijakan.
+</task>
+
+<output_format>
+Tabel markdown dengan kolom:
+| Topik | Klausul Kontrak | Ketentuan Policy | Mismatch | Rekomendasi |
+</output_format>
+```
+
+**Mengapa contoh ini bagus:**
+- Task dipecah menjadi **4 langkah yang berurutan**, sehingga model tidak melompat ke kesimpulan.
+- Setiap langkah punya **scope sempit dan spesifik**.
+- Format output ditentukan terpisah agar mudah diverifikasi konsistensinya.
+
+---
+
+#### Contoh 3 — Audience-Aware Task
+
+```text
+<context>
+Hasil audit keamanan IT triwulan II 2025:
+- Ditemukan 12 server menggunakan password default.
+- 3 dari 5 firewall belum di-update sejak Januari.
+- Tidak ada multi-factor authentication pada 40% akun admin.
+- 1 insiden phishing berhasil dimitigasi dalam 2 jam.
+- Tingkat patching server: 78% (target: 95%).
+</context>
+
+<task>
+Buatkan ringkasan eksekutif untuk **Dewan Komisaris** yang TIDAK memiliki
+latar belakang teknis. Tulis dalam 3 paragraf dengan ketentuan:
+
+- Paragraf 1: Status keseluruhan dalam analogi yang dapat dipahami (misal:
+  bandingkan dengan keamanan rumah/bank).
+- Paragraf 2: 3 risiko terbesar dan dampak bisnisnya (bukan dampak teknisnya).
+- Paragraf 3: Rekomendasi tindakan, termasuk indikasi biaya & timeline.
+
+Hindari istilah seperti "patching", "MFA", "firewall" — ganti dengan
+penjelasan setara dalam bahasa awam.
+</task>
+```
+
+**Mengapa contoh ini bagus:**
+- **Audience eksplisit** (Dewan Komisaris non-teknis) — mengubah cara model menyampaikan.
+- **Kriteria sukses jelas** di tiap paragraf (analogi, dampak bisnis, biaya & timeline).
+- **Larangan vocabulary teknis** memaksa model menerjemahkan ke bahasa awam.
+
 ---
 
 ## 5. Komponen 4 — Constraint
@@ -315,6 +411,118 @@ Jangan pakai bahasa formal.
 Gunakan bahasa percakapan sehari-hari, seperti bicara dengan teman.
 ```
 
+### Contoh Prompt — Constraint dalam Praktik
+
+Berikut tiga contoh yang menunjukkan bagaimana constraint membentuk output yang aman, konsisten, dan sesuai kebutuhan.
+
+#### Contoh 1 — Constraint Length + Tone + Vocabulary
+
+```text
+<context>
+Pelanggan mengeluh barang yang diterima rusak. Pesanan ID #ORD-9921.
+Nilai pesanan: Rp 1.250.000.
+</context>
+
+<task>
+Tulis balasan email kepada pelanggan untuk merespons keluhan tersebut.
+</task>
+
+<constraints>
+- Panjang: maksimal 120 kata.
+- Tone: empatik, profesional, tidak menggurui.
+- Vocabulary: hindari istilah "kebijakan kami", "sesuai prosedur", "mohon maklum".
+  Gunakan bahasa yang langsung dan manusiawi.
+- Buka dengan permohonan maaf, tutup dengan kalimat yang menawarkan solusi.
+</constraints>
+```
+
+**Mengapa contoh ini bagus:**
+- Tiga jenis constraint (length, tone, vocabulary) bekerja bersama-sama.
+- Vocabulary constraint menghindarkan jawaban dari **klise korporat** yang terkesan dingin.
+- Aturan struktur ("buka dengan…, tutup dengan…") mengarahkan flow tanpa terlalu detail.
+
+---
+
+#### Contoh 2 — Constraint Safety + Domain
+
+```text
+<context>
+Anda adalah chatbot finansial untuk aplikasi tabungan pemula.
+Pengguna baru bertanya hal-hal seputar produk tabungan dan investasi dasar.
+</context>
+
+<task>
+Jawab pertanyaan pengguna dengan informatif dan ramah.
+</task>
+
+<constraints>
+SAFETY:
+- Jangan berikan saran investasi spesifik (saham X, reksa dana Y).
+- Jangan menjanjikan tingkat return tertentu.
+- Selalu sertakan disclaimer bahwa keputusan finansial adalah tanggung jawab pengguna.
+
+DOMAIN:
+- Jawab hanya pertanyaan seputar: tabungan, deposito, reksa dana umum, dan literasi finansial dasar.
+- Jika pertanyaan di luar topik (kripto, forex, pinjaman, asuransi),
+  jawab: "Pertanyaan tersebut di luar cakupan saya. Saya hanya membantu seputar tabungan dan investasi dasar."
+
+VOCABULARY:
+- Gunakan istilah finansial standar (return, profil risiko, diversifikasi),
+  namun selalu beri penjelasan singkat saat pertama kali muncul.
+</constraints>
+```
+
+**Mengapa contoh ini bagus:**
+- Constraint dikelompokkan ke 3 kategori (SAFETY, DOMAIN, VOCABULARY) sehingga mudah diaudit.
+- DOMAIN constraint memberikan **fallback response** spesifik untuk pertanyaan out-of-scope.
+- SAFETY constraint **eksplisit dan terukur** — bukan sekadar "jangan ngawur".
+
+---
+
+#### Contoh 3 — Constraint Format yang Ketat
+
+```text
+<context>
+Daftar 5 pelanggan dengan transaksi mencurigakan:
+1. Andi Pratama — Rp 250 juta dalam 3 hari (sebelumnya rata-rata Rp 5 juta/bulan)
+2. Siti Rahayu — 15 transaksi ke luar negeri dalam 1 minggu
+3. Budi Santoso — saldo nol, lalu deposit Rp 500 juta tunai
+4. Citra Dewi — pola transaksi normal, namun lokasi login berubah cepat (Indonesia → Singapura → UAE dalam 2 jam)
+5. Dedi Kurniawan — semua transaksi pas di angka Rp 49,9 juta (mendekati batas pelaporan)
+</context>
+
+<task>
+Klasifikasikan setiap kasus ke level risiko: LOW, MEDIUM, HIGH, CRITICAL.
+Berikan alasan singkat.
+</task>
+
+<constraints>
+FORMAT (WAJIB IKUTI PERSIS):
+```json
+{
+  "klasifikasi": [
+    {
+      "nama": "...",
+      "risk_level": "LOW | MEDIUM | HIGH | CRITICAL",
+      "alasan": "max 25 kata"
+    }
+  ],
+  "ringkasan": "max 50 kata, sebut berapa banyak per level"
+}
+```
+
+ATURAN:
+- risk_level HANYA boleh: LOW, MEDIUM, HIGH, atau CRITICAL.
+- alasan tidak boleh lebih dari 25 kata.
+- Output HANYA JSON valid, tanpa teks tambahan sebelum/sesudah.
+</constraints>
+```
+
+**Mengapa contoh ini bagus:**
+- Format diharuskan **valid JSON** — siap diparsing sistem otomatis.
+- **Enumerasi nilai** (`LOW | MEDIUM | HIGH | CRITICAL`) mencegah model mengarang label baru.
+- "Output HANYA JSON, tanpa teks tambahan" — menghindari Claude membuka jawaban dengan "Tentu, berikut hasilnya:" yang merusak parsing.
+
 ---
 
 ## 6. Komponen 5 — Output Format
@@ -340,6 +548,167 @@ Output dalam format berikut, tepat sesuai struktur:
 ```
 
 Untuk konsumsi sistem (Day 2+), gunakan JSON dengan schema eksplisit. Ini akan dibahas mendalam di Module 4.
+
+### Contoh Prompt — Output Format dalam Praktik
+
+Tiga contoh berikut menunjukkan kapan menggunakan format yang berbeda (markdown manusia, JSON terstruktur, dan format hibrida).
+
+#### Contoh 1 — Format Markdown untuk Konsumsi Manusia
+
+```text
+<context>
+Hasil wawancara dengan 3 kandidat untuk posisi Software Engineer:
+
+Kandidat A — Pengalaman 4 tahun di startup fintech, kuat di Go & PostgreSQL.
+            Komunikasi baik, namun perlu adaptasi ke skala enterprise.
+Kandidat B — Pengalaman 7 tahun di bank besar, kuat di Java & Oracle.
+            Berpengalaman, namun gaya kerjanya cenderung formal.
+Kandidat C — Pengalaman 2 tahun, fresh dari bootcamp, kuat di TypeScript.
+            Sangat antusias dan cepat belajar, namun belum punya track record.
+</context>
+
+<task>
+Analisis ketiga kandidat dan berikan rekomendasi untuk HR.
+</task>
+
+<output_format>
+Output dalam format markdown berikut, tepat sesuai struktur:
+
+## Ringkasan Eksekutif
+{1 paragraf, maksimal 80 kata}
+
+## Analisis per Kandidat
+
+### Kandidat A
+- **Kelebihan**: ...
+- **Kekurangan**: ...
+- **Cocok untuk**: ...
+
+### Kandidat B
+... (struktur sama)
+
+### Kandidat C
+... (struktur sama)
+
+## Rekomendasi
+1. **Prioritas 1**: {nama} — alasan dalam 1 kalimat.
+2. **Prioritas 2**: {nama} — alasan dalam 1 kalimat.
+3. **Prioritas 3**: {nama} — alasan dalam 1 kalimat.
+</output_format>
+```
+
+**Mengapa contoh ini bagus:**
+- Struktur markdown jelas → mudah dibaca manusia langsung.
+- Setiap kandidat punya **slot yang sama** → mudah dibandingkan secara visual.
+- Rekomendasi diberi nomor prioritas → tidak ambigu.
+
+---
+
+#### Contoh 2 — Format JSON untuk Konsumsi Sistem
+
+```text
+<context>
+Email pelanggan:
+"Halo, saya pesan baju nomor SKU-A2391 ukuran L warna biru kemarin malam.
+Sampai sekarang belum ada email konfirmasi. Order ID saya 7822. Tolong cek
+ya, atau saya batalkan saja kalau memang belum diproses. Saya bisa dihubungi
+di 0812-3456-7890."
+</context>
+
+<task>
+Ekstrak informasi terstruktur dari email pelanggan untuk diteruskan ke sistem CRM.
+</task>
+
+<output_format>
+Output HANYA JSON valid berikut, tanpa teks tambahan:
+
+```json
+{
+  "order_id": "string atau null",
+  "sku": "string atau null",
+  "size": "string atau null",
+  "color": "string atau null",
+  "customer_phone": "string atau null",
+  "intent": "complaint | inquiry | cancellation_request | other",
+  "urgency": "low | medium | high",
+  "summary": "string maksimal 100 karakter"
+}
+```
+
+ATURAN:
+- Jika informasi tidak ada, gunakan null.
+- intent dan urgency HANYA dari opsi yang disebutkan.
+- Tidak ada teks tambahan sebelum atau sesudah JSON.
+</output_format>
+```
+
+**Mengapa contoh ini bagus:**
+- Schema JSON **eksplisit dan ketat** — setiap field punya tipe dan opsi yang dibatasi.
+- `null` diizinkan untuk field yang tidak ditemukan → tidak memaksa model mengarang.
+- "Output HANYA JSON valid, tanpa teks tambahan" → siap dipipa langsung ke parser.
+
+---
+
+#### Contoh 3 — Format Hibrida (Reasoning + Hasil Terstruktur)
+
+```text
+<context>
+Riwayat 6 bulan transaksi nasabah Bank X:
+- Setoran rutin Rp 5 juta tiap akhir bulan (gaji).
+- Pengeluaran rata-rata Rp 4,2 juta/bulan untuk: makan, transportasi, sewa kos.
+- Saldo akhir 6 bulan: Rp 4,8 juta.
+- Belum punya deposito atau investasi.
+- Usia: 28 tahun, pekerjaan: karyawan swasta.
+</context>
+
+<task>
+Berikan rekomendasi tabungan/investasi yang sesuai profil nasabah.
+</task>
+
+<output_format>
+Output dalam format hibrida berikut:
+
+## Analisis Singkat
+{paragraf reasoning, 3-5 kalimat, jelaskan profil nasabah dan logika rekomendasi}
+
+## Rekomendasi (Terstruktur)
+
+```json
+{
+  "profil_risiko": "konservatif | moderat | agresif",
+  "rekomendasi_produk": [
+    {
+      "nama_produk": "string",
+      "alokasi_persen": number,
+      "alasan": "string maksimal 30 kata"
+    }
+  ],
+  "total_alokasi_persen": "harus 100",
+  "catatan_penting": "string"
+}
+```
+
+ATURAN:
+- Bagian "Analisis Singkat" untuk dibaca oleh nasabah (manusia).
+- Bagian JSON untuk diproses sistem rekomendasi otomatis.
+- total_alokasi_persen WAJIB 100.
+</output_format>
+```
+
+**Mengapa contoh ini bagus:**
+- **Markdown bagian atas** = penjelasan reasoning, untuk dibaca manusia.
+- **JSON bagian bawah** = data terstruktur, untuk sistem otomatis.
+- **Aturan validasi** (`total_alokasi_persen` wajib 100) → constraint matematis di level prompt.
+
+---
+
+### Memilih Format yang Tepat
+
+| Format | Gunakan saat | Hindari saat |
+|--------|-------------|--------------|
+| **Markdown / teks** | Output langsung dibaca manusia (laporan, email, dokumen) | Output akan diparsing sistem |
+| **JSON terstruktur** | Output dipakai sistem (database, API, automation) | Output akan dibaca langsung tanpa pengolahan |
+| **Hibrida** | Audience-nya keduanya (UI menampilkan reasoning + sistem proses data) | Salah satu saja sudah cukup — jangan over-engineer |
 
 ---
 
