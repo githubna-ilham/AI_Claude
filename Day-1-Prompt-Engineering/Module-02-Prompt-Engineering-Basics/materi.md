@@ -110,6 +110,159 @@ Context = semua informasi yang model butuhkan untuk menjawab dengan benar tetapi
 </rules>
 ```
 
+### Contoh Prompt — Context Engineering dalam Praktik
+
+Berikut empat skenario nyata yang dapat langsung Anda coba di claude.ai atau Workbench.
+
+#### Contoh 1 — Tanya Jawab Berbasis Dokumen Kebijakan
+
+```text
+<context>
+Kebijakan Cuti Karyawan PT Sejahtera Mandiri (2025):
+- Setiap karyawan tetap berhak atas 12 hari cuti tahunan.
+- Pengajuan cuti minimal H-7 untuk cuti reguler, H-30 untuk cuti panjang (>3 hari).
+- Cuti tidak terpakai dapat diakumulasi maksimal 6 hari ke tahun berikutnya.
+- Karyawan dengan masa kerja >5 tahun mendapat tambahan 2 hari cuti per tahun.
+- Cuti melahirkan: 3 bulan, dengan minimal 1,5 bulan setelah melahirkan.
+</context>
+
+<task>
+Saya karyawan tetap dengan masa kerja 6 tahun. Saya ingin mengambil cuti 5 hari
+mulai 15 Juli untuk liburan keluarga. Berapa total cuti tahunan saya, dan
+kapan paling lambat saya harus mengajukan?
+</task>
+
+<rules>
+- Jawab hanya berdasarkan informasi di <context>.
+- Jika ada informasi yang tidak tersedia, sebutkan secara eksplisit.
+- Sertakan perhitungan jika relevan.
+</rules>
+```
+
+**Mengapa contoh ini bagus:**
+- Context jelas dipisah dari pertanyaan.
+- Aturan eksplisit: tidak boleh mengarang di luar dokumen.
+- Pertanyaan menyentuh **beberapa pasal** sekaligus (masa kerja >5 tahun + lead time pengajuan).
+
+---
+
+#### Contoh 2 — Ringkasan Transkrip Rapat
+
+```text
+<context>
+Transkrip Rapat Mingguan Tim Produk — Senin, 3 Juni 2025
+
+Andi (PM): "Sprint minggu ini ada 3 prioritas: integrasi payment gateway,
+            fix bug login OTP, dan kick-off feature wishlist."
+Budi (Tech Lead): "Untuk payment gateway saya butuh 1 dev tambahan, sekarang
+                   masih solo. Bug OTP sudah ada hipotesis di sisi rate-limit
+                   SMS provider."
+Citra (Designer): "Wishlist mockup selesai Rabu. Saya butuh masukan dari
+                   Andi soal flow guest user."
+Andi: "Oke, prioritas urutan: bug OTP critical, payment lanjut paralel,
+       wishlist kick-off paling akhir minggu. Saya akan minta tambahan dev
+       ke Pak Eko."
+Citra: "Catat ya, Wishlist akan masuk roadmap Q3 kalau tidak selesai sprint ini."
+</context>
+
+<task>
+Ringkas rapat di atas dalam format:
+1. Keputusan utama (bullet)
+2. Action items per orang (nama: tugas, deadline jika ada)
+3. Isu yang belum terselesaikan
+</task>
+```
+
+**Mengapa contoh ini bagus:**
+- Context berupa data **tidak terstruktur** (transkrip natural).
+- Task memaksa model **mengekstrak struktur** dari narasi mentah.
+- Tidak ada `<rules>` karena tugasnya kreatif (ringkas), bukan ekstraksi ketat.
+
+---
+
+#### Contoh 3 — Analisis Data Penjualan (Data Terstruktur)
+
+```text
+<context>
+Data Penjualan Q2 2025 (dalam juta Rupiah):
+
+| Bulan | Jakarta | Surabaya | Bandung | Medan |
+|-------|---------|----------|---------|-------|
+| April | 450     | 320      | 280     | 180   |
+| Mei   | 480     | 350      | 290     | 210   |
+| Juni  | 520     | 330      | 310     | 240   |
+
+Target Q2 per kota:
+- Jakarta: 1.400 juta
+- Surabaya: 1.000 juta
+- Bandung: 900 juta
+- Medan: 600 juta
+</context>
+
+<task>
+1. Hitung total penjualan Q2 per kota.
+2. Identifikasi kota mana yang melebihi/di bawah target, sertakan selisih dan persentase pencapaian.
+3. Berikan 2 insight singkat dari data.
+</task>
+
+<rules>
+- Lakukan perhitungan secara eksplisit (tunjukkan langkah).
+- Format output dalam tabel untuk poin 1 & 2.
+- Insight maksimal 2 kalimat per poin.
+</rules>
+```
+
+**Mengapa contoh ini bagus:**
+- Context berupa **tabel terstruktur** — Claude dapat membaca markdown table dengan baik.
+- Task meminta gabungan **kalkulasi + analisis** — memaksa model berpikir bertahap.
+- Output format spesifik (tabel + insight singkat).
+
+---
+
+#### Contoh 4 — Tanya Jawab dengan Konteks Riwayat Chat
+
+```text
+<context>
+Riwayat percakapan pelanggan dengan tim Customer Service:
+
+[2025-06-05 09:14] Pelanggan: "Pesanan ID #ORD-7821 belum saya terima padahal sudah 5 hari."
+[2025-06-05 09:20] CS Ratna: "Mohon maaf Bapak, akan saya cek ke tim logistik dulu ya."
+[2025-06-05 14:30] CS Ratna: "Pak, tim logistik konfirmasi paket terkirim ke alamat Jl. Mawar No. 12 — bukan No. 21 sesuai pesanan. Kami sedang upayakan penjemputan ulang."
+[2025-06-06 08:00] Pelanggan: "Saya butuh barang ini hari ini, ada lomba anak besok pagi. Bagaimana solusinya?"
+</context>
+
+<task>
+Anda adalah supervisor CS. Tuliskan balasan kepada pelanggan yang:
+1. Mengakui kesalahan internal secara empatik.
+2. Menawarkan minimal 2 opsi solusi konkret.
+3. Memberikan kompensasi yang masuk akal.
+4. Jelas, profesional, tidak berlebihan.
+</task>
+
+<rules>
+- Gunakan sapaan "Bapak/Ibu" — netral karena gender tidak disebut.
+- Tonenya empatik tapi tetap solutions-oriented.
+- Maksimal 150 kata.
+</rules>
+```
+
+**Mengapa contoh ini bagus:**
+- Context = **state percakapan sebelumnya** — model harus paham konteks emosional & timeline.
+- Task mengandung **konstrain perilaku** (empatik, profesional).
+- `<rules>` memberi panduan praktis (sapaan, tone, panjang).
+
+---
+
+### Pola yang Bisa Anda Ambil
+
+Dari empat contoh di atas, perhatikan pola berulang yang sama:
+
+1. **`<context>` di awal** — apa yang harus model ketahui sebelum bertindak.
+2. **`<task>` jelas dan spesifik** — apa yang harus dihasilkan.
+3. **`<rules>` (opsional) bila perlu pagar** — batasan format, perilaku, atau cara menjawab.
+
+Ketiga elemen ini bisa Anda terapkan untuk **hampir semua use case** — dari Q&A dokumen, ekstraksi data, ringkasan, sampai pembuatan balasan email.
+
 ---
 
 ## 4. Komponen 3 — Task (Instruction Design)
