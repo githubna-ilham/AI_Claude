@@ -1,48 +1,51 @@
 # Module 9 — Building AI Agent with Claude API
 
-**Durasi:** 120 menit (capstone Day 2)
-**Posisi:** Day 2, sesi penutup
-**Prasyarat:** Modul 5–8 (prompt, workflow, agent konsep, tool calling)
+**Durasi belajar:** ±120 menit (capstone Day 2)
+**Posisi:** Day 2, modul penutup
+**Prasyarat:** Module 5–8 (prompt, workflow, konsep agent, dan tool calling)
+**Format:** Baca konsep → praktik mandiri → lab capstone
 
 ---
 
-## Learning Outcomes
+## Apa yang Akan Anda Bisa Setelah Modul Ini
 
-Setelah modul ini, peserta mampu:
+Setelah selesai membaca dan mempraktikkan modul ini, Anda akan mampu:
 
-1. Mengintegrasikan **Claude API** secara aman: autentikasi, env var, retry, timeout, rate limit handling.
-2. Mengelola **conversation loop** dengan state (messages, memory, tool use) yang bersih.
-3. Membangun **input/output handling** robust: validasi user input, parsing output, streaming.
-4. Mendesain **agent interaction flow** lengkap (system prompt + tools + memory + termination).
-5. Memahami **deployment basics** untuk agent: secrets, observability, cost guard, scaling pattern.
+1. **Mengintegrasikan** Claude API secara aman: autentikasi, environment variable, retry, timeout, dan rate limit handling.
+2. **Mengelola** *conversation loop* dengan state yang bersih (messages, memory, dan tool use).
+3. **Membangun** *input/output handling* yang robust: validasi input pengguna, parsing output, dan streaming.
+4. **Mendesain** *agent interaction flow* yang lengkap (system prompt + tools + memory + termination).
+5. **Memahami** dasar-dasar deployment untuk agent: secrets, observability, cost guard, dan pola scaling.
 
 ---
 
 ## Konsep Inti
 
-### 1. Claude API Essentials
+### 1. Esensi Claude API
 
-Endpoint utama: `client.messages.create(...)`.
+Endpoint utama yang akan Anda pakai: `client.messages.create(...)`.
 
 | Parameter | Penjelasan |
 |---|---|
-| `model` | `claude-sonnet-4-5`, `claude-haiku-4-5`, dst. |
-| `max_tokens` | Cap output. Wajib. |
-| `system` | System prompt (string atau list of blocks). |
-| `messages` | List of `{role, content}`. role: user/assistant. |
-| `tools` | List tool schema (optional). |
-| `tool_choice` | `auto`, `any`, `{type:"tool", name}`. |
-| `temperature` | 0–1. Lebih rendah = lebih deterministik. |
-| `stream` | bool, streaming SSE. |
-| `metadata` | `{user_id: "..."}` untuk audit. |
+| `model` | `claude-sonnet-4-5`, `claude-haiku-4-5`, dan seterusnya |
+| `max_tokens` | Batas atas output. Wajib diisi. |
+| `system` | System prompt (berupa string atau list of blocks) |
+| `messages` | List of `{role, content}`. Role berupa user/assistant. |
+| `tools` | List schema tool (opsional) |
+| `tool_choice` | `auto`, `any`, atau `{type:"tool", name}` |
+| `temperature` | 0–1. Semakin rendah, semakin deterministik. |
+| `stream` | bool, untuk streaming SSE |
+| `metadata` | `{user_id: "..."}` untuk keperluan audit |
 
-### 2. Autentikasi & API Key Management
+### 2. Autentikasi dan Manajemen API Key
 
-- **JANGAN hardcode** `sk-ant-...` di source code.
-- Pakai env var: `os.environ["ANTHROPIC_API_KEY"]` atau `.env` + `python-dotenv`.
-- Di production: gunakan secret manager (AWS Secrets Manager, GCP Secret Manager, Vault).
-- Rotasi key berkala. Beri key per service / environment (dev/stg/prod).
-- Untuk multi-user app: gunakan **per-user metadata.user_id** untuk tracking abuse.
+Beberapa aturan yang wajib Anda patuhi sejak hari pertama:
+
+- **Jangan pernah hardcode** `sk-ant-...` di dalam source code.
+- Gunakan environment variable: `os.environ["ANTHROPIC_API_KEY"]` atau file `.env` dengan `python-dotenv`.
+- Di production, gunakan secret manager (AWS Secrets Manager, GCP Secret Manager, atau Vault).
+- Rotasi key secara berkala. Gunakan key terpisah per service dan per environment (dev/stg/prod).
+- Untuk aplikasi multi-pengguna, gunakan `metadata.user_id` per pengguna untuk melacak penyalahgunaan.
 
 ```python
 # .env
@@ -52,10 +55,10 @@ ANTHROPIC_API_KEY=sk-ant-xxxxx
 # code
 from dotenv import load_dotenv
 load_dotenv()
-client = Anthropic()  # otomatis baca env
+client = Anthropic()  # otomatis membaca dari env
 ```
 
-### 3. Backend Integration Pattern
+### 3. Pola Integrasi Backend
 
 ```mermaid
 flowchart LR
@@ -72,22 +75,22 @@ flowchart LR
     Orch -.logs.-> Obs[Observability<br/>OpenTelemetry / Log]
 ```
 
-Komponen wajib:
-- **Auth layer**: jangan ekspos Anthropic key ke frontend.
-- **Rate limit** per user (token bucket).
-- **Memory store** untuk multi-turn lintas request.
-- **Observability**: log request, token usage, latency, error rate.
+Komponen yang wajib hadir di arsitektur ini:
+- **Auth layer** — jangan pernah mengekspos Anthropic key ke frontend.
+- **Rate limit** per pengguna (token bucket).
+- **Memory store** untuk percakapan multi-turn lintas request.
+- **Observability** — catat request, penggunaan token, latensi, dan error rate.
 
 ### 4. Conversation Loop dengan State
 
-State minimum:
+State minimum yang perlu Anda kelola:
 - `messages: list[dict]`
 - `session_id: str`
 - `user_id: str`
 - `iter_count: int`
 - `budget_tokens: int` (sisa budget)
 
-Pola:
+Polanya:
 
 ```python
 def turn(session_id, user_input):
@@ -101,17 +104,17 @@ def turn(session_id, user_input):
 
 ### 5. Input/Output Handling
 
-**Input validation**:
-- Panjang max (cegah token bomb).
-- Strip / sanitize karakter aneh.
-- Deteksi prompt injection sederhana (regex keyword).
+**Validasi input** yang sebaiknya Anda lakukan:
+- Panjang maksimum (untuk mencegah *token bomb*).
+- Strip atau sanitize karakter yang tidak diinginkan.
+- Deteksi prompt injection sederhana (misalnya dengan regex keyword).
 
-**Output handling**:
-- Parse JSON dengan try-except.
-- Validasi schema (pydantic, zod).
-- Streaming: gunakan `client.messages.stream(...)` untuk UX responsif.
+**Penanganan output**:
+- Parse JSON dengan blok try-except.
+- Validasi schema (Pydantic untuk Python, Zod untuk TypeScript).
+- Streaming: gunakan `client.messages.stream(...)` untuk pengalaman pengguna yang lebih responsif.
 
-### 6. Agent Interaction Flow (Helpdesk IT contoh)
+### 6. Agent Interaction Flow (contoh: Helpdesk IT)
 
 ```mermaid
 sequenceDiagram
@@ -139,41 +142,45 @@ sequenceDiagram
     A->>U: "Saya buatkan tiket INC123, tim akan follow up <24 jam."
 ```
 
-### 7. Deployment Basics
+### 7. Dasar-Dasar Deployment
 
 | Aspek | Praktik |
 |---|---|
-| **Hosting** | Docker container di Cloud Run / ECS / VM |
-| **Secrets** | Secret manager, bukan env file di disk |
-| **Observability** | Structured log JSON; trace per session_id |
-| **Cost guard** | Budget cap per user per hari; alert > threshold |
+| **Hosting** | Docker container di Cloud Run, ECS, atau VM |
+| **Secrets** | Secret manager, bukan file env di disk |
+| **Observability** | Structured log dalam JSON; trace per session_id |
+| **Cost guard** | Budget cap per pengguna per hari; alert melebihi threshold |
 | **Reliability** | Retry dengan backoff (429/5xx); circuit breaker untuk tool |
-| **Safety** | Content filter, audit log untuk action irreversible |
-| **Versioning** | Pin model version; track perubahan prompt sebagai code |
+| **Safety** | Content filter, audit log untuk aksi yang tidak bisa dibatalkan |
+| **Versioning** | Pin model version; perlakukan perubahan prompt sebagai kode |
 
-### 8. Pola Production yang Sering Lupa
+### 8. Pola Production yang Sering Terlewat
 
-- **Idempotency key** untuk action eksternal (kirim email, create ticket).
-- **Timeout** di setiap tool call (jangan biarkan hang).
-- **Graceful degradation**: kalau Claude down → fallback response.
-- **PII redaction** di log.
-- **Compliance**: regional data residency, retention policy.
+- **Idempotency key** untuk aksi eksternal seperti kirim email atau create ticket.
+- **Timeout** di setiap tool call (jangan biarkan menggantung).
+- **Graceful degradation** — jika Claude tidak tersedia, berikan respons fallback.
+- **PII redaction** di dalam log.
+- **Compliance** — perhatikan regional data residency dan retention policy.
 
 ---
 
-## Demo Live (20 menit)
+## Praktik Mandiri (20 menit)
 
-Trainer mendemokan agent **IT Helpdesk** sederhana end-to-end:
+Mari Anda bangun sebuah agent **IT Helpdesk** sederhana dari awal hingga akhir. Tujuannya: merasakan integrasi system prompt, tool, conversation loop, hingga observasi log.
 
-1. **Bootstrap proyek**: struktur folder (`agent.py`, `tools.py`, `memory.py`, `.env`).
-2. **Definisikan 3 tool**: `search_kb`, `create_ticket`, `escalate_to_human`.
-3. **System prompt agent**: role IT helpdesk + policy + format.
-4. **Jalankan conversation loop CLI**: input user di terminal → agent reply → loop.
-5. **Skenario uji**:
-   - User: "Password saya lupa" → agent search KB → jawab dengan langkah reset.
-   - User: "Laptop tidak menyala" → agent search KB → kalau buntu, create ticket.
-   - User: "Saya butuh akses admin" → escalate ke human (policy: tidak self-serve).
-6. **Tunjukkan log**: token usage per turn, latency, tool dipakai.
+### Langkah-Langkahnya
+
+1. **Bootstrap proyek**: siapkan struktur folder berisi `agent.py`, `tools.py`, `memory.py`, dan `.env`.
+2. **Definisikan 3 tool**: `search_kb`, `create_ticket`, dan `escalate_to_human`.
+3. **Tulis system prompt agent**: tentukan role IT helpdesk, policy yang berlaku, dan format respons.
+4. **Jalankan conversation loop di CLI**: input pengguna di terminal → balasan agent → loop kembali.
+5. **Uji tiga skenario**:
+   - Pengguna: *"Password saya lupa."* → agent mencari KB → menjawab dengan langkah reset.
+   - Pengguna: *"Laptop tidak menyala."* → agent mencari KB → jika buntu, agent membuat tiket.
+   - Pengguna: *"Saya butuh akses admin."* → agent melakukan escalate (policy: tidak boleh self-serve).
+6. **Tinjau log**: penggunaan token per turn, latensi, dan tool yang dipakai di setiap langkah.
+
+Refleksi: di skenario mana agent paling rentan keliru? Apakah karena prompt, tool description, atau policy?
 
 ---
 
@@ -293,7 +300,7 @@ def safe_create(messages, system, tools, max_retries=3, budget_left=10000):
             time.sleep(1)
 ```
 
-> **Paralel JS**: pakai `@anthropic-ai/sdk`, struktur identik. Express/Fastify untuk backend; simpan state di Redis (`ioredis`).
+> **Paralel JS**: gunakan `@anthropic-ai/sdk` dengan struktur yang identik. Anda dapat memakai Express atau Fastify untuk backend; simpan state di Redis (misalnya dengan `ioredis`).
 
 ---
 
@@ -301,17 +308,19 @@ def safe_create(messages, system, tools, max_retries=3, budget_left=10000):
 
 Lanjut ke: [`lab-07-build-agent/`](./lab-07-build-agent/)
 
-Capstone Day 2: bangun mini AI Agent IT Helpdesk dengan 3 tool (`search_kb`, `create_ticket`, `escalate`) dan CLI conversation loop.
+Inilah capstone Day 2: Anda akan membangun mini AI Agent IT Helpdesk dengan tiga tool (`search_kb`, `create_ticket`, `escalate`) dan conversation loop berbasis CLI.
 
 ---
 
-## Wrap-up & Q&A
+## Latihan & Refleksi
 
-1. Sebutkan 3 hal yang TIDAK boleh terjadi di kode agent Anda terkait API key.
-2. Apa perbedaan menyimpan state di context window vs di Redis untuk multi-turn?
+Sebelum menutup Day 2, pastikan Anda mampu menjawab kelima pertanyaan berikut:
+
+1. Sebutkan tiga hal yang **tidak boleh** terjadi di kode agent Anda terkait API key.
+2. Apa bedanya menyimpan state di context window dibandingkan di Redis untuk percakapan multi-turn?
 3. Mengapa idempotency key penting untuk tool `create_ticket`?
-4. Apa indikator observability minimal yang harus Anda log per turn?
-5. Bagaimana strategi cost-guard sederhana yang bisa Anda terapkan besok?
+4. Apa indikator observability minimum yang harus Anda catat per turn?
+5. Bagaimana strategi *cost-guard* sederhana yang dapat Anda terapkan mulai besok?
 
 ---
 

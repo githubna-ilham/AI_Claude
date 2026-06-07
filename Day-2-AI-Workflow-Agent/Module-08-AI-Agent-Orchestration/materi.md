@@ -1,20 +1,21 @@
 # Module 8 — AI Agent Orchestration
 
-**Durasi:** 90 menit
-**Posisi:** Day 2, sesi sore setelah Modul 7
-**Prasyarat:** Modul 7 (konsep agent)
+**Durasi belajar:** ±90 menit
+**Posisi:** Day 2, sesi sore setelah Module 7
+**Prasyarat:** Module 7 (konsep agent)
+**Format:** Baca konsep → praktik mandiri → lab terintegrasi
 
 ---
 
-## Learning Outcomes
+## Apa yang Akan Anda Bisa Setelah Modul Ini
 
-Setelah modul ini, peserta mampu:
+Setelah selesai membaca dan mempraktikkan modul ini, Anda akan mampu:
 
-1. Membedakan **single-agent** vs **multi-agent** dan kapan pakai yang mana.
-2. Menjelaskan mekanisme **tool calling / function calling** di Claude API (request/response cycle).
-3. Menggambar **agent execution flow** lengkap dengan tool_use + tool_result loop.
-4. Mendesain **decision making & action planning** termasuk fallback ketika tool gagal.
-5. Mengimplementasi **task delegation** antar sub-agent (supervisor → worker).
+1. **Membedakan** *single-agent* dan *multi-agent*, serta tahu kapan harus memilih yang mana.
+2. **Menjelaskan** mekanisme *tool calling / function calling* pada Claude API (siklus request/response).
+3. **Menggambar** *agent execution flow* lengkap dengan loop tool_use dan tool_result.
+4. **Mendesain** *decision making* dan *action planning*, termasuk fallback ketika tool gagal.
+5. **Mengimplementasi** *task delegation* antar sub-agent (supervisor → worker).
 
 ---
 
@@ -22,25 +23,27 @@ Setelah modul ini, peserta mampu:
 
 ### 1. Single-Agent vs Multi-Agent
 
+Sebelum buru-buru membangun "tim agent", pahami terlebih dahulu trade-off-nya:
+
 | Aspek | Single-Agent | Multi-Agent |
 |---|---|---|
-| Jumlah LLM "role" | 1 | 2+ (supervisor, workers, critic, dsb.) |
-| State management | 1 conversation | Antar-agent communication |
-| Cocok untuk | Task moderat, 5–10 tool | Task kompleks, ekosistem tool besar, spesialisasi |
-| Complexity | Rendah–sedang | Tinggi |
+| Jumlah "role" LLM | 1 | 2 atau lebih (supervisor, workers, critic, dsb.) |
+| Manajemen state | 1 conversation | Komunikasi antar-agent |
+| Cocok untuk | Tugas moderat, 5–10 tool | Tugas kompleks, ekosistem tool besar, perlu spesialisasi |
+| Complexity | Rendah – sedang | Tinggi |
 | Cost | Lebih rendah | Bisa berlipat |
-| Debugging | Mudah | Sulit (perlu observability) |
+| Debugging | Mudah | Sulit (memerlukan observability) |
 
-**Heuristik**: mulai dari single-agent dengan tool. Naik ke multi-agent hanya ketika:
-- Tool > 15 sehingga LLM kebingungan memilih.
-- Sub-tasks butuh expertise berbeda (mis. coding vs research).
-- Paralelisasi memberi speedup signifikan.
+**Heuristik praktis**: mulailah dari single-agent dengan tool. Naik ke multi-agent hanya ketika:
+- Jumlah tool melebihi 15 sehingga LLM kebingungan memilih.
+- Sub-task membutuhkan keahlian yang berbeda (misalnya coding vs research).
+- Paralelisasi memberikan speedup yang signifikan.
 
 ### 2. Tool Calling di Claude API
 
-**Tool calling** = fitur di Claude di mana developer mendaftarkan daftar tools (schema JSON), lalu model bisa memutuskan untuk *meminta* eksekusi tool tertentu dengan argumen yang valid.
+**Tool calling** adalah fitur di mana Anda sebagai developer mendaftarkan daftar tool (dalam bentuk schema JSON) ke Claude. Model kemudian dapat memutuskan untuk *meminta* eksekusi tool tertentu dengan argumen yang valid.
 
-Siklus:
+Siklusnya:
 
 ```mermaid
 sequenceDiagram
@@ -59,12 +62,12 @@ sequenceDiagram
     A->>U: response
 ```
 
-Poin penting:
+Beberapa hal penting yang sering luput diperhatikan:
 
-- **Model tidak eksekusi tool** — hanya menghasilkan permintaan. *App* yang eksekusi.
-- App harus **append** tool_result ke history sebelum call lagi.
-- Loop sampai `stop_reason != "tool_use"` (biasanya `end_turn`).
-- Model bisa minta **multiple tool calls in parallel** dalam satu turn.
+- **Model tidak mengeksekusi tool** — model hanya menghasilkan permintaan. Aplikasi Anda yang melakukan eksekusi.
+- Aplikasi wajib **menambahkan** tool_result ke history sebelum melakukan call berikutnya.
+- Loop berlanjut hingga `stop_reason != "tool_use"` (biasanya menjadi `end_turn`).
+- Model dapat meminta **beberapa tool call paralel** dalam satu giliran.
 
 ### 3. Tool Schema
 
@@ -83,11 +86,11 @@ tools = [{
 }]
 ```
 
-Best practice:
-- **Description tajam**: kapan dipakai, kapan TIDAK dipakai.
-- **Schema ketat**: enum, required, format.
-- **Naming**: snake_case kata kerja (get_weather, search_database, send_email).
-- **Idempotency**: untuk tool yang punya side effect, sertakan idempotency_key di schema.
+Praktik terbaik yang sebaiknya Anda ikuti:
+- **Description yang tajam** — jelaskan kapan tool ini dipakai dan kapan tidak dipakai.
+- **Schema yang ketat** — gunakan enum, required, dan format.
+- **Penamaan** — pakai snake_case berupa kata kerja (`get_weather`, `search_database`, `send_email`).
+- **Idempotency** — untuk tool yang memiliki side effect, sertakan `idempotency_key` di schema.
 
 ### 4. Agent Execution Flow
 
@@ -109,19 +112,19 @@ flowchart TB
 
 ### 5. Decision Making & Action Planning
 
-Model mengambil keputusan berdasarkan:
+Model mengambil keputusan berdasarkan beberapa sumber informasi:
 - **System prompt** (persona + policy).
 - **Conversation history**.
 - **Tool descriptions**.
-- **Tool results** sebelumnya.
+- **Tool results** dari iterasi sebelumnya.
 
-Pola yang membantu:
-- Tambahkan instruksi: *"Plan first in 2–3 bullets, then call tools."* — sering disebut **chain-of-thought scaffolding**. Untuk Claude juga bisa pakai extended thinking pada model yang mendukung.
-- Sediakan tool `give_up` / `ask_clarification` agar model tidak halusinasi saat buntu.
+Beberapa pola yang membantu kualitas keputusan model:
+- Tambahkan instruksi seperti: *"Plan first in 2–3 bullets, then call tools."* — sering disebut **chain-of-thought scaffolding** (pola yang memaksa model menuliskan rencana terlebih dahulu). Untuk model Claude yang mendukungnya, Anda juga dapat memanfaatkan *extended thinking*.
+- Sediakan tool seperti `give_up` atau `ask_clarification` agar model tidak berhalusinasi ketika menemui jalan buntu.
 
 ### 6. Task Delegation (Multi-Agent)
 
-Pola dasar **Supervisor → Workers**:
+Pola dasar yang paling umum adalah **Supervisor → Workers**:
 
 ```mermaid
 flowchart TB
@@ -135,38 +138,42 @@ flowchart TB
     Supervisor --> Final[Final Answer]
 ```
 
-Implementasi: supervisor punya tool `delegate(worker_name, sub_task)`. Setiap worker adalah `messages.create` terpisah dengan system prompt khusus. Hasil dikembalikan ke supervisor.
+Implementasinya: supervisor memiliki tool `delegate(worker_name, sub_task)`. Setiap worker merupakan panggilan `messages.create` tersendiri dengan system prompt yang khusus. Hasil dari worker dikembalikan ke supervisor untuk disintesa.
 
-Risiko multi-agent:
-- **Cost berlipat** (setiap agent = call sendiri).
-- **Loss in translation** antar agent → output supervisor harus structured.
-- **Loop antar-agent** jika tidak ada termination.
+Risiko yang perlu Anda antisipasi pada multi-agent:
+- **Cost berlipat** — setiap agent adalah satu call tersendiri.
+- **Loss in translation** antar agent — output supervisor sebaiknya selalu terstruktur.
+- **Loop antar-agent** jika tidak ada mekanisme termination.
 
 ### 7. Error Handling untuk Tool Calls
 
 | Skenario | Strategi |
 |---|---|
-| Tool throw exception | Return `tool_result` dengan `is_error=true` + pesan singkat |
-| Tool return data besar | Truncate + summary, simpan full di memory eksternal |
-| Tool butuh confirm user | Pause, kirim ke human-in-loop UI |
-| Tool tidak ada di whitelist | App tolak, kirim error ke model |
-| Argument invalid | Tolak, beri tahu skema yang benar |
+| Tool melempar exception | Kembalikan `tool_result` dengan `is_error=true` dan pesan singkat |
+| Tool mengembalikan data besar | Lakukan truncate + summary; simpan konten penuh di memory eksternal |
+| Tool butuh konfirmasi pengguna | Hentikan sementara, kirim ke UI human-in-the-loop |
+| Tool tidak ada di whitelist | Aplikasi menolak, kirimkan pesan error ke model |
+| Argumen invalid | Tolak, beritahu skema yang benar |
 
 ### 8. Observability
 
-Tracing penting: log per turn → `input_messages`, `tool_used`, `tool_input`, `tool_output`, `latency`, `tokens`, `cost`. Tools: OpenTelemetry, LangSmith, custom JSON log.
+Tracing menjadi krusial: catat setiap turn beserta `input_messages`, `tool_used`, `tool_input`, `tool_output`, `latency`, `tokens`, dan `cost`. Tooling yang dapat Anda gunakan: OpenTelemetry, LangSmith, atau custom JSON log.
 
 ---
 
-## Demo Live (15 menit)
+## Praktik Mandiri (15 menit)
 
-Trainer mendemokan tool calling dengan 3 tool dummy:
+Mari Anda eksplorasi tool calling dengan tiga tool dummy berikut. Tujuannya agar Anda merasakan langsung bagaimana model memilih tool secara mandiri.
 
-1. **Definisikan 3 tools**: `get_weather`, `search_database` (mock customer DB), `send_email`.
-2. **User query 1**: "Cek cuaca Jakarta hari ini" → expect: model panggil `get_weather`.
-3. **User query 2**: "Cari email customer bernama Budi" → expect: `search_database`.
-4. **User query 3**: "Cek cuaca Surabaya dan kirim email ringkasan ke admin@toko.id" → expect: 2 tool call berurutan / paralel.
-5. **Error injection**: bikin `search_database` raise → tunjukkan model recover dengan klarifikasi.
+### Langkah-Langkahnya
+
+1. **Definisikan 3 tool**: `get_weather`, `search_database` (mock customer DB), dan `send_email`.
+2. **Query 1**: "Cek cuaca Jakarta hari ini." Harapan: model memanggil `get_weather`.
+3. **Query 2**: "Cari email customer bernama Budi." Harapan: model memanggil `search_database`.
+4. **Query 3**: "Cek cuaca Surabaya dan kirim email ringkasan ke admin@toko.id." Harapan: dua tool call berurutan atau paralel.
+5. **Eksperimen error**: buat `search_database` melempar exception, lalu amati bagaimana model pulih dengan meminta klarifikasi.
+
+Refleksi: pada query mana model paling rentan salah memilih tool? Apakah deskripsi tool Anda sudah cukup tajam?
 
 ---
 
@@ -260,7 +267,7 @@ def supervisor(goal: str):
     return call_claude("supervisor", system="Synthesize final answer.", user=str(results))
 ```
 
-> **Paralel JS**: `client.messages.create({ model, tools, messages })` dengan struktur tool_use / tool_result yang identik. Iterasi pakai while-loop.
+> **Paralel JS**: gunakan `client.messages.create({ model, tools, messages })` dengan struktur tool_use / tool_result yang identik. Iterasi dapat dibuat menggunakan while-loop.
 
 ---
 
@@ -268,17 +275,19 @@ def supervisor(goal: str):
 
 Lanjut ke: [`lab-06-tool-calling/`](./lab-06-tool-calling/)
 
-Peserta mengimplementasikan tool calling end-to-end dengan 3 tool dummy dan minimum 4 user query yang menguji decision making model.
+Pada lab ini Anda akan mengimplementasikan tool calling end-to-end dengan tiga tool dummy dan minimal empat query pengguna yang menguji kemampuan *decision making* model.
 
 ---
 
-## Wrap-up & Q&A
+## Latihan & Refleksi
 
-1. Apakah model "menjalankan" tool atau hanya "meminta"? (jawab: meminta — app yang eksekusi)
-2. Apa yang terjadi kalau Anda lupa append `tool_result` ke history? (jawab: error / model tidak bisa lanjut)
-3. Sebutkan 2 alasan memilih single-agent dibanding multi-agent.
-4. Bagaimana mencegah agent stuck di tool yang sama berulang? (jawab: max iter, deteksi pengulangan, tool description lebih jelas)
-5. Kapan paralelisasi tool call membantu, kapan justru merepotkan?
+Sebelum melanjutkan ke Module 9, pastikan Anda mampu menjawab kelima pertanyaan berikut:
+
+1. Apakah model "menjalankan" tool atau hanya "meminta"? (Petunjuk: model hanya meminta — aplikasi Anda yang mengeksekusi.)
+2. Apa yang terjadi jika Anda lupa menambahkan `tool_result` ke history? (Petunjuk: error atau model tidak dapat melanjutkan.)
+3. Sebutkan dua alasan memilih single-agent dibandingkan multi-agent.
+4. Bagaimana cara mencegah agent terjebak memanggil tool yang sama berulang-ulang? (Petunjuk: max iter, deteksi pengulangan, dan deskripsi tool yang lebih jelas.)
+5. Kapan paralelisasi tool call membantu, dan kapan justru merepotkan?
 
 ---
 
