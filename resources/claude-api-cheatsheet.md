@@ -4,29 +4,61 @@ Ringkasan endpoint, parameter, dan pola integrasi Claude API untuk dipegang pese
 
 > Dokumentasi resmi: https://docs.anthropic.com/
 
+> ⚠️ **Status migrasi (2026-06-10)**: Pelatihan ini menggunakan stack **JavaScript/TypeScript** (`@anthropic-ai/sdk` + Next.js). Section 1 sudah migrasi ke JS. **Section 2 dan seterusnya masih menggunakan snippet Python** dan akan dimigrasi ke JS bersamaan dengan rombak materi Day 2–4. Konsep, parameter, dan field response identik antara SDK Python dan JS — hanya sintaks pemanggilan yang berbeda. Pemetaan singkat ada di akhir Section 1.
+
 ---
 
 ## 1. Setup Awal
 
-### Python
+### Node.js / TypeScript
 
 ```bash
-pip install anthropic
-export ANTHROPIC_API_KEY="sk-ant-..."
+npm install @anthropic-ai/sdk
 ```
 
-```python
-from anthropic import Anthropic
+Buat file `.env.local` di root project (Next.js convention):
 
-client = Anthropic()  # otomatis baca env ANTHROPIC_API_KEY
-
-resp = client.messages.create(
-    model="claude-sonnet-4-5",
-    max_tokens=1024,
-    messages=[{"role": "user", "content": "Halo Claude!"}],
-)
-print(resp.content[0].text)
+```env
+ANTHROPIC_API_KEY=sk-ant-api03-...
 ```
+
+Pemakaian dasar (file `.mjs` atau di Next.js Server Action / Route Handler):
+
+```javascript
+import 'dotenv/config';
+import Anthropic from '@anthropic-ai/sdk';
+
+const client = new Anthropic(); // otomatis baca env ANTHROPIC_API_KEY
+
+const resp = await client.messages.create({
+  model: 'claude-sonnet-4-5',
+  max_tokens: 1024,
+  messages: [{ role: 'user', content: 'Halo Claude!' }],
+});
+
+console.log(resp.content[0].text);
+```
+
+Jalankan standalone:
+
+```bash
+node --env-file=.env.local hello.mjs
+```
+
+### Pemetaan Python ↔ JavaScript SDK
+
+Snippet Python di section berikutnya dapat ditranslasi ke JS dengan pola berikut:
+
+| Python                                          | JavaScript (`@anthropic-ai/sdk`)                       |
+| ----------------------------------------------- | ------------------------------------------------------ |
+| `from anthropic import Anthropic`               | `import Anthropic from '@anthropic-ai/sdk';`           |
+| `client = Anthropic()`                          | `const client = new Anthropic();`                      |
+| `client.messages.create(model=..., ...)`        | `await client.messages.create({ model: ..., ... })`    |
+| `client.messages.stream(...)`                   | `client.messages.stream({ ... })` (async iterator)     |
+| `resp.content[0].text`                          | `resp.content[0].text` (identik)                       |
+| `resp.usage.input_tokens`                       | `resp.usage.input_tokens` (identik)                    |
+| `tool_use_id`, `tools=[...]`                    | `tool_use_id`, `tools: [...]` (struktur JSON identik)  |
+| `os.environ["ANTHROPIC_API_KEY"]`               | `process.env.ANTHROPIC_API_KEY`                        |
 
 ### JavaScript / TypeScript
 

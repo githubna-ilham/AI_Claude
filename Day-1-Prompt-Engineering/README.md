@@ -68,19 +68,15 @@ Day-1-Prompt-Engineering/
 ├── README.md                                       <- file ini
 ├── Module-01-Introduction-LLM-Claude/
 │   ├── materi.md
-│   ├── speaker-notes.md
-│   └── diskusi.md
+│   └── latihan.md
 ├── Module-02-Prompt-Engineering-Basics/
 │   ├── materi.md
-│   ├── speaker-notes.md
 │   └── lab-01-anatomy-prompt/README.md
 ├── Module-03-Prompting-Techniques/
 │   ├── materi.md
-│   ├── speaker-notes.md
 │   └── lab-02-zero-few-cot/README.md
 └── Module-04-Structured-Output-Optimization/
     ├── materi.md
-    ├── speaker-notes.md
     └── lab-03-json-output-evaluation/README.md
 ```
 

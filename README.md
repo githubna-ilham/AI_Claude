@@ -32,11 +32,12 @@ Setelah mengikuti pelatihan ini, peserta mampu:
 ## Prasyarat
 
 - Pemahaman dasar AI / ChatGPT / Claude
-- Basic programming (Python atau JavaScript)
+- Basic programming JavaScript / TypeScript (familiar React/Next.js merupakan nilai tambah, tetapi tidak wajib — kode starter sudah disediakan)
 - Pemahaman dasar API & aplikasi web
 - Familiar dengan workflow digital bisnis
 - Laptop minimal 8 GB RAM, koneksi internet stabil
 - Anthropic API key (disediakan fasilitator atau peserta mendaftar di console.anthropic.com)
+- Akun Supabase (free tier) untuk Day 2–4
 - Sudah mengisi **[Pretest](pretest/PRETEST-AI-Claude.md)** sebelum hari pertama
 
 ---
@@ -90,32 +91,38 @@ AI_Claude/
 
 ## Tools & Technologies
 
-1. **Claude** (claude.ai untuk eksplorasi, console.anthropic.com untuk API)
-2. **Claude API** — Python SDK (`anthropic`) sebagai default, JS SDK (`@anthropic-ai/sdk`) sebagai alternatif
-3. **Python 3.11+** / **Node.js 20+**
-4. **Vector Database** — Chroma (lokal) atau pgvector; opsi cloud Pinecone/Weaviate
-5. **LangChain / Agent Framework** (opsional — fokus utama vanilla Claude API agar peserta paham fundamental)
-6. **REST API integration tools** — Postman / Insomnia
-7. **AI Workflow tools** — overview konseptual (n8n, Make, Zapier untuk konteks low-code)
+1. **Claude** (claude.ai untuk eksplorasi, console.anthropic.com untuk API & Workbench)
+2. **Claude API** — JavaScript/TypeScript SDK (`@anthropic-ai/sdk`) sebagai default tunggal
+3. **Node.js 20 LTS+** (idealnya 22 LTS) — runtime utama untuk seluruh hands-on
+4. **Next.js 16 (App Router) + TypeScript + Tailwind CSS + Shadcn UI** — stack project hands-on `fin-app`
+5. **Supabase (Postgres)** — database utama + extension **`pgvector`** untuk RAG di Day 3
+6. **Voyage AI** — embedding provider default (cloud, free tier cukup)
+7. **REST API integration tools** — Postman / Insomnia (opsional)
+8. **AI Workflow tools** — overview konseptual (n8n, Make, Zapier untuk konteks low-code)
+9. **Vercel** (opsional) — untuk deploy capstone Day 4
 
 ---
 
 ## Persiapan untuk Peserta (H-1)
 
-- [ ] Install Python 3.11+ dan/atau Node.js 20+
-- [ ] Install editor (Cursor / VS Code direkomendasikan)
+- [ ] Install Node.js 20 LTS+ (idealnya 22 LTS)
+- [ ] Install editor (Cursor / VS Code direkomendasikan) + extensions ESLint, Tailwind IntelliSense, Prettier
 - [ ] Buat akun Anthropic Console: https://console.anthropic.com
 - [ ] Dapatkan API key dari fasilitator (atau generate sendiri, top-up minimal $5)
+- [ ] Buat akun Supabase: https://supabase.com (free tier; buat project baru region Singapore)
+- [ ] Buat akun Voyage AI: https://www.voyageai.com (untuk embedding di Day 3)
 - [ ] Clone repo materi: `git clone https://github.com/githubna-ilham/AI_Claude.git`
-- [ ] `pip install anthropic chromadb` (atau ekuivalen Node.js)
+- [ ] Clone repo `fin-app` starter (link dari fasilitator) → `npm install`
+- [ ] Jalankan smoke test JS untuk verifikasi API key (instruksi di `PENDAHULUAN.md`)
 - [ ] Isi pretest (deadline H-3)
 
 ## Persiapan untuk Fasilitator
 
 - [ ] Analisis hasil pretest → tentukan kedalaman teknis & use case dominan
 - [ ] Siapkan akun Anthropic Console dengan budget cukup untuk demo & hands-on
+- [ ] Siapkan repo `fin-app` starter (iterasi 1 CRUD selesai) untuk dibagikan H-3
 - [ ] Siapkan dummy data: dokumen SOP, CSV transaksi, sample tiket, kontrak PDF
-- [ ] Siapkan vector DB lokal (Chroma docker / pgvector) yang terverifikasi jalan
+- [ ] Siapkan Supabase project demo dengan `pgvector` extension sudah aktif
 - [ ] Cetak handout cheatsheet & checklist responsible AI
 - [ ] Setup proyektor, internet ruang kelas, dan UPS minimal untuk demo
 
@@ -140,7 +147,7 @@ AI_Claude/
 Setiap module mengikuti format seragam:
 
 - `materi.md` — bahan utama (Learning Outcomes → Konsep Inti + diagram mermaid → Demo Live → Contoh Konkret → Hands-on Lab → Q&A → Bacaan Lanjutan)
-- `speaker-notes.md` — cue fasilitator, alokasi waktu, jawaban kunci, common pitfall
+- `latihan.md` (opsional) — latihan terstruktur untuk modul yang dominan konseptual
 - `lab-*/README.md` — folder hands-on dengan brief, langkah, dan rubrik
 
 ## Kontak

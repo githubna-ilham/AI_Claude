@@ -2,6 +2,8 @@
 
 > Persyaratan teknis untuk **peserta** dan **fasilitator** pelatihan AI Claude (4 hari).
 > Verifikasi semua item ini selesai **H-1** sebelum pelatihan dimulai.
+>
+> **Catatan stack**: Mulai cohort ini, seluruh hands-on menggunakan **JavaScript/TypeScript (Next.js)**. Tidak lagi menggunakan Python. Alasan: alignment dengan project demo `fin-app` (Next.js + Supabase + Shadcn UI) yang dipakai sebagai backbone hands-on Day 2 hingga Capstone.
 
 ---
 
@@ -32,9 +34,9 @@
 
 ### A.3 Catatan Penting
 
-- **RAM 16 GB sangat direkomendasikan** untuk Day 3 (vector DB lokal + embedding model + IDE + browser). Dengan 8 GB masih bisa, tapi peserta perlu tutup aplikasi lain.
-- **GPU tidak wajib.** Semua inference LLM lewat Claude API (cloud). Embedding bisa pakai cloud (Voyage AI) atau CPU lokal (sentence-transformers — lebih lambat tapi tetap jalan).
-- **Tablet / Chromebook TIDAK direkomendasikan** — banyak lab perlu install Python, Node.js, dan jalankan server lokal.
+- **RAM 8 GB sudah cukup** untuk stack JS (Next.js dev server + browser + editor). RAM 16 GB membuat workflow Day 3-4 (multi-tab + dev server + Supabase Studio) jauh lebih nyaman.
+- **GPU tidak wajib.** Inference LLM lewat Claude API (cloud). Embedding lewat Voyage AI (cloud) atau model di Supabase Edge (cloud) — tidak ada beban lokal.
+- **Tablet / Chromebook TIDAK direkomendasikan** — banyak lab perlu install Node.js, jalankan dev server lokal, dan operasi terminal.
 - **Mouse eksternal** opsional tapi membantu untuk Day 3-4 (banyak coding).
 
 ---
@@ -45,79 +47,118 @@
 
 | Software       | Versi minimum | Wajib?                         | Link install                                  |
 | -------------- | ------------- | ------------------------------ | --------------------------------------------- |
-| **Python**     | 3.11+         | Wajib (default lab)            | https://www.python.org/downloads/             |
-| **pip**        | (bundled)     | Wajib                          | (ikut Python)                                 |
-| **Node.js**    | 20 LTS+       | Opsional (alternatif JS)       | https://nodejs.org/                           |
+| **Node.js**    | **20 LTS+** (idealnya 22 LTS) | **Wajib (default semua lab)** | https://nodejs.org/                           |
+| **npm**        | bundled (≥10) | Wajib                          | (ikut Node.js)                                |
 | **Git**        | latest        | Wajib                          | https://git-scm.com/downloads                 |
+
+> 💡 **Tips Node.js**: Gunakan **nvm** (macOS/Linux: https://github.com/nvm-sh/nvm, Windows: https://github.com/coreybutler/nvm-windows) untuk manage multiple versi Node.js. Berguna jika peserta sudah memiliki project lain dengan versi Node.js berbeda.
 
 ### B.2 Editor / IDE (pilih salah satu)
 
-| Editor                 | Rekomendasi untuk                                  |
-| ---------------------- | -------------------------------------------------- |
-| **VS Code**            | Default — paling universal                         |
-| **Cursor**             | Rekomendasi #1 (sinergi dengan pelatihan AI Cursor)|
-| **PyCharm Community**  | Bila peserta sudah biasa JetBrains                 |
-| **Jupyter Lab**        | Tambahan untuk eksplorasi notebook                 |
+| Editor                 | Rekomendasi untuk                                    | Link download                                  |
+| ---------------------- | ---------------------------------------------------- | ---------------------------------------------- |
+| **VS Code**            | Default — paling universal                           | https://code.visualstudio.com/download         |
+| **Cursor**             | Rekomendasi #1 (sinergi dengan workflow AI-assisted) | https://cursor.com/download                    |
+| **WebStorm**           | Bila peserta sudah biasa JetBrains                   | https://www.jetbrains.com/webstorm/download/   |
+
+**Extension VS Code yang direkomendasikan** (install dari Marketplace tab di dalam VS Code, atau klik link di bawah):
+
+| Extension                              | Fungsi                              | Link Marketplace                                                                                       |
+| -------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **ESLint** (dbaeumer)                  | Linting otomatis                    | https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint                             |
+| **Tailwind CSS IntelliSense** (bradlc) | Autocomplete class Tailwind         | https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss                          |
+| **Prettier** (esbenp)                  | Format kode otomatis                | https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode                             |
+| **GitLens** (eamodio)                  | History git lebih detail di editor  | https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens                                    |
 
 ### B.3 Browser
 
-- **Chrome / Edge / Firefox** versi terbaru
-- Direkomendasikan: profile khusus pelatihan agar terisolasi dari akun pribadi
+Pilih salah satu (versi terbaru). Disarankan membuat **profile khusus pelatihan** agar terisolasi dari akun pribadi.
+
+| Browser     | Link download                                  |
+| ----------- | ---------------------------------------------- |
+| **Chrome**  | https://www.google.com/chrome/                 |
+| **Edge**    | https://www.microsoft.com/edge/download        |
+| **Firefox** | https://www.mozilla.org/firefox/new/           |
+| **Brave** (opsional) | https://brave.com/download/           |
 
 ### B.4 Tools Tambahan
 
-| Tool                  | Fungsi di pelatihan                          | Wajib? |
-| --------------------- | -------------------------------------------- | ------ |
-| **Postman / Insomnia**| Test Claude API request manual               | Opsional |
-| **Docker Desktop**    | Run Chroma / pgvector via container          | Opsional (alternatif ada) |
-| **DBeaver**           | Inspect vector DB (pgvector)                 | Opsional |
-| **Slack / Telegram**  | Channel pelatihan untuk Q&A                  | Wajib (1 dari ini) |
+| Tool                  | Fungsi di pelatihan                          | Wajib? | Link download                                                  |
+| --------------------- | -------------------------------------------- | ------ | -------------------------------------------------------------- |
+| **Postman**           | Test Claude API request manual               | Opsional | https://www.postman.com/downloads/                           |
+| **Insomnia**          | Alternatif Postman (lebih ringan)            | Opsional | https://insomnia.rest/download                                |
+| **Supabase CLI**      | Manage migration & local dev Supabase        | Opsional (semua bisa via Supabase Studio web) | https://supabase.com/docs/guides/local-development/cli/getting-started |
+| **DBeaver**           | Inspect database Postgres (cross-platform, gratis) | Opsional | https://dbeaver.io/download/                            |
+| **TablePlus**         | Alternatif DBeaver (UI lebih modern, free tier) | Opsional | https://tableplus.com/download                             |
+| **Slack**             | Channel pelatihan untuk Q&A                  | Wajib (1 dari ini) | https://slack.com/downloads                          |
+| **Telegram Desktop**  | Channel pelatihan untuk Q&A                  | Wajib (1 dari ini) | https://desktop.telegram.org/                        |
 
 ---
 
-## C. Python Packages (Install di Virtual Environment)
+## C. Inisialisasi Project & Package (Install H-1)
 
-Buat virtualenv & install. Pre-install H-1.
+Pelatihan ini menggunakan **template project `fin-app`** (Next.js 16 + TypeScript + Tailwind + Shadcn UI) yang akan dikembangkan bertahap dari Day 2 sampai Capstone.
 
-```bash
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -U pip
-pip install -r requirements.txt
-```
-
-**`requirements.txt`:**
-
-```
-anthropic>=0.40.0
-python-dotenv>=1.0.0
-fastapi>=0.115.0
-uvicorn[standard]>=0.32.0
-streamlit>=1.40.0
-chromadb>=0.5.0
-sentence-transformers>=3.0.0
-voyageai>=0.3.0
-pypdf>=5.0.0
-python-docx>=1.1.0
-pandas>=2.2.0
-tiktoken>=0.8.0
-tenacity>=9.0.0
-pydantic>=2.9.0
-httpx>=0.27.0
-```
-
-**Verifikasi instalasi:**
+### C.1 Clone Repo Pelatihan
 
 ```bash
-python -c "import anthropic, chromadb, fastapi; print('OK')"
+git clone https://github.com/githubna-ilham/AI_Claude.git
+cd AI_Claude
 ```
 
-### Node.js Packages (Opsional, untuk peserta JS)
+### C.2 Clone Template Hands-on (`fin-app`)
+
+Project starter berada di repo terpisah (dishare fasilitator H-3). Setelah di-clone:
 
 ```bash
-npm init -y
-npm install @anthropic-ai/sdk dotenv express
+cd fin-app
+npm install
 ```
+
+Perintah `npm install` akan menarik semua dependensi dari `package.json`. Dependensi inti yang digunakan sepanjang pelatihan:
+
+```json
+{
+  "dependencies": {
+    "next": "^16.2.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "@anthropic-ai/sdk": "^0.30.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "zod": "^3.23.0",
+    "date-fns": "^4.0.0",
+    "voyageai": "^0.0.4"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "tailwindcss": "^4",
+    "@tailwindcss/postcss": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "^16.2.6"
+  }
+}
+```
+
+> 💡 Daftar di atas adalah **target final** setelah seluruh hari selesai. Beberapa paket (Anthropic SDK, Voyage AI) baru di-install saat hari relevan (Day 2 dan Day 3) — instruksi `npm install` per hari akan ada di materi tiap modul.
+
+### C.3 Verifikasi Instalasi Node.js & npm
+
+```bash
+node --version    # harus ≥ v20.x
+npm --version     # harus ≥ 10.x
+git --version
+```
+
+### C.4 Verifikasi Dev Server
+
+```bash
+cd fin-app
+npm run dev
+```
+
+Buka http://localhost:3000 — halaman Next.js default harus muncul. Hentikan dev server dengan `Ctrl+C`.
 
 ---
 
@@ -126,51 +167,78 @@ npm install @anthropic-ai/sdk dotenv express
 | Layanan                       | Wajib?  | Cara setup                                                    | Catatan biaya                              |
 | ----------------------------- | ------- | ------------------------------------------------------------- | ------------------------------------------ |
 | **Anthropic Console**         | **WAJIB** | https://console.anthropic.com → sign up → generate API key  | Top-up min $5; pelatihan habiskan ~$2-5/peserta |
-| **Voyage AI**                 | Rekomendasi | https://www.voyageai.com → sign up → API key              | Free tier cukup untuk pelatihan            |
+| **Supabase**                  | **WAJIB** | https://supabase.com → sign up → buat project baru           | Free tier cukup (500 MB DB, 2 GB bandwidth) |
+| **Voyage AI**                 | **WAJIB (Day 3)** | https://www.voyageai.com → sign up → API key            | Free tier cukup untuk pelatihan            |
 | **GitHub**                    | Wajib   | Akun GitHub aktif                                             | Free                                       |
 | **Google Account**            | Wajib   | Untuk akses Google Form pretest/posttest                      | Free                                       |
-| **OpenAI API** (alternatif embedding) | Opsional | https://platform.openai.com                            | Bayar per token                            |
-| **Pinecone / Weaviate**       | Opsional | Hanya jika mau cloud vector DB                                | Free tier ada                              |
+| **Vercel**                    | Opsional | https://vercel.com (login dengan GitHub) untuk deploy capstone | Free hobby tier cukup                    |
 
-### D.1 Setup API Key (penting!)
+### D.1 Setup Anthropic API Key
 
 Tiap peserta WAJIB:
 
 1. Generate Anthropic API key dari https://console.anthropic.com/settings/keys
 2. Top-up minimum $5 (atau gunakan key yang disediakan fasilitator)
-3. Set environment variable:
+3. Simpan key di file `.env.local` project (bukan environment variable global, supaya tidak bocor ke project lain):
 
-   **macOS / Linux:**
+   ```env
+   ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxx
+   ```
+
+4. Verifikasi (jalankan dari folder `fin-app/` setelah `npm install @anthropic-ai/sdk dotenv`):
+
    ```bash
-   echo 'export ANTHROPIC_API_KEY="sk-ant-..."' >> ~/.zshrc
-   source ~/.zshrc
+   node -e "import('dotenv').then(d=>d.config({path:'.env.local'})).then(()=>import('@anthropic-ai/sdk')).then(({default:Anthropic})=>new Anthropic().messages.create({model:'claude-haiku-4-5',max_tokens:20,messages:[{role:'user',content:'ping'}]})).then(r=>console.log(r.content[0].text))"
    ```
 
-   **Windows (PowerShell):**
-   ```powershell
-   [Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", "sk-ant-...", "User")
+   Hasil yang diharapkan: muncul respons singkat dari Claude di terminal.
+
+### D.2 Setup Supabase Project
+
+1. Buat project baru di https://supabase.com/dashboard → **New project**
+2. Pilih region terdekat (Singapore untuk Indonesia)
+3. Tunggu provisioning ~2 menit, lalu masuk ke **Project Settings → API**
+4. Catat 2 nilai ini ke `.env.local`:
+
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxx.supabase.co
+   SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJI...
    ```
 
-4. Verifikasi:
-   ```bash
-   python -c "from anthropic import Anthropic; print(Anthropic().messages.create(model='claude-haiku-4-5', max_tokens=20, messages=[{'role':'user','content':'ping'}]).content[0].text)"
+5. (Day 3 only) Aktifkan extension **`vector`** untuk RAG:
+   - Buka **Database → Extensions** → search `vector` → enable. Detail penggunaan dibahas di materi Day 3.
+
+### D.3 Setup Voyage AI (Day 3)
+
+1. Sign up di https://www.voyageai.com
+2. Generate API key, tambahkan ke `.env.local`:
+
+   ```env
+   VOYAGE_API_KEY=pa-xxxxxxxxxxxx
    ```
 
-### D.2 `.env` Template
+### D.4 `.env.local` Template Lengkap
 
-Setiap project folder pakai `.env` (jangan commit ke git):
+Setiap project pakai `.env.local` (Next.js convention) — jangan commit ke git:
 
 ```env
-ANTHROPIC_API_KEY=sk-ant-...
+# Anthropic (Day 2+)
+ANTHROPIC_API_KEY=sk-ant-api03-...
+
+# Supabase (Day 2+)
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJI...
+
+# Voyage AI (Day 3)
 VOYAGE_API_KEY=pa-...
 ```
 
-Pastikan `.gitignore` berisi:
+Pastikan `.gitignore` berisi (Next.js default sudah cover, tapi worth checking):
+
 ```
-.env
-.venv/
-__pycache__/
-chroma_demo/
+.env*.local
+node_modules/
+.next/
 ```
 
 ---
@@ -179,36 +247,38 @@ chroma_demo/
 
 ### Day 1 — Prompt Engineering Fundamentals
 
-**Peserta cukup:** browser + akun Anthropic Console. **Belum perlu coding.**
+**Peserta cukup browser + akun Anthropic Console. Belum perlu coding.**
 
-- [ ] Akses https://claude.ai (free tier OK)
-- [ ] Akses https://console.anthropic.com/workbench (untuk demo parameter)
+- [ ] Akses https://claude.ai (free tier OK, Pro lebih nyaman)
+- [ ] Akses https://console.anthropic.com/workbench (untuk demo parameter + prefill)
 - [ ] Pretest sudah diisi
 
-### Day 2 — AI Workflow & Agent
+### Day 2 — AI Workflow & Agent (dengan `fin-app`)
 
-**Mulai coding:**
+**Mulai coding dengan stack JavaScript:**
 
-- [ ] Python venv siap, `pip install anthropic python-dotenv` jalan
-- [ ] API key sudah di env var (verifikasi dengan curl/python test)
-- [ ] Editor + GitHub repo materi sudah di-clone
-- [ ] Postman/Insomnia (opsional, untuk eksplorasi raw API)
+- [ ] Node.js 20+ ter-install (`node --version`)
+- [ ] Repo `fin-app` sudah di-clone, `npm install` jalan tanpa error
+- [ ] `npm run dev` berhasil menampilkan halaman di http://localhost:3000
+- [ ] Anthropic API key sudah di `.env.local` + verifikasi smoke test JS jalan
+- [ ] Supabase project sudah dibuat, URL + service-role key di `.env.local`
+- [ ] Editor (VS Code / Cursor) + ESLint + Tailwind IntelliSense terinstal
 
-### Day 3 — AI App + RAG
+### Day 3 — AI App + RAG (dengan Supabase pgvector)
 
-**Paling intensive di hardware/software:**
+**Paling intensive setup:**
 
-- [ ] FastAPI + uvicorn berfungsi: `uvicorn --version`
-- [ ] Streamlit berfungsi: `streamlit hello`
-- [ ] Chroma jalan lokal: `python -c "import chromadb; chromadb.PersistentClient(path='./test_db')"`
-- [ ] Voyage AI key (atau sentence-transformers downloaded — first run ~80 MB)
-- [ ] Sample dokumen sudah ada di folder lab
-- [ ] Disk space cek: minimum 5 GB free (untuk models + chroma)
+- [ ] Extension `vector` (pgvector) di Supabase project sudah enabled
+- [ ] Voyage AI key sudah di `.env.local`
+- [ ] Sample dokumen sudah ada di folder lab (disediakan fasilitator)
+- [ ] Disk space cek: minimum 5 GB free (untuk dependencies + sample data)
+- [ ] Browser bisa akses Supabase Studio (kadang diblokir corporate proxy)
 
 ### Day 4 — Product, Governance, Capstone
 
-- [ ] Slide deck tool: Google Slides / PowerPoint / Keynote
-- [ ] Optional: Figma/Miro untuk diagram arsitektur
+- [ ] Slide deck tool: Google Slides / Keynote / PowerPoint
+- [ ] Optional: Figma / Excalidraw / Miro untuk diagram arsitektur
+- [ ] Optional: akun Vercel (login dgn GitHub) untuk deploy capstone
 - [ ] Form rubrik (Google Form) sudah dibuat oleh fasilitator
 - [ ] Backup API key budget untuk capstone (tiap tim bisa pakai 50-100 calls demo)
 
@@ -218,28 +288,29 @@ chroma_demo/
 
 ### F.1 Hardware Fasilitator
 
-| Komponen  | Spesifikasi                             |
-| --------- | --------------------------------------- |
-| Laptop    | Spek **direkomendasikan** (B.2), 16 GB RAM |
-| Layar tambahan | Untuk presentasi + notes              |
-| HDMI/USB-C adapter | Untuk proyektor ruang kelas      |
+| Komponen       | Spesifikasi                              |
+| -------------- | ---------------------------------------- |
+| Laptop         | Spek **direkomendasikan** (A.2), 16 GB RAM |
+| Layar tambahan | Untuk presentasi + notes                 |
+| HDMI/USB-C adapter | Untuk proyektor ruang kelas          |
 
 ### F.2 Software Fasilitator
 
-- Semua yang ada di B + C
+- Semua yang ada di B + C + D
 - **Anthropic Console** dengan **budget cukup** ($50-100 untuk demo intensif 4 hari)
+- **Supabase Pro** (opsional, hanya jika peserta ramai dan free tier tidak cukup untuk demo session)
 - **OBS / Loom** untuk rekaman sesi (jika perlu)
 - **Screen annotation tool** (Annotate, Presentify) untuk highlight saat demo
 - **Timer / stopwatch** (banyak lab time-boxed)
 
-### F.3 Konten yang Harus Siap (per ringkasan agen)
+### F.3 Konten yang Harus Siap
 
 - [ ] Slide presentasi per Module (slide deck di-export dari `materi.md`)
-- [ ] Sample dokumen HR (PDF kebijakan cuti, SOP DOCX, FAQ CSV) di `lab-09/sample_docs/`
-- [ ] Sample bug invoice fiktif untuk Lab 03
-- [ ] 5 contoh tweet bahasa Indonesia untuk Lab 02
-- [ ] Golden Q&A set 10-20 pasang untuk eval Lab 11
-- [ ] Mock data tiket helpdesk untuk Capstone opsi 6
+- [ ] Repo `fin-app` versi starter (iterasi 1 selesai) sudah di-share H-3
+- [ ] Sample dokumen HR (PDF kebijakan cuti, SOP DOCX, FAQ CSV) di `lab-day-3/sample_docs/`
+- [ ] 5 contoh deskripsi transaksi bahasa Indonesia untuk Lab Day 2 (auto-categorize)
+- [ ] Golden Q&A set 10-20 pasang untuk eval RAG Day 3
+- [ ] Mock data transaksi (CSV / SQL seed) untuk Capstone
 - [ ] PDF dummy berisi indirect prompt injection untuk demo Module 14
 - [ ] Cetak: Use Case Canvas A3 (1/peserta), checklist Responsible AI, OWASP LLM Top 10
 
@@ -247,9 +318,9 @@ chroma_demo/
 
 - **API key cadangan** bila key utama kena rate limit
 - **Hotspot 4G/5G** bila WiFi ruang kelas drop
-- **Offline embeddings** (sentence-transformers) bila Voyage AI bermasalah
+- **Snapshot Supabase project** (export SQL) siap untuk peserta yang ketinggalan migration
 - **Pre-recorded demo video** untuk segmen kritis bila live demo gagal
-- **Snapshot Chroma DB** sudah berisi data, agar peserta yang lambat ingest bisa skip ke retrieval
+- **Pre-seeded Supabase project** sebagai fallback bila peserta gagal setup Supabase sendiri
 
 ---
 
@@ -272,40 +343,43 @@ chroma_demo/
 **Untuk Peserta:**
 
 - [ ] Hardware memenuhi minimum (idealnya direkomendasikan)
-- [ ] Python 3.11+, Node.js (opsional), Git terinstal
-- [ ] Editor (VS Code / Cursor) terinstal
-- [ ] `requirements.txt` ter-install di virtualenv
-- [ ] Anthropic API key didapat & ada di env var
-- [ ] Voyage AI key (opsional)
+- [ ] Node.js 20+ & Git terinstal
+- [ ] Editor (VS Code / Cursor) + extensions terinstal
+- [ ] Repo `fin-app` sudah di-clone, `npm install` & `npm run dev` jalan
+- [ ] Anthropic API key didapat & ada di `.env.local`
+- [ ] Supabase project dibuat, URL + service-role key di `.env.local`
+- [ ] Voyage AI key (untuk Day 3) ada di `.env.local`
 - [ ] Akun GitHub aktif
 - [ ] Pretest sudah diisi
-- [ ] Repo materi sudah di-clone
-- [ ] Sample dokumen sudah di-download
-- [ ] Test ping API berhasil (jalankan snippet verifikasi)
+- [ ] Test ping API berhasil (smoke test JS)
 - [ ] Browser dengan profile pelatihan
 
 **Untuk Fasilitator:**
 
 - [ ] Semua di atas (sebagai backup demo)
 - [ ] Slide deck final per Module
-- [ ] Sample data & golden set
+- [ ] Repo `fin-app` starter sudah di-share ke peserta
+- [ ] Sample data & golden set sudah disiapkan
 - [ ] API key budget cukup ($50-100)
 - [ ] Aset cetak (Canvas A3, checklist)
 - [ ] Ruang kelas tervalidasi (proyektor, internet, listrik)
-- [ ] Backup plan teruji (hotspot, offline embeddings, video)
+- [ ] Backup plan teruji (hotspot, pre-seeded Supabase, video)
 
 ---
 
 ## I. FAQ Singkat
 
+**Q: Kenapa pakai JavaScript / TypeScript, bukan Python?**
+A: Stack hands-on pelatihan ini terpusat pada project `fin-app` (Next.js + Supabase + Shadcn UI). Dengan JS/TS sebagai bahasa tunggal, peserta tidak perlu konteks switching antara backend Python + frontend JS — semua dalam satu codebase yang sama. Konsep prompting, workflow, dan agent **fully transferable** ke Python jika peserta perlu di project lain.
+
 **Q: Apakah harus pakai Mac?**
-A: Tidak. Windows / Linux / Mac semuanya kompatibel. Mac M-series memang lebih cepat untuk embedding lokal.
+A: Tidak. Windows / Linux / Mac semuanya kompatibel. Mac M-series + Windows + Linux semua menjalankan Node.js dengan lancar.
 
 **Q: Berapa biaya total Anthropic API untuk 1 peserta 4 hari?**
 A: Estimasi $2-5 untuk semua hands-on bila peserta tertib (pakai Haiku untuk task ringan, Sonnet untuk yang perlu kualitas). Top-up $10 sudah aman.
 
 **Q: Apakah bisa offline?**
-A: TIDAK. Claude API mutlak butuh internet. Embedding bisa lokal (sentence-transformers), tapi inference LLM cloud-only.
+A: TIDAK. Claude API, Supabase, dan Voyage AI semuanya cloud-based. Internet stabil mutlak diperlukan.
 
 **Q: Apakah bisa pakai LLM open-source (Llama, Mistral)?**
 A: Konsep prompting & agent transferable, tapi materi pelatihan ini spesifik Claude API (tool use format, prompt caching, dll.). Untuk Capstone bila ingin demo dengan LLM lokal, perlu adaptasi pribadi.
@@ -315,3 +389,12 @@ A: Boleh, dan justru lebih praktis untuk fasilitator (1 API key, multiple users 
 
 **Q: Bagaimana kalau peserta belum punya kartu kredit untuk Anthropic?**
 A: Fasilitator sediakan API key bersama dengan budget tracking per user via `metadata.user_id`.
+
+**Q: Saya sudah punya Node.js versi lain (mis. 18). Harus uninstall?**
+A: Tidak. Pakai **nvm** untuk switch versi: `nvm install 20 && nvm use 20`. Project-local `.nvmrc` di repo `fin-app` akan otomatis pakai versi yang sesuai.
+
+**Q: Supabase free tier cukup tidak untuk pelatihan?**
+A: Cukup. 500 MB database + 2 GB bandwidth jauh di atas kebutuhan pelatihan. Project bisa di-pause setelah pelatihan untuk hemat kuota.
+
+**Q: Saya tidak familiar dengan React / Next.js. Apakah masih bisa ikut?**
+A: Bisa. Day 1 sama sekali tidak menyentuh kode. Day 2-4 fokus integrasi Claude — kode React/Next.js sudah disediakan via `fin-app` starter, peserta hanya perlu **modify dan tambahkan logic AI** di file yang sudah ditunjuk. Tidak ada lab yang minta peserta menulis komponen React dari nol.

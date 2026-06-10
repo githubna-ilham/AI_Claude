@@ -112,7 +112,7 @@ Context = semua informasi yang model butuhkan untuk menjawab dengan benar tetapi
 
 ### Contoh Prompt — Context Engineering dalam Praktik
 
-Berikut empat skenario nyata yang dapat langsung Anda coba di claude.ai atau Workbench.
+Berikut empat skenario nyata yang dapat langsung Anda coba di claude.ai (free tier sudah cukup).
 
 #### Contoh 1 — Tanya Jawab Berbasis Dokumen Kebijakan
 
@@ -759,35 +759,45 @@ Perlakukan prompt seperti kode:
 
 ## Demo Live (15 menit)
 
-**Skenario**: refactor prompt customer service reply dari "buruk" → "berproduksi".
+**Skenario**: refactor prompt **balasan keluhan transaksi gagal** di customer service Jalin, dari "buruk" → "berproduksi".
 
 ### Langkah
 
-1. **Buka claude.ai**, model Sonnet 4.x.
+1. **Buka claude.ai** (free tier, model default sudah Sonnet 4.x).
 2. **Iteration 1 — buruk**:
-   `Balas keluhan pelanggan ini: "Paket saya hilang sudah 5 hari"`
-   Amati: respons terlalu generik, tidak ada empati spesifik, tidak ada SOP.
+   ```text
+   Balas keluhan nasabah ini: "Transfer saya gagal tapi saldo terdebit, sudah 2 hari"
+   ```
+   Amati: respons terlalu generik, tidak menyebut prosedur Jalin, tidak ada SLA, tidak ada empati spesifik.
 3. **Iteration 2 — tambah Role + Context**:
    ```text
-   Anda adalah CS officer kurir XYZ Express, audiens pelanggan ritel.
-   Balas keluhan: "Paket saya hilang sudah 5 hari"
+   Anda adalah Customer Service officer Jalin Pembayaran Nusantara,
+   audiens nasabah ritel bank peserta.
+   Balas keluhan: "Transfer saya gagal tapi saldo terdebit, sudah 2 hari"
    ```
 4. **Iteration 3 — tambah Task + Constraint + Format**:
    ```text
-   Anda adalah CS officer kurir XYZ Express.
-   SOP: setiap keluhan paket hilang > 3 hari wajib (1) minta nomor resi,
-   (2) janjikan tracking dalam 24 jam, (3) tawarkan voucher 50K.
-   
-   Balas keluhan pelanggan dalam <message> dengan empati, profesional,
-   maks 100 kata, format:
+   Anda adalah Customer Service officer Jalin Pembayaran Nusantara.
+
+   SOP penanganan dispute transaksi gagal saldo terdebit:
+   (1) Minta nomor referensi transaksi (Trace ID / Sequence Number) dan
+       nama bank pengirim & penerima.
+   (2) Janjikan investigasi dispute dalam SLA 3 hari kerja, sesuai
+       ketentuan BI tentang penanganan keluhan nasabah pengguna sistem
+       pembayaran.
+   (3) Jelaskan bahwa dana akan otomatis kembali (reversal) jika
+       transaksi terbukti gagal di sisi switch.
+
+   Balas keluhan nasabah dalam <message> dengan empati, profesional,
+   maks 120 kata, format:
    - Salam pembuka
    - Akui & empati (1 kalimat)
    - 3 langkah SOP
    - Closing + nomor tiket placeholder [#TICKET]
-   
-   <message>Paket saya hilang sudah 5 hari</message>
+
+   <message>Transfer saya gagal tapi saldo terdebit, sudah 2 hari</message>
    ```
-5. **Diskusi**: minta peserta tunjuk komponen mana yang membuat output iteration 3 jauh lebih baik.
+5. **Diskusi**: minta peserta menunjukkan komponen mana yang membuat output Iteration 3 jauh lebih baik — dan diskusikan komponen yang mungkin masih bisa diperketat (mis. menambah `<rules>` untuk **tidak** mengarang nomor tiket asli).
 
 ---
 

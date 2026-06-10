@@ -582,11 +582,15 @@ Bandingkan dengan hasil Eksperimen A. Apa perbedaannya?
 
 Buka https://platform.openai.com/tokenizer, ketik nama Anda dan beberapa kata Bahasa Indonesia. Lihat jumlah token yang terhitung — ini akan menjadi dasar perhitungan biaya saat Anda menggunakan API.
 
-### Eksperimen D — Membandingkan Tiga Model Claude
+### Eksperimen D — Memetakan Model ke Use Case
 
-Buka https://console.anthropic.com (Workbench), jalankan satu soal logika cerita yang sama pada **Haiku, Sonnet, dan Opus**. Bandingkan: model mana yang paling cepat? Mana yang paling masuk akal? Berapa selisih biayanya?
+Buka https://www.anthropic.com/pricing untuk melihat harga input/output token tiap model Claude (Haiku, Sonnet, Opus). Lalu untuk tiga skenario berikut, **tentukan model mana yang paling tepat** dan tulis alasannya satu kalimat:
 
-**Refleksi**: mengapa jawabannya berbeda? Apa implikasinya terhadap pilihan model Anda di pekerjaan nyata?
+1. Kategorisasi otomatis 100.000 notifikasi transaksi per hari.
+2. Chat assistant yang membaca kontrak SLA 30 halaman dan menarik klausul.
+3. Analisis post-mortem insiden sistem pembayaran (1× per minggu, butuh penalaran mendalam).
+
+**Refleksi**: mengapa jawaban Anda berbeda antar skenario? Apa implikasinya terhadap pilihan model di pekerjaan nyata? (Latihan lebih mendalam ada di [`latihan.md`](./latihan.md) — Latihan 3.)
 
 ---
 
@@ -690,7 +694,7 @@ Modul 1 ini bersifat **konseptual** — belum disertai lab coding. Namun sebelum
 4. **Mengapa** context window yang besar tidak otomatis menghasilkan jawaban yang lebih baik?
 5. Apa perbedaan **"reasoning" pada LLM dan reasoning pada manusia** menurut pemahaman Anda saat ini?
 
-Untuk diskusi kelompok yang lebih terstruktur, lihat [`diskusi.md`](./diskusi.md).
+Untuk latihan hands-on terstruktur (5 eksperimen di claude.ai — semua bisa dijalankan gratis), lihat [`latihan.md`](./latihan.md).
 
 ---
 

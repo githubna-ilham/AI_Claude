@@ -26,7 +26,7 @@ Setelah menyelesaikan pelatihan ini, Anda akan mampu:
 1. Memahami konsep dan arsitektur LLM (Claude family, context window, sampling, tokenization).
 2. Mendesain prompt yang profesional, terukur, dan *reproducible*.
 3. Mengoptimalkan output AI menggunakan *advanced prompting* (CoT, few-shot, structured output, evals).
-4. Menggunakan **Claude API** (Python/JS) untuk pengembangan aplikasi AI.
+4. Menggunakan **Claude API** (JavaScript/TypeScript) untuk pengembangan aplikasi AI.
 5. Membangun AI Application end-to-end berbasis Claude.
 6. Mengembangkan **AI Agent** untuk otomasi workflow dengan *tool use*.
 7. Mengimplementasikan **RAG** (Retrieval Augmented Generation) menggunakan vector database.
@@ -65,7 +65,7 @@ Bagian ini berisi **syarat minimum** yang sebaiknya Anda penuhi sebelum hari per
 | Area                   | Tingkat        | Indikator "siap"                                                   |
 | ---------------------- | -------------- | ------------------------------------------------------------------ |
 | Konsep AI / LLM        | Awareness      | Pernah menggunakan ChatGPT/Claude, memahami istilah *prompt* dan *token* |
-| Pemrograman            | Basic          | Mampu membaca dan menulis fungsi sederhana di **Python** atau **JavaScript** |
+| Pemrograman            | Basic          | Mampu membaca dan menulis fungsi sederhana di **JavaScript / TypeScript** (familiar dengan React/Next.js merupakan nilai tambah, tetapi tidak wajib) |
 | API & HTTP             | Basic          | Memahami `GET`/`POST`, JSON, header, status code                   |
 | Command line / Terminal | Basic         | Mampu menjalankan `cd`, `ls`, eksekusi script, dan setting environment variable |
 | Git                    | Basic (opsional)| Mampu menjalankan `clone`, `pull` — cukup untuk mengambil materi |
@@ -86,12 +86,14 @@ Detail lengkap tersedia di [`REQUIREMENTS-Spek-Komputer-Aplikasi.md`](REQUIREMEN
 | Internet   | WiFi stabil minimal 10 Mbps                        | WiFi 6 + ethernet backup                    |
 | Battery    | Minimal 4 jam (atau pastikan colokan tersedia)     | —                                           |
 
-> ❌ **Tidak didukung**: Tablet, Chromebook, atau perangkat yang tidak mampu menginstal Python/Node.js dan menjalankan server lokal.
+> ❌ **Tidak didukung**: Tablet, Chromebook, atau perangkat yang tidak mampu menginstal Node.js dan menjalankan dev server lokal.
 
 ### 2.3 Akun & Akses
 
 - ✅ Akun **Anthropic Console** — daftar di https://console.anthropic.com
 - ✅ **Anthropic API key** — disediakan oleh fasilitator, atau generate sendiri (top-up minimal **$5** untuk seluruh lab)
+- ✅ Akun **Supabase** — daftar di https://supabase.com (free tier cukup; digunakan untuk Day 2–4 sebagai database `fin-app` + pgvector untuk RAG)
+- ✅ Akun **Voyage AI** — daftar di https://www.voyageai.com (free tier cukup; digunakan untuk embedding di Day 3)
 - ✅ Akun **GitHub** (untuk meng-clone materi)
 - ✅ Email aktif untuk korespondensi dan sertifikat
 
@@ -113,22 +115,19 @@ Checklist berikut diurutkan berdasarkan *deadline*. Centang setiap item ketika s
 #### Step 1 — Install Runtime
 
 ```bash
-# Python (default)
-python --version          # harus >= 3.11
-
-# Node.js (opsional, alternatif JS)
-node --version            # harus >= 20
+node --version            # harus >= 20 (idealnya 22 LTS)
+npm --version             # bundled dengan Node.js, harus >= 10
 ```
 
 Link install:
-- Python 3.11+: https://www.python.org/downloads/
-- Node.js 20 LTS: https://nodejs.org/
+- Node.js 20 LTS+: https://nodejs.org/ (download installer sesuai OS)
+- Tips: pasang **nvm** (https://github.com/nvm-sh/nvm untuk macOS/Linux, https://github.com/coreybutler/nvm-windows untuk Windows) jika Anda sudah memiliki project lain dengan versi Node.js berbeda.
 
 #### Step 2 — Install Editor
 
 Anda direkomendasikan menggunakan salah satu dari:
 - **Cursor** — https://cursor.com (AI-native, paling nyaman untuk pelatihan ini)
-- **VS Code** — https://code.visualstudio.com beserta ekstensi: *Python*, *Jupyter*, *Prettier*
+- **VS Code** — https://code.visualstudio.com beserta ekstensi: *ESLint*, *Tailwind CSS IntelliSense*, *Prettier*, *GitLens*
 
 #### Step 3 — Clone Repository Materi
 
@@ -137,58 +136,72 @@ git clone https://github.com/githubna-ilham/AI_Claude.git
 cd AI_Claude
 ```
 
-#### Step 4 — Install Dependencies
+Selain repo materi, fasilitator juga akan membagikan link repo **`fin-app`** (Next.js starter) yang akan digunakan sebagai backbone hands-on Day 2 hingga Capstone. Clone repo tersebut di lokasi yang Anda inginkan.
 
-**Python:**
+#### Step 4 — Install Dependencies (di folder `fin-app`)
+
 ```bash
-python -m venv .venv
-source .venv/bin/activate          # macOS/Linux
-# .venv\Scripts\activate           # Windows PowerShell
-
-pip install anthropic chromadb python-dotenv jupyter
+cd fin-app
+npm install
 ```
 
-**Node.js (alternatif):**
-```bash
-npm install @anthropic-ai/sdk dotenv
-```
+Perintah ini akan menarik seluruh dependensi (Next.js, React, Tailwind, Shadcn UI, Anthropic SDK, Supabase client, dll.). Detail daftar paket ada di `package.json` dan dijabarkan di [`REQUIREMENTS-Spek-Komputer-Aplikasi.md`](REQUIREMENTS-Spek-Komputer-Aplikasi.md).
 
-#### Step 5 — Konfigurasi API Key
+#### Step 5 — Konfigurasi API Key & Environment Variables
 
-Buat file `.env` di root repo:
+Buat file **`.env.local`** di folder `fin-app/` (Next.js convention):
 
 ```env
+# Anthropic (Day 2+)
 ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# Supabase (Day 2+)
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJI...
+
+# Voyage AI (Day 3)
+VOYAGE_API_KEY=pa-xxxxxxxxxxxx
 ```
 
-> ⚠️ **Jangan commit file `.env` ke git.** Pastikan file ini tercantum di `.gitignore`.
+> ⚠️ **Jangan commit file `.env.local` ke git.** Next.js sudah menyertakan pola ini di `.gitignore` default, tetapi pastikan kembali sebelum push.
 
 #### Step 6 — Smoke Test (verifikasi seluruh setup berjalan)
 
-Buat file `smoke-test.py`:
-```python
-import os
-from anthropic import Anthropic
-from dotenv import load_dotenv
+Buat file `smoke-test.mjs` di folder `fin-app/`:
 
-load_dotenv()
-client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+```javascript
+import 'dotenv/config';
+import Anthropic from '@anthropic-ai/sdk';
 
-resp = client.messages.create(
-    model="claude-sonnet-4-6",
-    max_tokens=128,
-    messages=[{"role": "user", "content": "Sebut 1 keuntungan utama Claude untuk enterprise dalam 1 kalimat."}],
-)
-print(resp.content[0].text)
+const client = new Anthropic();
+
+const resp = await client.messages.create({
+  model: 'claude-sonnet-4-6',
+  max_tokens: 128,
+  messages: [
+    { role: 'user', content: 'Sebut 1 keuntungan utama Claude untuk enterprise dalam 1 kalimat.' },
+  ],
+});
+
+console.log(resp.content[0].text);
 ```
 
 Jalankan:
+
 ```bash
-python smoke-test.py
+node --env-file=.env.local smoke-test.mjs
 ```
 
 ✅ Jika sebaris jawaban berhasil muncul → setup Anda sudah berhasil.
 ❌ Jika muncul error → simpan screenshot dan hubungi penyelenggara **sebelum** Day-1 dimulai.
+
+#### Step 7 — Verifikasi Dev Server Next.js
+
+```bash
+npm run dev
+```
+
+Buka http://localhost:3000 — halaman default `fin-app` harus muncul. Hentikan dengan `Ctrl+C`.
 
 ### 3.3 H-1 — Pengecekan Akhir
 
@@ -203,7 +216,7 @@ python smoke-test.py
 
 - [ ] Datang 30 menit lebih awal untuk registrasi
 - [ ] Sambungkan laptop ke WiFi ruang kelas
-- [ ] Verifikasi API key masih aktif (jalankan ulang `smoke-test.py`)
+- [ ] Verifikasi API key masih aktif (jalankan ulang `node --env-file=.env.local smoke-test.mjs`)
 - [ ] Tarik versi terbaru repo: `git pull origin main`
 
 ---
@@ -215,7 +228,7 @@ Jika Anda mengalami kendala, gunakan tabel berikut untuk menentukan saluran yang
 | Masalah                         | Hubungi                                |
 | ------------------------------- | -------------------------------------- |
 | Pendaftaran & administrasi      | Multimatics — www.multimatics.co.id    |
-| Setup teknis (Python/API/dll.)  | Penyelenggara via channel komunikasi resmi pelatihan |
+| Setup teknis (Node.js / Supabase / API / dll.) | Penyelenggara via channel komunikasi resmi pelatihan |
 | API key tidak berfungsi         | Penyelenggara (untuk pengecekan kuota dan billing) |
 | Pertanyaan materi & repo        | Buka issue di GitHub repo ini          |
 
