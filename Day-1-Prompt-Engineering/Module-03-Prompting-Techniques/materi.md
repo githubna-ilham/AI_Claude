@@ -480,14 +480,19 @@ PERAN 3 — Performance Engineer:
 
 <knowledge_base>
 KONTEKS PROYEK:
-- Stack: Python/FastAPI + PostgreSQL.
+- Stack: Next.js 16 (App Router) + TypeScript + Supabase (Postgres + pgvector).
+- Akses DB: server-side only via Server Actions / Route Handlers menggunakan
+  service-role key. Browser hanya melihat data yang dikirim balik dari server.
 - Skala: ~10.000 active users, traffic puncak 200 req/detik.
-- Convention internal: snake_case untuk function, PascalCase untuk class,
-  Pydantic untuk semua schema.
+- Convention internal:
+  - camelCase untuk variable & function, PascalCase untuk type & React component.
+  - Zod untuk validasi input dari client ke server.
+  - Tidak boleh ada import `process.env` di komponen client (`"use client"`).
 
 PR YANG AKAN DI-REVIEW:
-```python
-{tempel kode dari pull request — 50–100 baris}
+```typescript
+{tempel kode dari pull request — 50–100 baris,
+ mis. Server Action handler atau API Route Handler}
 ```
 </knowledge_base>
 
@@ -533,7 +538,7 @@ Akhiri dengan SINTESIS: rekomendasi prioritas perbaikan.
 
 **Mengapa contoh ini bagus:**
 - **Multi-persona** memungkinkan satu prompt menghasilkan **3 sudut pandang berbeda** tanpa harus run terpisah.
-- **Knowledge base proyek-spesifik** (Python/FastAPI, convention internal) menyesuaikan saran.
+- **Knowledge base proyek-spesifik** (Next.js + TypeScript + Supabase, convention internal) menyesuaikan saran.
 - **Rules anti-duplikasi** ("jangan ulang temuan yang sama di babak berbeda") mencegah noise.
 - **Sintesis akhir** mengubah 3 review terpisah menjadi prioritas tindakan yang dapat ditindaklanjuti.
 
@@ -574,12 +579,14 @@ Jika task Anda hanya membutuhkan beberapa contoh dan instruksi sederhana, **few-
 
 ### Langkah
 
-1. **Buka claude.ai** atau Console Workbench, Sonnet 4.x, `temperature=0`.
+1. **Buka claude.ai** (free tier, model default Sonnet 4.x). Karena claude.ai tidak memungkinkan set `temperature=0`, **jalankan setiap teknik 2–3 kali** dan ambil output yang mayoritas. Variansi minor antar run adalah hal normal dan justru menjadi pelajaran tentang reproducibility.
 2. Siapkan 5 tweet test (sertakan 1 sarkastik, 1 mixed sentiment, 1 slang berat).
 3. **Run zero-shot**: prompt klasifikasi dasar tanpa contoh.
 4. **Run few-shot**: tambahkan 5 contoh terbalanced.
 5. **Run CoT**: tambahkan instruksi "pikirkan langkah demi langkah, identifikasi kata kunci sentimen, baru beri label".
 6. Catat output ke tabel perbandingan. Diskusikan: kapan jump dari zero ke few-shot worth? Kapan CoT worth?
+
+> 💡 **Catatan untuk Day 2+**: Saat Anda mengintegrasikan ke kode (Day 2), pemanggilan via Anthropic API dapat menerima parameter `temperature: 0` sehingga A/B test menjadi deterministik. Untuk Day 1, eksplorasi via claude.ai sudah cukup untuk mendapatkan intuisi pola perbedaan antar teknik.
 
 ---
 

@@ -153,8 +153,8 @@ Kirim ke fasilitator via channel yang ditentukan (LMS / Slack / Telegram).
 
 Lab ini adalah **fondasi paling penting** sepanjang pelatihan. Anatomi prompt yang Anda kuasai di sini akan dipakai berulang di:
 
-- **Module 3** — Anda akan menambahkan teknik lanjutan (few-shot, chain-of-thought) di atas anatomi yang sama.
-- **Module 4** — Anda akan memperketat **Output Format** menjadi JSON yang valid dan dapat dievaluasi otomatis.
+- **Module 3 (Day 1)** — Anda akan menambahkan teknik lanjutan (few-shot, chain-of-thought) di atas anatomi yang sama.
+- **Module 4 (Day 2 — pembuka)** — Anda akan memperketat **Output Format** menjadi JSON yang valid dan dapat dievaluasi otomatis.
 - **Day 2+** — Saat menulis prompt untuk fitur AI di `fin-app` (Next.js + Supabase), anatomi yang sama akan menjadi struktur dasar dari setiap prompt yang Anda definisikan dalam kode.
 
 Investasi waktu di sini akan terasa manfaatnya selama 3 hari ke depan.

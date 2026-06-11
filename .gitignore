@@ -1,0 +1,19 @@
+# Local config
+.claude/
+.DS_Store
+
+# Secrets
+.env
+.env.local
+.env*.local
+
+# Node / Next.js (for fin-app integration later)
+node_modules/
+.next/
+
+# Days yang belum siap untuk publik
+# Pelatihan cohort ini hanya mempublikasikan Day 1 di repo.
+# Day 2-4 akan dibuka kembali setelah rombak lengkap (stack JS + konteks Jalin).
+Day-2-AI-Workflow-Agent/
+Day-3-AI-App-RAG/
+Day-4-Product-Governance-Capstone/

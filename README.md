@@ -46,8 +46,8 @@ Setelah mengikuti pelatihan ini, peserta mampu:
 
 | Hari      | Fokus                                                                       | Module       |
 | --------- | --------------------------------------------------------------------------- | ------------ |
-| **Day 1** | Prompt Engineering Fundamentals + Advanced                                  | 1–4          |
-| **Day 2** | AI Workflow + AI Agent (Concept → Orchestration → Claude API)               | 5–9          |
+| **Day 1** | Prompt Engineering Fundamentals + Advanced                                  | 1–3          |
+| **Day 2** | Structured Output + AI Workflow + AI Agent (Concept → Orchestration → Claude API) | 4–9    |
 | **Day 3** | AI App Development + RAG (Retrieval Augmented Generation)                   | 10–12        |
 | **Day 4** | AI Product Design + Governance + **Capstone Project**                       | 13–14 + Capstone |
 
@@ -76,8 +76,8 @@ AI_Claude/
 ├── README.md                                  # file ini
 ├── pretest/                                   # profiling peserta
 ├── posttest/                                  # evaluasi akhir
-├── Day-1-Prompt-Engineering/                  # Module 1–4
-├── Day-2-AI-Workflow-Agent/                   # Module 5–9
+├── Day-1-Prompt-Engineering/                  # Module 1–3
+├── Day-2-AI-Workflow-Agent/                   # Module 4–9 (M4 dipindahkan dari Day 1)
 ├── Day-3-AI-App-RAG/                          # Module 10–12
 ├── Day-4-Product-Governance-Capstone/         # Module 13–14 + Capstone
 └── resources/                                 # templates, starter code, cheatsheet

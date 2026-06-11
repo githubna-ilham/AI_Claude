@@ -38,8 +38,8 @@ Setelah menyelesaikan pelatihan ini, Anda akan mampu:
 
 | Hari      | Fokus                                                            | Module       |
 | --------- | ---------------------------------------------------------------- | ------------ |
-| **Day 1** | Prompt Engineering Fundamentals + Advanced                       | 1–4          |
-| **Day 2** | AI Workflow + AI Agent (Concept → Orchestration → Claude API)    | 5–9          |
+| **Day 1** | Prompt Engineering Fundamentals + Advanced                       | 1–3          |
+| **Day 2** | Structured Output + AI Workflow + AI Agent                       | 4–9          |
 | **Day 3** | AI App Development + RAG                                         | 10–12        |
 | **Day 4** | AI Product Design + Governance + **Capstone Project**            | 13–14 + Cap. |
 

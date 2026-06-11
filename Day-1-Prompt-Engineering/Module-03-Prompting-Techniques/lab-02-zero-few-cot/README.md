@@ -3,7 +3,7 @@
 **Modul**: Module 3 — Prompting Techniques
 **Durasi**: 45 menit
 **Mode**: Individual; peer comparison di 5 menit terakhir.
-**Tools**: claude.ai (Sonnet 4.x) atau Anthropic Console — Workbench (set `temperature=0` untuk konsistensi).
+**Tools**: claude.ai (free tier sudah cukup). Karena claude.ai tidak expose `temperature`, output bisa sedikit bervariasi antar run — workaround: jalankan 2–3× per teknik dan ambil mayoritas.
 **Output**: tabel evaluasi 3 teknik × 3 task + insight 3-5 bullet.
 
 ---
@@ -20,8 +20,10 @@ Peserta mampu:
 ## Prasyarat
 
 - Telah menyelesaikan Module 3 (materi & demo).
-- Akun claude.ai aktif. Dianjurkan Console Workbench karena dapat set `temperature=0`.
+- Akun claude.ai aktif (free tier cukup; tidak butuh Workbench berbayar).
 - Spreadsheet atau tabel kosong untuk mencatat hasil.
+
+> ℹ️ **Catatan reproducibility**: claude.ai tidak memungkinkan setting `temperature=0`. Untuk menjaga konsistensi A/B test, **jalankan tiap teknik 2–3 kali** dan ambil output yang mayoritas. Saat masuk Day 2 (integrasi via API), Anda akan dapat akses penuh ke parameter `temperature` dan eksperimen yang sama bisa menjadi deterministik.
 
 ---
 
@@ -77,9 +79,9 @@ Berapa total waktu minimum project?
 
 ### Langkah 1 — Setup (5 menit)
 
-1. Buka Console Workbench atau claude.ai.
-2. Set `temperature=0` (Workbench) untuk konsistensi.
-3. Siapkan dokumen / spreadsheet dengan tabel evaluasi (template di bawah).
+1. Buka **claude.ai** (free tier, model default sudah Sonnet 4.x).
+2. Siapkan dokumen / spreadsheet dengan tabel evaluasi (template di bawah).
+3. Sepakati ritme **2–3× per teknik per sampel**, lalu ambil mayoritas → catat sebagai "output stabil".
 
 ### Langkah 2 — Run 3 Teknik untuk Task 1 (10 menit)
 
@@ -215,7 +217,7 @@ Tulis 3–5 bullet menjawab:
 | Kriteria                                    | 0      | 2                 | 4                                  |
 |---------------------------------------------|--------|-------------------|------------------------------------|
 | Kelengkapan eksperimen                      | < 3 kombinasi | 4–6 kombinasi | 7–9 kombinasi penuh                |
-| Konsistensi setup (temperature, format)     | Tidak konsisten | Sebagian konsisten | Sepenuhnya konsisten              |
+| Konsistensi setup (format prompt, jumlah run per teknik) | Tidak konsisten | Sebagian konsisten | Sepenuhnya konsisten   |
 | Kualitas tabulasi & perhitungan akurasi     | Tidak ada | Ada tapi salah hitung | Lengkap & benar                |
 | Insight (bukti-based, bukan opini)          | Tidak ada | Generik           | Spesifik, kuantitatif, actionable  |
 
@@ -225,10 +227,10 @@ Tulis 3–5 bullet menjawab:
 
 ## Tips
 
-- **Jalankan 2x** untuk memverifikasi konsistensi, bahkan dengan `temperature=0` masih ada variansi minimal.
+- **Jalankan 2–3× per teknik** dan ambil mayoritas — claude.ai tidak deterministik, dan ini sekaligus melatih Anda berpikir reproducibility sejak Day 1.
 - Untuk sarkasme (S5), CoT sangat membantu jika Anda menyebut "periksa sarkasme" eksplisit.
 - Pada Task 3 M3 (project scheduling), CoT hampir wajib. Zero-shot sering salah.
-- Jika Anda pakai claude.ai (tidak ada `temperature=0`), jalankan **2-3 kali per teknik** dan ambil mayoritas.
+- Jika 2 dari 3 run sepakat → catat sebagai output stabil. Jika tidak (variansi tinggi) → catat semuanya dan jadikan bukti bahwa teknik itu **belum reliable** untuk task tersebut.
 
 ---
 
