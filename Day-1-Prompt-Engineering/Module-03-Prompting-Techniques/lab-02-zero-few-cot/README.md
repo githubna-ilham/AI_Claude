@@ -141,6 +141,11 @@ masing-masing 4 hari dan dapat dikerjakan paralel setelah C selesai.
 Berapa total waktu minimum project?
 ```
 
+**Ground truth** (untuk evaluasi sendiri di akhir):
+- **M1**: Total revenue = **Rp 40.500.000** (Kaos 9 juta + Celana 12 juta + Topi 7 juta + Sepatu 12,5 juta). Revenue tertinggi = **Sepatu (Rp 12.500.000)**.
+- **M2**: Total yang harus dibayar = **Rp 5.300.000** (pokok 5 juta + bunga sederhana 5 juta × 12% × 6/12 = 300 ribu).
+- **M3**: Total waktu minimum project = **9 hari** (A&B paralel 3 hari → C 2 hari → D&E paralel 4 hari).
+
 ### Task 3 — Klasifikasi Sentimen Konteks Jalin (5 sampel)
 
 Sama dengan Task 1 (label: `POSITIF`, `NEGATIF`, `NETRAL`), tapi domain berbeda — kalimat berikut adalah komentar nasabah tentang layanan pembayaran. Tujuannya: melihat apakah teknik yang menang di Task 1 (komentar aplikasi umum) tetap menang di domain finansial dengan istilah teknis (BI-FAST, ATM Link, dispute, dll).
@@ -235,11 +240,58 @@ Jalankan ketiga template untuk S1–S5. Catat output di tabel.
 
 ### Langkah 3 — Run 3 Teknik untuk Task 2 — Reasoning Matematika (10 menit)
 
-Adaptasi template di atas untuk reasoning matematika. Ekspektasi tiap teknik:
+Gunakan 3 template di bawah. Ganti placeholder `{soal}` dengan teks M1, M2, atau M3 dari Dataset Lab.
 
-- **Zero-shot**: jawaban langsung tanpa eksplisit menyebut langkah — risiko error tinggi pada soal multi-step.
-- **Few-shot**: beri 1–2 contoh soal + solusi lengkap sebagai pemandu pola pikir.
-- **CoT**: paksa model menulis langkah 1 → 2 → 3 → … sebelum memberikan jawaban akhir. Untuk M3 (project scheduling), ini hampir wajib.
+#### Zero-Shot Template
+```text
+Selesaikan soal matematika berikut. Berikan jawaban akhirnya secara singkat.
+
+Soal: "{soal}"
+Jawaban:
+```
+
+#### Few-Shot Template
+```text
+Selesaikan soal matematika berikut. Berikan jawaban akhirnya secara singkat.
+
+<example>
+Soal: "Bu Sari membeli 3 kg apel @ Rp 25.000/kg dan 2 kg jeruk @ Rp 30.000/kg. Berapa total yang harus dibayar?"
+Jawaban: Apel 3 × 25.000 = 75.000; Jeruk 2 × 30.000 = 60.000; Total = 135.000.
+</example>
+<example>
+Soal: "Pak Budi menabung Rp 50 juta di deposito dengan bunga sederhana 5% per tahun selama 2 tahun. Berapa saldo akhir?"
+Jawaban: Bunga = 50 juta × 5% × 2 = 5 juta. Saldo akhir = 50 juta + 5 juta = 55 juta.
+</example>
+
+Soal: "{soal}"
+Jawaban:
+```
+
+#### Chain-of-Thought Template
+```text
+Selesaikan soal matematika berikut. Pikirkan langkah demi langkah.
+
+Langkah berpikir:
+1. Identifikasi data yang diketahui dari soal.
+2. Tentukan rumus atau metode yang relevan.
+3. Lakukan perhitungan satu per satu, tulis hasil tiap langkah.
+4. Simpulkan jawaban akhir dengan satuan yang sesuai.
+
+<thinking>
+{tulis langkah perhitungan di sini}
+</thinking>
+
+<answer>
+Jawaban: {jawaban akhir}
+</answer>
+
+Soal: "{soal}"
+```
+
+**Ekspektasi tiap teknik**:
+- **Zero-shot**: jawaban langsung tanpa eksplisit menyebut langkah → risiko error tinggi pada soal multi-step.
+- **Few-shot**: contoh soal + solusi memandu pola pikir model.
+- **CoT**: model menulis langkah 1 → 2 → 3 → … sebelum jawaban akhir. Untuk M3 (project scheduling dengan dependensi paralel), ini hampir wajib.
 
 Jalankan ketiga template untuk M1, M2, M3. Catat output di tabel.
 
