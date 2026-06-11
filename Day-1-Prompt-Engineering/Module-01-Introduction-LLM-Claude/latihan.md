@@ -84,52 +84,76 @@ Jika informasi tersebut tidak ada di dalam teks, jawab: "TIDAK DISEBUTKAN".
 
 ---
 
-## Latihan 3 — Memilih Model yang Tepat untuk Use Case (6 menit)
+## Latihan 3 — Pilih Model Claude untuk Skenario Jalin (6 menit)
 
-Berbeda dari latihan lain, latihan ini **lebih analitis** daripada hands-on. Tujuannya: melatih keputusan pemilihan model **sebelum** Anda menulis baris kode pertama di Day 2.
+Bayangkan: Anda anggota tim AI Lab Jalin. Atasan Anda baru saja meminta rekomendasi model Claude untuk 3 ide fitur AI internal yang akan masuk roadmap. Latihan ini melatih **keputusan**, bukan riset — Anda akan berlatih memilih model dengan cepat berdasarkan profil use case, persis seperti yang akan Anda lakukan di rapat tim sungguhan.
 
-### Langkah 1 — Jalankan 1 Prompt di claude.ai
+### Bagian 1 — Cheat Sheet 30 Detik
 
-Buka **claude.ai** (free tier) dan kirim prompt berikut. Catat respons + kira-kira berapa detik model "berpikir":
+Hafal pola sederhana ini sebelum memutuskan apapun:
+
+| Model      | Kecepatan      | Kualitas reasoning  | Harga relatif (vs Sonnet) | Sweet spot                                        |
+| ---------- | -------------- | ------------------- | ------------------------- | ------------------------------------------------- |
+| **Haiku**  | Paling cepat   | Cukup               | ~1/4×                     | Volume tinggi, task pendek dan terstandar         |
+| **Sonnet** | Sedang         | Tinggi              | 1× (baseline)             | Default workhorse untuk hampir semua use case     |
+| **Opus**   | Paling lambat  | Sangat tinggi       | ~5×                       | Dokumen panjang, reasoning rumit, stakes tinggi   |
+
+> 💡 **Aturan praktis cepat**: kalau ragu, pilih **Sonnet** dulu. Turunkan ke Haiku kalau volume tinggi dan task sederhana. Naikkan ke Opus hanya kalau Sonnet gagal di benchmark Anda sendiri.
+
+### Bagian 2 — Pilih Model untuk 3 Skenario Jalin (3 menit)
+
+Untuk masing-masing skenario, **tulis 1 baris saja**: model pilihan + alasan 1 kalimat. Tidak perlu mencari angka — pakai intuisi dari cheat sheet di atas.
+
+**Skenario A — Auto-Tagging Notifikasi Transaksi**
+> Tim CS ingin notifikasi push ("Transfer Rp X ke Bank Y berhasil") di-tag otomatis ke salah satu dari 5 kategori: `TRANSFER_SUKSES`, `TRANSFER_GAGAL`, `TARIK_TUNAI`, `DISPUTE`, `LAINNYA`. Volume: **50.000 notifikasi per hari**. Input: 1 kalimat. Output: 1 label.
+
+→ Model: ____________  | Alasan: __________________________________
+
+**Skenario B — Asisten Internal SOP**
+> Staff CS sering bingung mencari prosedur penanganan dispute di dokumen SOP. Tim ingin chat assistant internal yang membaca SOP (25 halaman) dan menjawab pertanyaan staff dengan akurat. Volume: ~200 query per hari. Input: pertanyaan + seluruh SOP. Output: jawaban pendek dengan kutipan.
+
+→ Model: ____________  | Alasan: __________________________________
+
+**Skenario C — Analisis Root Cause Incident Switching**
+> Saat terjadi lonjakan failure rate di jaringan switching, network engineer butuh "asisten analis" yang membaca log error (~30 menit, 40.000 baris) + konfigurasi route + tren trafik, lalu mengusulkan hipotesis penyebab utama. Volume: **1–2 kali per minggu** saat ada insiden. Input: dokumen besar (50.000+ token). Output: paragraf analisis terstruktur.
+
+→ Model: ____________  | Alasan: __________________________________
+
+### Bagian 3 — Validasi Cepat di claude.ai (3 menit)
+
+Buka **claude.ai** dan jalankan **versi mini Skenario A** berikut untuk merasakan output model default (Sonnet):
 
 ```
-Anda adalah analis bisnis. Berikut transkrip pendek rapat:
+Klasifikasikan setiap notifikasi berikut ke salah satu kategori:
+TRANSFER_SUKSES, TRANSFER_GAGAL, TARIK_TUNAI, DISPUTE, LAINNYA.
 
-Andi: "Pendapatan kuartal ini turun 8% dibanding kuartal lalu."
-Bita: "Tetapi biaya akuisisi pelanggan kita turun 22%."
-Citra: "Pelanggan baru naik 35%, dan retention juga membaik."
+Output: kembalikan dalam format "no. notifikasi → kategori".
 
-Buat ringkasan eksekutif 3 kalimat: apa yang terjadi, mengapa,
-dan apa yang sebaiknya dilakukan kuartal berikutnya?
+1. "Transfer Rp 2.000.000 ke Bank Mandiri berhasil. Saldo: Rp 5.123.000"
+2. "Tarik tunai Rp 500.000 di ATM Link berhasil. Biaya: Rp 7.500"
+3. "Maaf, transfer Anda gagal karena melewati batas harian"
+4. "Saya komplain, transfer Rp 1jt tadi gagal tapi saldo terdebit"
+5. "Selamat! Anda mendapat cashback Rp 50.000"
 ```
 
-### Langkah 2 — Baca Tabel Karakteristik Model
+Amati output. Lalu tanya diri sendiri:
+- Apakah outputnya **rapi dan konsisten**? Kalau iya → bisa jadi Sonnet sudah overkill, **Haiku** kemungkinan besar sanggup juga.
+- Apakah masih ada satu yang salah klasifikasi (mis. nomor 5)? Kalau iya → Anda butuh prompt yang lebih ketat (bahasan Module 2), **bukan** naik ke Opus.
 
-Buka https://www.anthropic.com/pricing dan cermati harga input/output token untuk **Haiku, Sonnet, dan Opus**. Lalu lengkapi tabel berikut berdasarkan informasi resmi + materi Module 1:
+### Pertanyaan Refleksi (kerjakan setelah pelatihan)
 
-| Model      | Harga input ($/1M token) | Harga output ($/1M token) | Kecepatan relatif | Kelebihan utama |
-| ---------- | ------------------------ | ------------------------- | ----------------- | --------------- |
-| **Haiku**  | …                        | …                         | Paling cepat      | Volume tinggi, low-cost, task ringan |
-| **Sonnet** | …                        | …                         | Sedang            | Default "sweet spot" — kualitas tinggi, harga wajar |
-| **Opus**   | …                        | …                         | Paling lambat     | Reasoning terkompleks, dokumen panjang |
+1. Untuk Skenario A (50.000/hari): kira-kira berapa biaya per bulan kalau pakai **Haiku** vs **Sonnet**? Tidak perlu angka eksak — cukup "kira-kira beda berapa kali lipat".
+2. Adakah use case di tim Anda sendiri yang **mirip Skenario C** (low-volume tapi high-stakes reasoning)? Sebutkan satu.
+3. Kalau atasan Anda meminta "**satu model default** untuk semua proof-of-concept AI Jalin di kuartal ini", mana yang Anda usulkan dan kenapa?
 
-### Langkah 3 — Pemetaan Use Case → Model
+---
 
-Berdasarkan tabel di atas dan respons Anda di Langkah 1, **petakan 4 use case berikut** ke model paling sesuai. Tulis alasannya 1 kalimat per use case.
-
-| Use Case Jalin                                                                    | Model pilihan | Alasan |
-| --------------------------------------------------------------------------------- | ------------- | ------ |
-| **A.** Auto-kategorisasi 100.000 notifikasi transaksi per hari (text → label)     | …             | …      |
-| **B.** Chat assistant untuk membaca kontrak SLA 30 halaman dan menarik klausul    | …             | …      |
-| **C.** Drafting respons keluhan nasabah di customer service (volume sedang)       | …             | …      |
-| **D.** Analisis post-mortem incident sistem pembayaran (1×/minggu, butuh nalar)   | …             | …      |
-
-### Pertanyaan Refleksi
-
-1. Apakah Opus benar-benar memberi jawaban yang **30× lebih bagus** dari Haiku (sesuai selisih harga)? Atau untuk use case sederhana, perbedaannya marginal?
-2. Untuk **use case A** (volume 100.000/hari), berapa estimasi biaya bulanan jika memakai Haiku vs Sonnet? (perkiraan kasar: 300 token input + 50 token output per request).
-3. Use case apa di organisasi Anda yang **menjustifikasi** biaya Opus — yaitu low-volume tapi high-stakes reasoning?
-4. Jika Anda harus memilih **satu model default** untuk semua proyek AI internal Jalin di tahap awal eksplorasi, mana yang akan Anda rekomendasikan dan mengapa?
+> 🎯 **Kunci jawaban (untuk fasilitator / self-check)**:
+> - **Skenario A → Haiku.** Volume tinggi, task pendek dan terstandar, cocok untuk model murah dan cepat.
+> - **Skenario B → Sonnet.** Q&A dokumen butuh reasoning yang andal tapi tidak ekstrem. Sonnet default workhorse.
+> - **Skenario C → Opus.** Dokumen panjang, jarang dipakai, dan keputusan downstream-nya penting. Trade-off harga pantas dibayar.
+>
+> Tidak ada jawaban "salah mutlak" — yang penting Anda bisa **menjelaskan reasoning Anda**.
 
 ---
 

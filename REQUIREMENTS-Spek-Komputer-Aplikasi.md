@@ -166,20 +166,34 @@ Buka http://localhost:3000 — halaman Next.js default harus muncul. Hentikan de
 
 | Layanan                       | Wajib?  | Cara setup                                                    | Catatan biaya                              |
 | ----------------------------- | ------- | ------------------------------------------------------------- | ------------------------------------------ |
-| **Anthropic Console**         | **WAJIB** | https://console.anthropic.com → sign up → generate API key  | Top-up min $5; pelatihan habiskan ~$2-5/peserta |
+| **Anthropic Console**         | **WAJIB** | https://console.anthropic.com → sign up → terima undangan Workspace dari fasilitator | Day 1 Module 3 + Day 2+: pakai budget Workspace fasilitator; opsional top-up pribadi $5 untuk eksplorasi mandiri |
 | **Supabase**                  | **WAJIB** | https://supabase.com → sign up → buat project baru           | Free tier cukup (500 MB DB, 2 GB bandwidth) |
 | **Voyage AI**                 | **WAJIB (Day 3)** | https://www.voyageai.com → sign up → API key            | Free tier cukup untuk pelatihan            |
 | **GitHub**                    | Wajib   | Akun GitHub aktif                                             | Free                                       |
 | **Google Account**            | Wajib   | Untuk akses Google Form pretest/posttest                      | Free                                       |
 | **Vercel**                    | Opsional | https://vercel.com (login dengan GitHub) untuk deploy capstone | Free hobby tier cukup                    |
 
-### D.1 Setup Anthropic API Key
+### D.1 Setup Anthropic Workspace (untuk Fasilitator — H-3)
+
+Sebelum pelatihan, fasilitator membuat **Workspace bersama** sehingga seluruh peserta dapat menggunakan Workbench (Day 1 Module 3) dan API (Day 2+) tanpa harus top-up pribadi:
+
+1. Login ke https://console.anthropic.com sebagai fasilitator (akun dengan budget pelatihan).
+2. Klik dropdown workspace di kanan atas → **Create workspace** → beri nama, mis. **"Pelatihan Jalin 2026-06"**.
+3. Buka **Settings → Members** (di dalam workspace tersebut) → **Invite member**.
+4. Masukkan email seluruh peserta. Pilih role **`Developer`** (cukup untuk Workbench + generate API key, tidak ada akses ubah billing).
+5. Set **Usage Limit** untuk workspace di **Settings → Limits** ke angka aman (mis. **$80**) sebagai pagar otomatis.
+6. Verifikasi: setelah peserta menerima dan accept undangan email, mereka akan melihat workspace ini di dropdown kanan atas Console.
+
+> 💡 **Estimasi biaya Workspace**: untuk 6 peserta × 4 hari pelatihan (Day 1 Module 3 lab + Day 2–4 hands-on), anggaran $50–80 sudah cukup. Top-up $100 memberi margin aman. Lihat detail estimasi di bagian Diskusi Biaya (Q&A) — jika belum ada, tanyakan ke fasilitator senior atau dokumen anggaran pelatihan.
+
+### D.1b Setup Anthropic API Key (untuk Peserta — H-1)
 
 Tiap peserta WAJIB:
 
-1. Generate Anthropic API key dari https://console.anthropic.com/settings/keys
-2. Top-up minimum $5 (atau gunakan key yang disediakan fasilitator)
-3. Simpan key di file `.env.local` project (bukan environment variable global, supaya tidak bocor ke project lain):
+1. Sign up di https://console.anthropic.com menggunakan email yang sama dengan email registrasi pelatihan (agar undangan workspace cocok).
+2. Cek inbox email — terima dan accept undangan ke **Workspace Pelatihan Jalin**.
+3. Setelah masuk workspace pelatihan, generate API key di https://console.anthropic.com/settings/keys (pastikan dropdown workspace di kanan atas menunjuk ke workspace pelatihan, **bukan** workspace pribadi).
+4. Simpan key di file `.env.local` project (bukan environment variable global, supaya tidak bocor ke project lain):
 
    ```env
    ANTHROPIC_API_KEY=sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxx

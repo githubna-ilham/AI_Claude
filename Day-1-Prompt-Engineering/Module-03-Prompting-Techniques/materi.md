@@ -579,14 +579,14 @@ Jika task Anda hanya membutuhkan beberapa contoh dan instruksi sederhana, **few-
 
 ### Langkah
 
-1. **Buka claude.ai** (free tier, model default Sonnet 4.x). Karena claude.ai tidak memungkinkan set `temperature=0`, **jalankan setiap teknik 2–3 kali** dan ambil output yang mayoritas. Variansi minor antar run adalah hal normal dan justru menjadi pelajaran tentang reproducibility.
+1. **Buka [Anthropic Console — Workbench](https://console.anthropic.com/workbench)**. Pilih model **Sonnet 4.x** dan set **`temperature = 0`** di panel kanan. Dengan temperature 0, eksperimen A/B menjadi deterministik — sangat penting untuk membandingkan kualitas antar teknik secara fair.
 2. Siapkan 5 tweet test (sertakan 1 sarkastik, 1 mixed sentiment, 1 slang berat).
 3. **Run zero-shot**: prompt klasifikasi dasar tanpa contoh.
 4. **Run few-shot**: tambahkan 5 contoh terbalanced.
 5. **Run CoT**: tambahkan instruksi "pikirkan langkah demi langkah, identifikasi kata kunci sentimen, baru beri label".
 6. Catat output ke tabel perbandingan. Diskusikan: kapan jump dari zero ke few-shot worth? Kapan CoT worth?
 
-> 💡 **Catatan untuk Day 2+**: Saat Anda mengintegrasikan ke kode (Day 2), pemanggilan via Anthropic API dapat menerima parameter `temperature: 0` sehingga A/B test menjadi deterministik. Untuk Day 1, eksplorasi via claude.ai sudah cukup untuk mendapatkan intuisi pola perbedaan antar teknik.
+> 💰 **Akses Workbench**: berbeda dengan claude.ai yang gratis, Workbench memerlukan **kredit API** karena setiap "Run" memanggil endpoint Messages. Fasilitator membuat **Workspace pelatihan Jalin** di Anthropic Console dan mengundang seluruh peserta sebagai member. Selama sesi Module 3, pastikan dropdown workspace di kanan atas Console menunjuk ke workspace pelatihan — semua usage akan otomatis ditagih ke billing fasilitator, bukan ke akun pribadi Anda.
 
 ---
 
