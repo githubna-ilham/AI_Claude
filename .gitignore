@@ -2,7 +2,10 @@
 .claude/
 .DS_Store
 
-# Secrets
+# Materi referensi (tidak untuk di-commit)
+Prompt Engineering, AI Agent & AI App Development with Claude.pdf
+
+# Secrets — JANGAN PERNAH commit file ini
 .env
 .env.local
 .env*.local
@@ -10,6 +13,16 @@
 # Node / Next.js (for fin-app integration later)
 node_modules/
 .next/
+package.json
+package-lock.json
+
+# File testing/eksperimen lokal — bukan bagian materi resmi
+test.ts
+test.mjs
+test.js
+test.py
+scratch/
+playground/
 
 # Days yang belum siap untuk publik
 # Pelatihan cohort ini hanya mempublikasikan Day 1 di repo.
