@@ -8,18 +8,16 @@
 
 ## Outline Section
 
-Module 05 terdiri dari **6 section** yang membangun di atas Module 04. Setiap section menambah satu kemampuan prompt engineering pada AI Financial Advisor:
+Module 05 terdiri dari **4 section** yang membangun di atas Module 04. Setiap section menambah satu kemampuan prompt engineering pada AI Financial Advisor:
 
 | # | Section | Fokus | Status |
 |---|---|---|---|
 | **1** | **System Instruction** | Pakai parameter `system` untuk menetapkan persona, batasan, dan format output | ✅ Siap |
 | **2** | **Sample Parameter & Output Control** | Praktik mendalam: `temperature`, `top_p`, `top_k`, `stop_sequences`, structured output + parser transaksi | ✅ Siap |
-| **3** | **Prompt Guides** | Anatomi prompt yang baik: 7 prinsip, anti-pattern, iterative refinement | ✅ Siap |
-| **4** | **Zero-shot & Few-shot Prompting** | Perbedaan & kapan pakai; tambah few-shot examples ke parser & advisor | ✅ Siap |
-| **5** | **Role, Context, & Instruction** | Pattern RCI: komposisi modular, reuse untuk fitur Insight Mingguan | ✅ Siap |
-| **6** | **Agentic Workflow** | Tool use — Claude memanggil `get_transactions` & `get_balance_summary` dari Supabase | ✅ Siap |
+| **3** | **Role, Context, & Instruction** | Pattern RCI: komposisi modular, reuse untuk fitur Insight Mingguan | ✅ Siap |
+| **4** | **Agentic Workflow** | Tool use — Claude memanggil `get_transactions` & `get_balance_summary` dari Supabase | ✅ Siap |
 
-**Total estimasi durasi**: ±5–6 jam efektif (di luar break & diskusi).
+**Total estimasi durasi**: ±3–4 jam efektif (di luar break & diskusi).
 
 > 💡 **Cara kerja modul ini**: sama dengan Module 04 — setiap section memberi prompt-prompt siap copy-paste untuk dieksekusi ke Claude Code, yang akan memodifikasi fitur AI Financial Advisor di Fin-App secara inkremental.
 
@@ -34,15 +32,13 @@ flowchart TD
     subgraph M5["Module 05 — Prompt Engineering"]
         S1["Section 1<br/>System Instruction<br/>(migrasi dari prompt prefixing)"]
         S2["Section 2<br/>Sample Parameter & Output Control<br/>top_p, stop_sequences, structured output"]
-        S3["Section 3<br/>Prompt Guides<br/>audit, iterative refinement"]
-        S4["Section 4<br/>Zero-shot & Few-shot<br/>examples di system prompt"]
-        S5["Section 5<br/>Role, Context, Instruction<br/>pola komposisi modular"]
-        S6["Section 6<br/>Agentic Workflow<br/>tool use (Supabase)"]
+        S3["Section 3<br/>Role, Context, Instruction<br/>pola komposisi modular"]
+        S4["Section 4<br/>Agentic Workflow<br/>tool use (Supabase)"]
     end
 
     Final["AI Financial Advisor (production-grade)<br/>persona stabil + structured output + tool use"]
 
-    M4 --> S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> Final
+    M4 --> S1 --> S2 --> S3 --> S4 --> Final
 ```
 
 Setiap section adalah peningkatan kualitas prompt — bukan fitur baru di UI, melainkan **kecerdasan baru** di model yang dipanggil.
@@ -56,12 +52,10 @@ flowchart TD
     M4["Module 04 (selesai)<br/>AI Advisor pakai prompt prefixing"]
     A1["Section 1 → Migrasi ke parameter system"]
     A2["Section 2 → Eksplorasi parameter control<br/>+ structured output"]
-    A3["Section 3 → Refactor system prompt<br/>sesuai best practice"]
-    A4["Section 4 → Tambah few-shot examples<br/>di system prompt"]
-    A5["Section 5 → Restrukturisasi prompt<br/>dengan pola Role-Context-Instruction"]
-    A6["Section 6 → Aktifkan tool use<br/>(baca transaksi user dari Supabase)"]
+    A3["Section 3 → Restrukturisasi prompt<br/>dengan pola Role-Context-Instruction"]
+    A4["Section 4 → Aktifkan tool use<br/>(baca transaksi user dari Supabase)"]
 
-    M4 --> A1 --> A2 --> A3 --> A4 --> A5 --> A6
+    M4 --> A1 --> A2 --> A3 --> A4
 ```
 
 Pada akhir Module 05, AI Financial Advisor Anda tidak hanya menjawab pertanyaan — ia **memahami konteks pengguna** (dengan akses ke data transaksi via tool) dan menjawab dengan **format yang konsisten** untuk integrasi UI yang lebih kaya.
@@ -83,7 +77,7 @@ System instruction adalah pesan **khusus** yang Anda kirim ke Claude lewat param
 | `system` | Aturan tetap, identitas, format | Konstan sepanjang percakapan |
 | `messages[].role: "user"` | Pertanyaan / instruksi user saat itu | Dinamis per turn |
 | `messages[].role: "assistant"` | Respons Claude sebelumnya | Dinamis per turn |
-| `messages[].role: "tool_result"` | Hasil panggilan tool (Section 6) | Dinamis per tool call |
+| `messages[].role: "tool_result"` | Hasil panggilan tool (Section 4) | Dinamis per tool call |
 
 Claude dilatih khusus untuk membedakan: pesan di `system` adalah **rules**, pesan di `messages` adalah **conversation**. Itu sebabnya instruksi yang sama jauh lebih **konsisten dipatuhi** saat ditaruh di system dibandingkan diselipkan di user message.
 
@@ -185,7 +179,7 @@ Aturan praktis yang sudah terbukti bekerja di production chatbot:
 
 5. **Struktur jelas dengan heading.** Sub-section `## Persona`, `## Format`, `## Batasan` — bukan satu paragraf raksasa. Mudah di-iterate dan di-debug saat ada masalah.
 
-6. **Pisahkan persona (siapa) dari instruksi (apa).** Persona stabil sepanjang waktu; instruksi bisa berubah per fitur. Pemisahan ini juga jadi fondasi untuk **pola RCI** di Section 5.
+6. **Pisahkan persona (siapa) dari instruksi (apa).** Persona stabil sepanjang waktu; instruksi bisa berubah per fitur. Pemisahan ini juga jadi fondasi untuk **pola RCI** di Section 3.
 
 ## Anti-Pattern (Pitfalls)
 
@@ -345,225 +339,7 @@ flowchart LR
     Valid -- no --> Err
 ```
 
-# Section 3 — Prompt Guides
-
-**Tujuan section**: memahami **anatomi prompt yang baik** dan **anti-pattern** yang merusak kualitas output — lalu refactor system prompt AI Advisor dari Section 1 sesuai best practice.
-
-## Anatomi Prompt yang Baik
-
-Prompt produktif memiliki **3 elemen** yang harus jelas:
-
-```
-┌─────────────────────────────────────────────────────┐
-│ 1. KONTEKS  → "Siapa kamu, untuk apa, di mana"      │
-│ 2. TUGAS    → "Apa yang harus dilakukan saat ini"   │
-│ 3. FORMAT   → "Bagaimana output harus terlihat"     │
-└─────────────────────────────────────────────────────┘
-```
-
-### Contoh: Buruk vs Baik
-
-❌ **Prompt buruk** (semua tercampur, ambigu):
-
-```
-Bantu user dengan keuangan dan jawab dengan baik
-```
-
-✅ **Prompt baik** (3 elemen jelas terpisah):
-
-```
-KONTEKS:
-Anda adalah AI Financial Advisor untuk aplikasi Fin-App,
-sebuah personal finance tracker di Indonesia.
-
-TUGAS:
-Jawab pertanyaan user tentang keuangan personal —
-pengeluaran, tabungan, perencanaan finansial dasar.
-
-FORMAT:
-- Bahasa Indonesia, ramah, to-the-point.
-- Markdown rapi, format Rupiah "Rp 1.500.000".
-- Apabila pertanyaan di luar topik keuangan, sopan
-  kembalikan ke topik.
-```
-
-## 7 Prinsip Prompt yang Solid
-
-1. **Spesifik, bukan abstrak**.
-   - ❌ "tulis dengan baik"
-   - ✅ "tulis dengan 2-3 paragraf, formal tetapi ramah, max 200 kata"
-
-2. **Eksplisit, bukan implisit**.
-   - ❌ Berharap Claude "tahu" konvensi project Anda.
-   - ✅ Tulis konvensi tersebut langsung di prompt.
-
-3. **Berikan contoh**.
-   - Satu contoh konkret = ratusan kata penjelasan abstrak.
-
-4. **Larangan eksplisit**.
-   - "JANGAN sebut harga saham spesifik" lebih kuat dari "hindari hal sensitif".
-
-5. **Strukturkan dengan heading / list**.
-   - Markdown structure di prompt → Claude lebih mudah parse instruksi.
-
-6. **Pisahkan persona dari instruksi tugas**.
-   - System: persona, batasan, format.
-   - User message: tugas saat ini.
-
-7. **Iterasi adalah norma**.
-   - Jarang sekali prompt sempurna di percobaan pertama. Plan untuk 3-5 iterasi.
-
-## Anti-Pattern Umum
-
-| Anti-Pattern | Contoh | Dampak |
-|---|---|---|
-| **Permintaan kontradiktif** | "Singkat tetapi lengkap" | Output mediocre |
-| **Beban kognitif berlebih** | 15 batasan dalam satu prompt | Claude lupa beberapa |
-| **Instruksi negatif tanpa positif** | "Jangan begini, jangan begitu" | Claude bingung "harus apa" |
-| **Pertanyaan ambigu** | "Bagus tidak?" | Jawaban tidak terprediksi |
-| **Asumsi tanpa konteks** | "Lanjut yang tadi" tanpa konteks | Halusinasi |
-| **Format goal tidak terspesifikasi** | "Jawab pertanyaannya" | Output panjang/pendek tergantung mood |
-| **Mencampur banyak task** | "Ringkas, terjemahkan, dan analisis sekaligus" | Kualitas turun di semua task |
-
-## Iterative Refinement Pattern
-
-Saat menyusun prompt baru, gunakan pola berikut:
-
-```
-Versi 1: prompt minimal → test → identifikasi kekurangan
-Versi 2: tambah 1-2 perbaikan → test → identifikasi sisa kekurangan
-Versi 3: tambah edge case handling → test → puas
-Versi 4: simplifikasi yang bisa di-simplifikasi → test akhir
-```
-
-Versi terakhir biasanya **lebih simpel** dari versi tengah — banyak instruksi yang awalnya terasa perlu, ternyata tidak.
-
-Lanjutkan ke `latihan.md` Section 3 untuk eksekusi.
-
----
-
-Loop iteratif untuk meningkatkan kualitas prompt:
-
-```mermaid
-flowchart LR
-    Write["Tulis prompt v1"]
-    Test["Test dengan input nyata"]
-    Analyze["Analisis output:<br/>mana yang salah / bagus?"]
-    Hypo["Hipotesis perbaikan"]
-    Revise["Revisi → prompt v2"]
-
-    Write --> Test --> Analyze --> Hypo --> Revise --> Test
-```
-
-# Section 4 — Zero-shot & Few-shot Prompting
-
-**Tujuan section**: memahami **kapan** Anda perlu memberi Claude contoh dan **kapan** instruksi murni sudah cukup. Lalu menambahkan few-shot examples ke AI Advisor untuk konsistensi format yang lebih kuat.
-
-## Definisi
-
-### Zero-shot Prompting
-
-Anda meminta Claude melakukan task **tanpa memberi contoh** sebelumnya. Hanya instruksi.
-
-```
-Klasifikasikan kategori transaksi berikut sebagai
-"income" atau "expense":
-
-Bayar listrik bulanan
-```
-
-Claude akan mengandalkan **pengetahuan umum** dan instruksi untuk memberi jawaban.
-
-### Few-shot Prompting
-
-Anda memberi Claude **beberapa contoh input → output** sebelum task yang sebenarnya.
-
-```
-Klasifikasikan kategori transaksi berikut sebagai
-"income" atau "expense":
-
-Gaji bulan ini → income
-Beli kopi → expense
-Hasil freelance → income
-Bayar internet → expense
-
-Sekarang klasifikasikan:
-Bayar listrik bulanan
-```
-
-Claude melihat pola dan menjawab sesuai pola.
-
-## Kapan Pakai yang Mana?
-
-| Karakter Task | Zero-shot | Few-shot |
-|---|---|---|
-| Task umum yang Claude sudah "tahu" (tanya jawab, summary) | ✅ Cukup | ❌ Boros token |
-| Format output yang **sangat spesifik** (JSON kustom, gaya tertentu) | ⚠️ Bisa gagal | ✅ Lebih reliable |
-| Klasifikasi dengan kategori unik | ⚠️ Bisa salah label | ✅ Pasti pakai label yang Anda berikan |
-| Reasoning kompleks | ⚠️ Sering inkonsisten | ✅ Contoh chain-of-thought membantu |
-| Task yang tidak biasa / niche | ❌ Sering gagal | ✅ Wajib |
-
-## Trade-off Few-shot
-
-| Aspek | Implikasi |
-|---|---|
-| **Token usage** | Naik linear dengan jumlah contoh |
-| **Konsistensi** | Naik signifikan |
-| **Maintenance** | Contoh perlu di-update saat domain berubah |
-| **Halusinasi** | Turun (Claude lebih anchor ke contoh) |
-
-## Berapa Banyak Contoh yang Ideal?
-
-| Jumlah Contoh | Karakter |
-|---|---|
-| **1-shot** | Lebih baik dari zero-shot, tetapi pattern belum jelas |
-| **3-5 shot** | Sweet spot untuk kebanyakan task |
-| **10+ shot** | Diminishing returns, boros token |
-
-**Variasi penting**: contoh-contoh harus mewakili **distribusi** input yang akan Claude hadapi. Jangan semua contoh "easy case" — sertakan edge case.
-
-## Aplikasi di AI Financial Advisor
-
-Pertanyaan keuangan personal punya banyak variasi gaya:
-
-- "Tips menabung dong" (casual)
-- "Bagaimana strategi menabung yang efektif?" (formal)
-- "DP rumah 5 thn lg gmn caranya" (singkat, banyak singkatan)
-
-Dengan **few-shot examples** di system instruction, Anda dapat mengarahkan Claude untuk:
-
-- Memahami berbagai gaya bahasa.
-- Selalu merespons dengan format konsisten (markdown, list, bold).
-- Menangani pertanyaan ambigu dengan cara yang konsisten.
-
-Pada Section 4 latihan, Anda akan menambah 3-5 contoh ke system prompt dan melihat dampaknya pada konsistensi.
-
-Lanjutkan ke `latihan.md` Section 4 untuk eksekusi.
-
----
-
-Perbandingan struktur prompt zero-shot vs few-shot:
-
-```mermaid
-flowchart LR
-    subgraph Zero["Zero-shot"]
-        I1["Instruksi"]
-        Q1["Pertanyaan"]
-        O1["Output<br/>(format ditebak Claude)"]
-        I1 --> Q1 -.-> O1
-    end
-
-    subgraph Few["Few-shot"]
-        I2["Instruksi"]
-        E2["Contoh 1 (input → output)"]
-        E3["Contoh 2 (input → output)"]
-        Q2["Pertanyaan"]
-        O2["Output<br/>(konsisten dengan pola contoh)"]
-        I2 --> E2 --> E3 --> Q2 -.-> O2
-    end
-```
-
-# Section 5 — Role, Context, & Instruction
+# Section 3 — Role, Context, & Instruction
 
 **Tujuan section**: mempelajari pola **RCI (Role-Context-Instruction)** sebagai kerangka terstruktur untuk menyusun prompt. Lalu restrukturisasi system prompt AI Advisor agar lebih maintainable dan testable.
 
@@ -581,7 +357,7 @@ Pola RCI memisahkan **tiga lapis** informasi yang harus ada di prompt:
 
 ### Mengapa Memisahkan?
 
-Pada Section 1-4, system prompt Anda mencampur ketiganya dalam satu blok prose. Itu **bekerja**, tetapi:
+Pada Section 1-2, system prompt Anda mencampur ketiganya dalam satu blok prose. Itu **bekerja**, tetapi:
 
 - Sulit memodifikasi satu aspek tanpa kerusakan aspek lain.
 - Sulit reuse untuk task lain (mis. fitur "Insight Mingguan" mungkin pakai role yang sama, context berbeda).
@@ -684,7 +460,7 @@ Pemisahan ini membuat debugging jauh lebih cepat dibanding prompt monolitik.
 - ❌ **Instruction yang dependent pada context dinamis**: lebih baik pakai variable substitution.
 - ❌ **Format yang tergantung pada instruction**: format harus berdiri sendiri.
 
-Lanjutkan ke `latihan.md` Section 5 untuk eksekusi.
+Lanjutkan ke `latihan.md` Section 3 untuk eksekusi.
 
 ---
 
@@ -708,7 +484,7 @@ flowchart TD
     SP --> Ins
 ```
 
-# Section 6 — Agentic Workflow
+# Section 4 — Agentic Workflow
 
 **Tujuan section**: melampaui chatbot pasif — biarkan Claude **memanggil tool** untuk membaca data transaksi nyata user dari Supabase, lalu menjawab pertanyaan dengan **angka aktual**.
 
@@ -797,7 +573,7 @@ Karena Claude bisa memanggil **beberapa tool secara berurutan**, alurnya menjadi
 
 ## Tools yang Akan Dibangun di Fin-App
 
-Pada Section 6 latihan, Anda akan membangun **dua tool sederhana**:
+Pada Section 4 latihan, Anda akan membangun **dua tool sederhana**:
 
 | Tool | Input | Output | Use Case |
 |---|---|---|---|
@@ -814,7 +590,7 @@ Saat Claude memanggil tool, ada **delay tambahan** sebelum respons final. UX yan
 - Apabila tool memanggil beberapa kali (loop), tampilkan setiap langkah secara bertahap.
 - Pada streaming (Module 04 Section 6), tool calls muncul sebagai event terpisah dalam stream.
 
-## Batasan Section 6
+## Batasan Section 4
 
 Untuk modul ini, agentic workflow dibatasi pada:
 
@@ -824,7 +600,7 @@ Untuk modul ini, agentic workflow dibatasi pada:
 
 Versi production-grade dari agentic workflow membutuhkan permission system, audit trail, dan safeguards yang lebih kuat. Itu modul tersendiri.
 
-Lanjutkan ke `latihan.md` Section 6 untuk eksekusi.
+Lanjutkan ke `latihan.md` Section 4 untuk eksekusi.
 
 Alur tool use loop satu-step (kasus paling umum):
 

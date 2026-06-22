@@ -11,7 +11,7 @@ Setelah menyelesaikan materi ini, peserta diharapkan mampu:
 3. Memanfaatkan **Extended Thinking** model Opus dan menampilkannya di UI sebagai *collapsible reasoning*.
 4. Membangun pengalaman **streaming** kata-demi-kata untuk chat AI yang responsif.
 5. Mengelola **multi-turn conversation** dengan riwayat percakapan + windowing.
-6. Menerapkan **prompt engineering best practices**: system instruction, role-context-instruction pattern, zero-shot vs few-shot, output control.
+6. Menerapkan **prompt engineering best practices**: system instruction, role-context-instruction pattern, output control.
 7. Merancang **agentic workflow**: Claude memanggil tool (mis. `get_transactions`) untuk mengambil data dari Supabase secara mandiri.
 
 ## Outline Modul
@@ -19,9 +19,9 @@ Setelah menyelesaikan materi ini, peserta diharapkan mampu:
 | Modul | Judul | Estimasi |
 |---|---|---|
 | **04** | Content Generation — 6 section: Integrasi API → Text Generation → Thinking → Switching Mode → Streaming → Multi-Turn | 4–5 jam |
-| **05** | Prompt Engineering — 6 section: System Instruction → Parameter & Output Control → Prompt Guides → Zero/Few-Shot → Role-Context-Instruction → Agentic Workflow | 5–6 jam |
+| **05** | Prompt Engineering — 4 section: System Instruction → Parameter & Output Control → Role-Context-Instruction → Agentic Workflow | 3–4 jam |
 
-Total estimasi: **±9–11 jam efektif** untuk Module 04–05 (di luar break & diskusi).
+Total estimasi: **±7–9 jam efektif** untuk Module 04–05 (di luar break & diskusi).
 
 ## Prasyarat
 
@@ -44,9 +44,13 @@ Day 3 - Prompt Engineering/
 │   ├── latihan-switching-thinking.md     (Section 4 — Switching Thinking Mode)
 │   ├── latihan-streaming.md              (Section 5 — Streaming Process)
 │   └── latihan-multi-turn.md             (Section 6 — Multi-Turn Conversation)
-└── Module-05-Prompt-Engineering/                   ✅ siap (6 section)
-    ├── materi.md                                   (outline + Section 1–6 detail)
-    └── latihan.md                                  (20 prompt eksekusi siap copy-paste)
+└── Module-05-Prompt-Engineering/         ✅ siap (4 section)
+    ├── materi.md                         (outline + Section 1–4 detail + diagram Mermaid)
+    ├── latihan.md                        (index 4 section)
+    ├── latihan-system-instruction.md     (Section 1 — System Instruction)
+    ├── latihan-output-control.md         (Section 2 — Sample Parameter & Output Control)
+    ├── latihan-rci.md                    (Section 3 — Role, Context, Instruction)
+    └── latihan-agentic.md                (Section 4 — Agentic Workflow)
 ```
 
 ## Alur Belajar
@@ -67,7 +71,7 @@ Day 3 Module 04 Section 5 — Streaming
 Day 3 Module 04 Section 6 — Multi-Turn
         ↓  +messages[] + windowing
 Day 3 Module 05 — Prompt Engineering
-        → system instruction, few-shot, tool use (agentic)
+        → system instruction, RCI, tool use (agentic)
 ```
 
 🚀 **Mulai**: [Module 04 — Content Generation](./Module-04-Content-Generation/materi.md)

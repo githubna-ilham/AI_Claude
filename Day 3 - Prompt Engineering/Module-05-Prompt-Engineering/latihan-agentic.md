@@ -1,14 +1,14 @@
-# Section 6 — Agentic Workflow
+# Section 4 — Agentic Workflow
 
-> Bagian dari **[Module 05 — Latihan](./latihan.md)**. Lanjutan dari **[Section 5 — Role, Context, & Instruction](./latihan-rci.md)**.
+> Bagian dari **[Module 05 — Latihan](./latihan.md)**. Lanjutan dari **[Section 3 — Role, Context, & Instruction](./latihan-rci.md)**.
 
 > Latihan untuk memberi AI Advisor kemampuan **memanggil tool** — membaca data transaksi user dari Supabase saat dibutuhkan. Empat prompt siap copy-paste.
 >
 > **Estimasi**: 60–75 menit (paling teknis di Module 05).
 
-## Prasyarat Section 6
+## Prasyarat Section 4
 
-- [ ] Section 1–5 selesai.
+- [ ] Section 1–3 selesai.
 - [ ] Module 02 (Transactions CRUD) selesai — data transaksi ada di Supabase.
 
 ---
@@ -56,7 +56,7 @@ GUARDRAIL:
   pakai tool.
 - Property descriptions juga harus jelas.
 - JANGAN tambahkan tool yang bisa MENGUBAH data (create,
-  update, delete) — Section 6 hanya read-only.
+  update, delete) — Section 4 hanya read-only.
 ```
 
 **Verifikasi:**
@@ -227,7 +227,7 @@ GUARDRAIL:
 
 ---
 
-## Validasi Akhir Section 6 (Akhir Module 05)
+## Validasi Akhir Section 4 (Akhir Module 05)
 
 - [ ] File `tools.ts` dengan `TOOLS_DEFINITION` dan `executeTool`.
 - [ ] Route handler memanggil tool dengan loop maks 5 iterasi.
@@ -236,7 +236,7 @@ GUARDRAIL:
 - [ ] Pertanyaan tanpa tool tetap respons cepat tanpa indicator.
 - [ ] Tidak ada regresi: thinking, streaming, multi-turn semua bekerja.
 
-## Refleksi Section 6
+## Refleksi Section 4
 
 1. Bagaimana akurasi Claude memilih tool yang tepat?
 2. Pernah Claude memanggil tool yang tidak perlu? (Mis. pakai `get_transactions` untuk pertanyaan persona)
@@ -247,11 +247,10 @@ GUARDRAIL:
 
 ## 🎉 Validasi Akhir Module 05
 
-Setelah seluruh 6 section selesai, AI Financial Advisor Anda sudah:
+Setelah seluruh 4 section selesai, AI Financial Advisor Anda sudah:
 
 - [ ] **System instruction** yang terstruktur dengan pola RCI.
 - [ ] **Parameter generation** terkontrol (temperature, top_p, stop_sequences).
-- [ ] **Few-shot examples** untuk konsistensi format.
 - [ ] **Komposisi modular** prompt yang reusable.
 - [ ] **Tool use** untuk akses data transaksi nyata.
 - [ ] **Parser transaksi** dari teks natural di halaman Transactions.
@@ -262,4 +261,4 @@ Apabila seluruh checklist tercapai, AI Financial Advisor Anda sudah jauh dari se
 
 ---
 
-⬅️ Kembali: **[Section 5](./latihan-rci.md)** · 🏠 Index: **[Module 05 — Latihan](./latihan.md)**
+⬅️ Kembali: **[Section 3](./latihan-rci.md)** · 🏠 Index: **[Module 05 — Latihan](./latihan.md)**

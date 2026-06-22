@@ -1,14 +1,14 @@
-# Section 5 — Role, Context, & Instruction
+# Section 3 — Role, Context, & Instruction
 
-> Bagian dari **[Module 05 — Latihan](./latihan.md)**. Lanjutan dari **[Section 4 — Zero-shot & Few-shot Prompting](./latihan-few-shot.md)**.
+> Bagian dari **[Module 05 — Latihan](./latihan.md)**. Lanjutan dari **[Section 2 — Sample Parameter & Output Control](./latihan-output-control.md)**.
 
 > Latihan restrukturisasi system prompt dengan pola RCI dan demonstrasi reuse. Tiga prompt siap copy-paste.
 >
 > **Estimasi**: 35–45 menit.
 
-## Prasyarat Section 5
+## Prasyarat Section 3
 
-- [ ] Section 1–4 selesai.
+- [ ] Section 1–2 selesai.
 
 ---
 
@@ -29,8 +29,7 @@ GOAL:
   - ADVISOR_INSTRUCTION: tugas dan batasan utama.
 
 - Komposisi: ekspor ADVISOR_SYSTEM_V3 dengan template
-  literal yang menggabungkan 4 konstanta + section
-  "Contoh Interaksi" dari Section 4.
+  literal yang menggabungkan 4 konstanta.
 
 - Struktur final:
   # ROLE
@@ -44,9 +43,6 @@ GOAL:
   
   # INSTRUCTION
   ${ADVISOR_INSTRUCTION}
-  
-  # CONTOH INTERAKSI
-  [examples dari Section 4]
 
 - Update alias ADVISOR_SYSTEM = ADVISOR_SYSTEM_V3.
 
@@ -55,7 +51,7 @@ CONTEXT:
 
 GUARDRAIL:
 - JANGAN ubah konten — hanya restrukturisasi.
-- Test cases dari Section 3 harus tetap lolos.
+- Perilaku chatbot dari Section 1–2 harus tetap lolos.
 - ADVISOR_ROLE jangan mengandung instruksi tugas (itu
   bagian INSTRUCTION).
 - ADVISOR_CONTEXT jangan mengandung instruksi format
@@ -65,9 +61,9 @@ GUARDRAIL:
 **Verifikasi:**
 
 1. File prompts.ts memiliki konstanta terpisah: ADVISOR_ROLE, ADVISOR_CONTEXT, ADVISOR_FORMAT, ADVISOR_INSTRUCTION.
-2. ADVISOR_SYSTEM_V3 menggabungkan keempatnya + examples.
+2. ADVISOR_SYSTEM_V3 menggabungkan keempatnya.
 3. Aplikasi pakai V3 (alias).
-4. Run test cases dari Section 3 — semua lolos.
+4. Chatbot tetap berfungsi seperti di Section 1–2.
 
 ---
 
@@ -178,14 +174,14 @@ GUARDRAIL:
 
 ---
 
-## Validasi Akhir Section 5
+## Validasi Akhir Section 3
 
 - [ ] Konstanta ROLE, CONTEXT, FORMAT, INSTRUCTION ada terpisah.
 - [ ] ADVISOR_SYSTEM_V3 dan INSIGHT_SYSTEM komposisi modular.
 - [ ] Server action `getWeeklyInsight` ada dan return insight string.
 - [ ] Tidak ada regresi: chatbot tetap berfungsi dengan V3.
 
-## Refleksi Section 5
+## Refleksi Section 3
 
 1. Apakah refactor RCI lebih mudah di-iterasi vs prompt monolitik?
 2. Apa keuntungan praktis dari komposisi modular yang Anda rasakan?
@@ -193,4 +189,4 @@ GUARDRAIL:
 
 ---
 
-⬅️ Kembali: **[Section 4](./latihan-few-shot.md)** · ➡️ Lanjut: **[Section 6 — Agentic Workflow](./latihan-agentic.md)**
+⬅️ Kembali: **[Section 2](./latihan-output-control.md)** · ➡️ Lanjut: **[Section 4 — Agentic Workflow](./latihan-agentic.md)**

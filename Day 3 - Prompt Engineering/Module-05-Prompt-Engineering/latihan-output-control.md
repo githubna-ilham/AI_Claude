@@ -223,4 +223,4 @@ GUARDRAIL:
 
 ---
 
-⬅️ Kembali: **[Section 1](./latihan-system-instruction.md)** · ➡️ Lanjut: **[Section 3 — Prompt Guides](./latihan-prompt-guides.md)**
+⬅️ Kembali: **[Section 1](./latihan-system-instruction.md)** · ➡️ Lanjut: **[Section 3 — Role, Context, Instruction](./latihan-rci.md)**
