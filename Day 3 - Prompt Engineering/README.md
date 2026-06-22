@@ -20,8 +20,10 @@ Setelah menyelesaikan materi ini, peserta diharapkan mampu:
 |---|---|---|
 | **04** | Content Generation — 6 section: Integrasi API → Text Generation → Thinking → Switching Mode → Streaming → Multi-Turn | 4–5 jam |
 | **05** | Prompt Engineering — 4 section: System Instruction → Parameter & Output Control → Role-Context-Instruction → Agentic Workflow | 3–4 jam |
+| **06** | Embedding — 4 section: Konsep → Implementasi Voyage AI → Database Vector (pgvector) → Save Embedding To DB | 4–5 jam |
+| **07** | RAG (konseptual) — 1 section: halusinasi → closed/open book → alur kerja RAG → kapan dipakai | 30–45 menit (baca) |
 
-Total estimasi: **±7–9 jam efektif** untuk Module 04–05 (di luar break & diskusi).
+Total estimasi: **±12–15 jam efektif** untuk Module 04–07 (di luar break & diskusi).
 
 ## Prasyarat
 
@@ -44,13 +46,23 @@ Day 3 - Prompt Engineering/
 │   ├── latihan-switching-thinking.md     (Section 4 — Switching Thinking Mode)
 │   ├── latihan-streaming.md              (Section 5 — Streaming Process)
 │   └── latihan-multi-turn.md             (Section 6 — Multi-Turn Conversation)
-└── Module-05-Prompt-Engineering/         ✅ siap (4 section)
-    ├── materi.md                         (outline + Section 1–4 detail + diagram Mermaid)
-    ├── latihan.md                        (index 4 section)
-    ├── latihan-system-instruction.md     (Section 1 — System Instruction)
-    ├── latihan-output-control.md         (Section 2 — Sample Parameter & Output Control)
-    ├── latihan-rci.md                    (Section 3 — Role, Context, Instruction)
-    └── latihan-agentic.md                (Section 4 — Agentic Workflow)
+├── Module-05-Prompt-Engineering/         ✅ siap (4 section)
+│   ├── materi.md                         (outline + Section 1–4 detail + diagram Mermaid)
+│   ├── latihan.md                        (index 4 section)
+│   ├── latihan-system-instruction.md     (Section 1 — System Instruction)
+│   ├── latihan-output-control.md         (Section 2 — Sample Parameter & Output Control)
+│   ├── latihan-rci.md                    (Section 3 — Role, Context, Instruction)
+│   └── latihan-agentic.md                (Section 4 — Agentic Workflow)
+├── Module-06-Embedding/                  ✅ siap (4 section)
+│   ├── materi.md                         (konsep + implementasi + DB vector + save embedding)
+│   ├── latihan.md                        (index 4 section)
+│   ├── latihan-konsep-embedding.md       (Section 1 — Konsep Embedding)
+│   ├── latihan-implementasi-embedding.md (Section 2 — Implementasi Voyage AI)
+│   ├── latihan-database-vector.md        (Section 3 — Database Vector pgvector)
+│   └── latihan-save-embedding-db.md      (Section 4 — Save Embedding To DB Vector)
+└── Module-07-RAG/                        ✅ siap (konseptual saja)
+    ├── materi.md                         (Konsep RAG: halusinasi, open/closed book, alur kerja, variasi)
+    └── latihan.md                        (refleksi konseptual, tidak ada coding)
 ```
 
 ## Alur Belajar

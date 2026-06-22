@@ -1,6 +1,6 @@
 # Section 1 — Konsep AI Agent
 
-> Bagian dari **[Module 08 — Latihan](./latihan.md)**. Lanjutan dari **[Module 07 — Reranking & Hybrid Search](../../Day%203%20-%20Prompt%20Engineering/Module-07-RAG/latihan-reranking.md)**.
+> Bagian dari **[Module 08 — Latihan](./latihan.md)**. Lanjutan dari **[Module 07 — Konsep RAG](../../Day%203%20-%20Prompt%20Engineering/Module-07-RAG/materi.md)**.
 
 > Latihan **konseptual** untuk memperkuat intuisi pola ReAct sebelum coding agent di section berikutnya. Dua prompt — satu manual (no-code), satu di Claude Code untuk dokumentasi.
 >
@@ -8,7 +8,7 @@
 
 ## Prasyarat Section 1
 
-- [ ] Module 07 selesai. AI Advisor sudah RAG-aware (atau setidaknya streaming + multi-turn dari Module 04 Section 6).
+- [ ] Module 07 selesai. Anda paham konsep RAG (halusinasi, open-book vs closed-book, alur kerja retrieval-augmented).
 - [ ] Anda sudah membaca `materi.md` bagian Section 1 — paham definisi AI Agent + tiga kemampuan inti + pola ReAct.
 - [ ] Akses ke Claude Code di terminal terpisah (untuk Prompt 2).
 
@@ -138,4 +138,4 @@ Tuliskan pada catatan pribadi:
 
 ---
 
-⬅️ Kembali: **[Module 07 — Reranking & Hybrid Search](../../Day%203%20-%20Prompt%20Engineering/Module-07-RAG/latihan-reranking.md)** · 🏠 Index: **[Module 08 — Latihan](./latihan.md)** · ➡️ Lanjut: **[Section 2 — Tools & Function Calling](./latihan-tools-function-calling.md)**
+⬅️ Kembali: **[Module 07 — Konsep RAG](../../Day%203%20-%20Prompt%20Engineering/Module-07-RAG/materi.md)** · 🏠 Index: **[Module 08 — Latihan](./latihan.md)** · ➡️ Lanjut: **[Section 2 — Tools & Function Calling](./latihan-tools-function-calling.md)**
