@@ -28,32 +28,26 @@ Module 04 terdiri dari **6 section** (+ 1 latihan UI di Module 03 sebagai prasya
 
 Berikut gambaran arsitektur yang Anda bangun dari awal sampai akhir module:
 
-```
-   ┌──────────────────────────────────────────────────────┐
-   │                  Fin-App (Browser)                   │
-   └───────────────────────┬──────────────────────────────┘
-                           │
-   ── Module 03 (prasyarat) ──────────────────────────────
-   [latihan-ui-chatbot]  AIChatPanel (UI shell + mock)
-                           │
-   ── Module 04 ──────────────────────────────────────────
-   Section 1  →  server action askAdvisor()
-                 Browser → Server → Claude API
-                           │
-   Section 2  →  + temperature + prompt prefixing
-                           │
-   Section 3  →  + extended thinking → { text, thinking }
-                           │
-   Section 4  →  + toggle thinking + budget (Haiku/Opus)
-                           │
-   Section 5  →  route handler /api/advisor
-                 ReadableStream (token-by-token)
-                           │
-   Section 6  →  messages[] (riwayat) + windowing
-                           ↓
-   ┌──────────────────────────────────────────────────────┐
-   │       AI Financial Advisor (production-ready)        │
-   └──────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Browser["Fin-App (Browser)"]
+
+    subgraph M3["Module 03 — Prasyarat"]
+        UI["latihan-ui-chatbot<br/>AIChatPanel (UI shell + mock)"]
+    end
+
+    subgraph M4["Module 04 — Content Generation"]
+        S1["Section 1<br/>server action askAdvisor()<br/>Browser → Server → Claude API"]
+        S2["Section 2<br/>+ temperature + prompt prefixing"]
+        S3["Section 3<br/>+ extended thinking<br/>{ text, thinking }"]
+        S4["Section 4<br/>+ toggle thinking + budget<br/>Haiku ↔ Opus"]
+        S5["Section 5<br/>route handler /api/advisor<br/>ReadableStream (token-by-token)"]
+        S6["Section 6<br/>messages[] (riwayat) + windowing"]
+    end
+
+    Final["AI Financial Advisor<br/>(production-ready)"]
+
+    Browser --> UI --> S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> Final
 ```
 
 Setiap lapis menambah satu kemampuan **tanpa membongkar lapis sebelumnya**.
@@ -70,20 +64,17 @@ Artinya:
 
 Alur evolusinya kira-kira seperti ini:
 
-```
-[Latihan UI Module 03] → UI shell + mock messages
-   │
-Section 1 → Ganti mock dengan panggilan Claude API (server action)
-   │
-Section 2 → Tambah parameter `temperature` + prompt prefixing untuk format output
-   │
-Section 3 → Aktifkan extended thinking, tampilkan di UI
-   │
-Section 4 → Tambah toggle thinking di header chatbot
-   │
-Section 5 → Ubah respons biasa jadi streaming (efek typewriter)
-   │
-Section 6 → Simpan riwayat percakapan, kirim sebagai konteks
+```mermaid
+flowchart TD
+    M3["Latihan UI Module 03<br/>UI shell + mock messages"]
+    A1["Section 1<br/>Ganti mock dengan panggilan Claude API<br/>(server action)"]
+    A2["Section 2<br/>Tambah parameter temperature<br/>+ prompt prefixing untuk format output"]
+    A3["Section 3<br/>Aktifkan extended thinking,<br/>tampilkan di UI"]
+    A4["Section 4<br/>Tambah toggle thinking di header chatbot"]
+    A5["Section 5<br/>Ubah respons biasa jadi streaming<br/>(efek typewriter)"]
+    A6["Section 6<br/>Simpan riwayat percakapan,<br/>kirim sebagai konteks"]
+
+    M3 --> A1 --> A2 --> A3 --> A4 --> A5 --> A6
 ```
 
 Setiap "→" adalah peningkatan inkremental pada **kode yang sama**, bukan project baru.
@@ -98,14 +89,25 @@ Setiap "→" adalah peningkatan inkremental pada **kode yang sama**, bukan proje
 
 Lapis baru di atas latihan UI Module 03:
 
-```
-[Latihan UI Module 03]:       Section 1 (yang Anda tambah):
+```mermaid
+flowchart LR
+    subgraph Before["Latihan UI Module 03"]
+        UI1["UI Panel + Mock messages"]
+    end
 
-  [ UI Panel + Mock ]    →    [ UI Panel + Server Action → Claude API ]
-                                                   │
-                                                   ↓
-                                          [ Loading state ]
-                                          [ Error handling ]
+    subgraph After["Section 1 (yang Anda tambah)"]
+        UI2["UI Panel"]
+        SA["Server Action<br/>askAdvisor()"]
+        API["Claude API"]
+        Loading["Loading state"]
+        Error["Error handling"]
+
+        UI2 --> SA --> API
+        SA -.-> Loading
+        SA -.-> Error
+    end
+
+    Before ==> After
 ```
 
 Yang akan dibuat / dimodifikasi:
@@ -126,36 +128,22 @@ Anda **tidak boleh** memanggil Claude API langsung dari client component, karena
 
 Solusinya: **server action**. Pola yang sama dengan `getBalanceSummary` di Module 02 — fungsi dengan `"use server"` yang dipanggil dari client component tetapi eksekusinya di server.
 
-```
-   Browser (Client Component)              │              Server (Node.js / Next.js)
-   ════════════════════════════            │              ═══════════════════════════════
-                                           │
-   ┌──────────────────────┐                │
-   │  [User klik kirim]   │                │
-   └──────────┬───────────┘                │
-              │                            │
-              │  panggil askAdvisor("...")  │
-              ├────────────────────────────┼──────────►┌─────────────────────────────┐
-              │                            │           │  askAdvisor() jalan         │
-              │                            │           │  • baca ANTHROPIC_API_KEY   │
-              │           ⟨ menunggu ⟩     │           │  • panggil Anthropic SDK    │
-              │           (3–8 detik)      │           └──────────────┬──────────────┘
-              │                            │                          │
-              │                            │                          ▼
-              │                            │           ┌─────────────────────────────┐
-              │                            │           │  Claude API merespons       │
-              │                            │           └──────────────┬──────────────┘
-              │                            │                          │
-              │◄───────── return string (text saja) ──────────────────┤
-              │                            │
-              ▼                            │
-   ┌──────────────────────┐                │
-   │  Render bubble AI    │                │
-   └──────────────────────┘                │
-                                           │
-   ──────────────────────────────── batas jaringan ────────────────────────────────
-   API key & raw API response               │           API key hidup hanya di sini —
-   TIDAK PERNAH terlihat di sini.            │           tidak dikirim ke browser.
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant B as Browser<br/>(Client Component)
+    participant S as Server<br/>(Next.js / Node.js)
+    participant A as Anthropic API
+
+    U->>B: klik tombol kirim
+    B->>S: panggil askAdvisor("...")
+    Note over B,S: batas jaringan —<br/>API key tidak melintas ke browser
+    S->>S: baca ANTHROPIC_API_KEY dari env
+    S->>A: client.messages.create(...)
+    A-->>S: respons (text content block)
+    S-->>B: return string (text saja)
+    B->>U: render bubble AI
 ```
 
 ## Konsep Loading State & Error Handling
@@ -174,31 +162,17 @@ Untuk error, UI harus:
 
 Alur state pesan dari user klik kirim sampai render respons:
 
-```
-   [idle]
-     │ user klik kirim
-     ↓
-   [pesan user di-push] ─→ input dikosongkan
-     │
-     ↓
-   [isThinking = true]  ─→ tampilkan "AI sedang mengetik..."
-     │                     input + tombol kirim DISABLED
-     │ panggil askAdvisor(message)
-     ↓
-   ┌───────────────────────────┐
-   │   menunggu Claude API     │   (3–8 detik)
-   └─────────────┬─────────────┘
-                 │
-       ┌─────────┴──────────┐
-       ↓                    ↓
-   [SUKSES]             [GAGAL]
-   push assistant       lastError = { msg, q }
-   isThinking=false     isThinking=false
-   lastError=null       tampilkan bubble error + tombol "Coba lagi"
-       │                    │
-       └──────────┬─────────┘
-                  ↓
-              [idle]
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> PushUserMsg: user klik kirim
+    PushUserMsg --> Loading: isThinking = true,<br/>input disabled
+    Loading --> Success: respons OK
+    Loading --> Error: exception
+    Success --> Idle: push assistant,<br/>isThinking=false,<br/>lastError=null
+    Error --> RetryWait: lastError = { msg, q },<br/>tampilkan bubble error
+    RetryWait --> Loading: klik "Coba lagi"
+    RetryWait --> PushUserMsg: ketik pesan baru
 ```
 
 ## Estimasi Biaya per Request
@@ -265,14 +239,19 @@ Untuk **AI Financial Advisor**, nilai `0.5–0.7` umumnya pas: faktual tetapi ti
 
 Visualisasi spektrumnya:
 
-```
-  0.0 ─────── 0.3 ─────── 0.5 ─────── 0.7 ─────── 1.0
-   │           │           │           │           │
-   ▼           ▼           ▼           ▼           ▼
- Deterministik │      [Default chat]   │       Kreatif
-  Ekstraksi    │      Tanya-jawab,     │      Brainstorm,
-  data,        │      ringkasan,       │      ide nama,
-  klasifikasi  │      financial advice │      slogan
+```mermaid
+flowchart LR
+    T0["0.0<br/>Deterministik<br/>Ekstraksi data,<br/>klasifikasi"]
+    T03["0.3"]
+    T05["0.5<br/>Default chat<br/>Tanya-jawab,<br/>financial advice"]
+    T07["0.7"]
+    T1["1.0<br/>Kreatif<br/>Brainstorm,<br/>ide nama, slogan"]
+
+    T0 --> T03 --> T05 --> T07 --> T1
+
+    style T0 fill:#e0f2fe
+    style T05 fill:#dcfce7
+    style T1 fill:#fef3c7
 ```
 
 Pertanyaan yang sama, 3x di temperature 0.0 → jawaban identik. Di 1.0 → bisa sangat berbeda.
@@ -410,19 +389,20 @@ Karena itu, di Section 4 nanti Anda akan menambah toggle untuk mengaktifkan/meno
 
 Timeline perbandingan respons:
 
-```
-   Tanpa thinking (Haiku):
-   t=0s ─────────────────► t=3s
-   [submit] ............... [respons lengkap]
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant H as Haiku<br/>(tanpa thinking)
+    participant O as Opus<br/>(dengan thinking)
 
+    U->>H: submit (t=0s)
+    H-->>U: respons lengkap (t≈3s)
+    Note over H: Total: ~3 detik
 
-   Dengan thinking (Opus, budget 2000):
-   t=0s ──────────────────────────────────► t=12s
-   [submit] .............................. [respons lengkap]
-            │                          │
-            └─── thinking phase ───────┘
-                 (2000 tokens internal)
-                 user lihat: "🧠 Sedang menganalisis..."
+    U->>O: submit (t=0s)
+    Note over O: thinking phase aktif<br/>(2000 token internal)<br/>UI: "🧠 Sedang menganalisis..."
+    O-->>U: respons lengkap (t≈12s)
+    Note over O: Total: ~12 detik — kualitas analisis berbeda kelas
 ```
 
 Mata user tetap menunggu — tapi kualitas analisis berbeda kelas. Untuk pertanyaan "Berapa total expense?" tidak perlu thinking; untuk "Bandingkan tiga skenario tabungan" sangat berguna.
@@ -492,22 +472,22 @@ User tidak perlu menghafal tabel ini — UI akan menyediakan **preset** (low / m
 
 Decision tree intuitif:
 
-```
-   Pertanyaan datang
-        │
-        ↓
-   ┌────────────────────────────────┐
-   │ Butuh analisis / perbandingan? │
-   └────┬────────────────────┬──────┘
-        │ Tidak              │ Ya
-        ↓                    ↓
-   Thinking OFF         ┌──────────────────────┐
-   (Haiku, ~3s)         │ Seberapa kompleks?   │
-                        └──┬───────┬───────┬───┘
-                           │ low   │ med   │ high
-                           ↓       ↓       ↓
-                        1024 tk  2048 tk 4096 tk
-                        (Opus, 8s)(12s)  (20s)
+```mermaid
+flowchart TD
+    Q["Pertanyaan datang"]
+    D1{"Butuh analisis /<br/>perbandingan?"}
+    Off["Thinking OFF<br/>Haiku, ~3s"]
+    D2{"Seberapa kompleks?"}
+    Low["Low: 1024 tk<br/>Opus, ~8s"]
+    Med["Medium: 2048 tk<br/>Opus, ~12s"]
+    High["High: 4096 tk<br/>Opus, ~20s"]
+
+    Q --> D1
+    D1 -- Tidak --> Off
+    D1 -- Ya --> D2
+    D2 -- ringan --> Low
+    D2 -- sedang --> Med
+    D2 -- berat --> High
 ```
 
 ## State Management
@@ -632,25 +612,31 @@ while (true) {
 
 Visualisasi pipeline ujung ke ujung:
 
-```
-   Claude API          Route Handler          Client            UI Bubble
-   ──────────          ─────────────          ──────            ─────────
-       │                     │                  │                   │
-       │  "Berikut"          │                  │                   │
-       ├────────────────────►│                  │                   │
-       │                     │ enqueue("Berikut")                   │
-       │                     ├─────────────────►│                   │
-       │                     │                  │ setMessages(...)  │
-       │                     │                  ├──────────────────►│
-       │                     │                  │                   │ "Berikut"
-       │  " tiga"            │                  │                   │
-       ├────────────────────►├─────────────────►├──────────────────►│ "Berikut tiga"
-       │                     │                  │                   │
-       │  " tips"            │                  │                   │
-       ├────────────────────►├─────────────────►├──────────────────►│ "Berikut tiga tips"
-       │     ...             │      ...         │      ...          │      ...
-       │  [done]             │ controller.close │   {done: true}    │
-       └─────────────────────┴──────────────────┴───────────────────┘
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Claude API
+    participant R as Route Handler<br/>/api/advisor
+    participant Cl as Client<br/>(AIChatPanel)
+    participant UI as Bubble UI
+
+    C->>R: chunk "Berikut"
+    R->>Cl: enqueue("Berikut")
+    Cl->>UI: setMessages → "Berikut"
+
+    C->>R: chunk " tiga"
+    R->>Cl: enqueue(" tiga")
+    Cl->>UI: append → "Berikut tiga"
+
+    C->>R: chunk " tips"
+    R->>Cl: enqueue(" tips")
+    Cl->>UI: append → "Berikut tiga tips"
+
+    Note over C,UI: ... lanjut sampai stop_reason: end_turn
+
+    C->>R: [done]
+    R->>Cl: controller.close()
+    Cl->>UI: { done: true }
 ```
 
 Setiap token yang Claude hasilkan langsung mengalir tanpa nunggu seluruh respons selesai.
@@ -745,17 +731,19 @@ Pada percakapan **sangat panjang**, biaya menjadi mahal. Strategi yang umum:
 
 Visualisasi pertumbuhan `messages[]` yang dikirim ke API setiap turn:
 
-```
-   Turn 1:  [U1]                                          1 pesan
-   Turn 2:  [U1, A1, U2]                                  3 pesan
-   Turn 3:  [U1, A1, U2, A2, U3]                          5 pesan
-   Turn 4:  [U1, A1, U2, A2, U3, A3, U4]                  7 pesan
-   ...                                                    ...
-   Turn 10: [U1..A9, U10]                                19 pesan
-   Turn 20: [U1..A19, U20]                               39 pesan
-            └─────────┬─────────┘
-                  windowing aktif:
-                  slice(-10) hanya kirim 10 terakhir
+```mermaid
+flowchart TD
+    T1["Turn 1<br/>[U1]<br/>1 pesan"]
+    T2["Turn 2<br/>[U1, A1, U2]<br/>3 pesan"]
+    T3["Turn 3<br/>[U1, A1, U2, A2, U3]<br/>5 pesan"]
+    T10["Turn 10<br/>[U1..A9, U10]<br/>19 pesan"]
+    T20["Turn 20<br/>[U1..A19, U20]<br/>39 pesan"]
+    W["windowing aktif:<br/>slice(-10) hanya kirim 10 terakhir"]
+
+    T1 --> T2 --> T3 --> T10 --> T20
+    T20 -.-> W
+
+    style W fill:#fef3c7
 ```
 
 Setiap turn membayar ulang seluruh konteks sebelumnya — itulah kenapa windowing/summarization jadi krusial di percakapan panjang.
