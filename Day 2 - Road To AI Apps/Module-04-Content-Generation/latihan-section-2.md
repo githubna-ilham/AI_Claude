@@ -1,332 +1,206 @@
-# Section 2 — Integrasi Claude API ke Chatbot
+# Section 2 — Text Generation
 
 > Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Section 1](./latihan-section-1.md)**.
 
-> Latihan untuk **menghidupkan** chatbot dari Section 1: mengganti mock messages dengan respons asli dari Claude API. Empat prompt siap copy-paste.
+> Latihan untuk mengeksplorasi parameter generation Claude API: `max_tokens`, `temperature`, `stop_sequences` — serta pola **prompt prefixing** untuk mengarahkan format output tanpa system instruction. Empat prompt siap copy-paste.
 >
-> **Estimasi Section 2**: 40–50 menit.
+> **Estimasi Section 2**: 35–45 menit.
+
+> 📌 **Catatan**: Module 04 sengaja **belum menggunakan parameter `system`**. Format dan persona dikontrol murni lewat user message + parameter generation. System instruction adalah topik tersendiri.
 
 ## Prasyarat Section 2
 
-- [ ] Section 1 selesai. Panel chatbot tampil dengan UI lengkap (mock messages, input, toggle).
-- [ ] Module 03 selesai. SDK `@anthropic-ai/sdk` ter-install dan `ANTHROPIC_API_KEY` sudah ada di `.env.local`.
-- [ ] Dev server berjalan: `npm run dev`.
-- [ ] Claude Code aktif di terminal terpisah.
-
-> ⚠️ **Penting**: Section 2 **memperluas** kode dari Section 1. Jangan menulis ulang `ai-chat-panel.tsx` dari nol — minta Claude untuk **memodifikasi** file yang sudah ada.
+- [ ] Section 1 selesai (+ Latihan UI Module 03). Chatbot dapat menerima pertanyaan dan menampilkan respons asli dari Claude.
+- [ ] Anda sudah membaca bagian Section 2 di `materi.md`.
 
 ---
 
-## Prompt 1 — Buat Server Action `askAdvisor`
-
-### Walkthrough Manual (sebelum pakai prompt)
-
-Sebelum copy-paste prompt ke Claude, pahami dulu apa saja yang harus ada di file `src/features/advisor.ts`. Ini akan membantu Anda **mereview** output Claude dan menangkap kesalahan kalau ada.
-
-**File baru: `src/features/advisor.ts`** (satu file, tidak modifikasi yang lain)
-
-**1. Directive `"use server"` di baris pertama**
-
-Wajib agar Next.js menganggap file ini server action. Tanpa ini, fungsi tidak akan jalan saat dipanggil dari client.
-
-```ts
-"use server";
-```
-
-**2. Import SDK Anthropic**
-
-SDK sudah ter-install di Module 03 (`@anthropic-ai/sdk` ada di `package.json`).
-
-```ts
-import Anthropic from "@anthropic-ai/sdk";
-```
-
-**3. Inisialisasi client (di module level, bukan di dalam function)**
-
-Instantiate sekali saja, di-reuse setiap pemanggilan — lebih efisien daripada bikin baru tiap call. API key TANPA prefix `NEXT_PUBLIC_` karena ini server-only.
-
-```ts
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
-```
-
-**4. Function `askAdvisor(message: string): Promise<string>`**
-
-Alur internal:
-
-- **Validasi input dulu** — kalau `message.trim()` kosong, langsung `throw new Error("Pesan tidak boleh kosong")`. Ini SEBELUM API call agar hemat biaya.
-- **Panggil `client.messages.create(...)`** dengan param:
-  - `model: "claude-haiku-4-5"` (murah untuk eksperimen)
-  - `max_tokens: 1024`
-  - `messages: [{ role: "user", content: message }]`
-- **Cek tipe response block** — `response.content[0]` bisa berbentuk `"text"`, `"tool_use"`, `"thinking"`, dll. Kalau bukan `"text"`, throw error.
-- **Return `block.text`** (string saja), JANGAN return raw response object.
-
-**5. JSDoc singkat di atas function** — tujuan, parameter, return value.
-
-### Yang TIDAK perlu
-
-- ❌ Schema Zod (input cuma `string`)
-- ❌ Koneksi Supabase (server action ini tidak sentuh DB)
-- ❌ Try/catch besar (biarkan error throw, caller yang handle)
-- ❌ Logger / observability (cukup throw error message yang jelas)
-
-### Verifikasi setelah file dibuat
-
-1. Cek baris 1 ada `"use server";`
-2. API key TANPA `NEXT_PUBLIC_`
-3. Test cepat:
-   ```ts
-   // experiments/test-advisor.ts
-   import { askAdvisor } from "../src/features/advisor";
-   console.log(await askAdvisor("Halo, apa kabar?"));
-   ```
-   ```bash
-   npx tsx --env-file=.env.local experiments/test-advisor.ts
-   ```
-
----
+## Prompt 1 — Tambah Parameter `temperature` ke `askAdvisor`
 
 **Salin prompt berikut, paste ke Claude Code:**
 
 ```
-Saya ingin membuat server action untuk memanggil Claude API
-dari chatbot.
+Saya ingin mengontrol tingkat kreativitas respons Claude.
+Tambahkan parameter temperature ke server action.
 
 GOAL:
-- Buat file baru src/features/advisor.ts.
-- Ekspor server action async askAdvisor(message: string):
-  Promise<string>.
-- Function memanggil Claude API menggunakan SDK
-  @anthropic-ai/sdk yang sudah ter-install.
-- Return berupa string respons dari Claude (text content
-  block pertama).
+- Modifikasi src/features/advisor.ts.
+- Tambahkan parameter `temperature: 0.5` ke
+  client.messages.create() (saat ini hanya ada model,
+  max_tokens, messages).
+- Tambahkan JSDoc di atas function yang menjelaskan
+  alasan pemilihan 0.5 (seimbang antara faktual dan
+  natural).
 
 CONTEXT:
-- Pola server action sama dengan src/features/action.ts
-  (getBalanceSummary, dst). File dimulai dengan "use server".
-- API key diambil dari process.env.ANTHROPIC_API_KEY (TANPA
-  prefix NEXT_PUBLIC_).
-- Pakai model "claude-haiku-4-5" untuk eksperimen hemat biaya.
-- max_tokens: 1024.
-- Pesan dikirim sebagai single user message:
-  messages: [{ role: "user", content: message }]
+- Range temperature 0.0 - 1.0.
+- Untuk chatbot keuangan: 0.5 seimbang (faktual tetapi tidak
+  kaku).
+- JANGAN tambahkan parameter system — Module 04 belum pakai
+  system instruction.
 
 GUARDRAIL:
-- Apabila response.content[0] bukan tipe "text", throw error
-  dengan pesan jelas.
-- Apabila message kosong / whitespace-only, throw error
-  "Pesan tidak boleh kosong" tanpa memanggil API (hemat biaya).
-- JANGAN expose detail internal API ke caller (mis. raw
-  response object) — hanya return string.
-- Tambahkan komentar JSDoc singkat di atas function: tujuan,
-  parameter, return value.
-
-Setelah selesai, jelaskan singkat strukturnya.
+- Pertahankan validasi kosong dan return type dari Section 1.
+- JANGAN ubah model atau max_tokens.
 ```
 
 **Verifikasi:**
 
-1. File `src/features/advisor.ts` tercipta dengan struktur yang diminta.
-2. Buka file & pastikan ada `"use server"` di baris pertama.
-3. Verifikasi API key dipanggil tanpa prefix `NEXT_PUBLIC_`.
-4. (Opsional) test cepat dari `experiments/`:
-   ```ts
-   // experiments/test-advisor.ts
-   import { askAdvisor } from "../src/features/advisor";
-   console.log(await askAdvisor("Halo, apa kabar?"));
-   ```
-   Jalankan: `npx tsx --env-file=.env.local experiments/test-advisor.ts`
+1. Kirim pertanyaan yang sama 3 kali di chatbot: "Berikan 3 ide nama tabungan untuk DP rumah."
+2. Bandingkan respons. Dengan temperature 0.5, jawaban biasanya **mirip tetapi tidak identik**.
+3. (Opsional) Untuk eksperimen lebih, ubah temperature jadi `0.0`, restart server, kirim pertanyaan sama 3 kali — jawaban harusnya sangat mirip atau identik.
 
 ---
 
-## Prompt 2 — Integrasi ke AIChatPanel (Ganti Mock dengan API Call)
+## Prompt 2 — Eksplorasi `temperature` di File Eksperimen
 
 **Salin prompt berikut:**
 
 ```
-Hubungkan tombol kirim di AIChatPanel ke server action
-askAdvisor.
+Bantu saya membuat eksperimen membandingkan temperature.
 
 GOAL:
-- Di src/components/chat/ai-chat-panel.tsx, modifikasi
-  handler "kirim pesan" yang saat ini push mock message.
-- Alur baru saat user klik kirim (atau tekan Enter):
-  1. Push user message ke state messages (sudah dilakukan
-     sekarang — pertahankan).
-  2. Kosongkan input (sudah ada — pertahankan).
-  3. Set state isThinking = true.
-  4. Panggil askAdvisor dengan isi user message.
-  5. Push assistant message ke state messages dengan content
-     dari hasil askAdvisor.
-  6. Set isThinking = false.
+- Buat file baru experiments/temperature-test.ts.
+- Loop melalui 3 nilai temperature: 0.0, 0.5, 1.0.
+- Untuk setiap nilai, kirim pertanyaan yang sama 2 kali:
+  "Berikan satu nama unik untuk celengan digital."
+- Print hasil dengan format:
+  --- temperature: 0.0 ---
+  Attempt 1: <jawaban>
+  Attempt 2: <jawaban>
+  --- temperature: 0.5 ---
+  ...
 
-- Tambahkan state baru: useState<boolean>(false) untuk
-  isThinking.
-- Disable input dan tombol kirim selama isThinking === true.
-- Saat isThinking, di bawah pesan terakhir, tampilkan
-  indikator "AI sedang mengetik..." dengan ikon Loader2 dari
-  lucide-react (animate-spin).
+- Pakai Anthropic SDK langsung (bukan via askAdvisor).
+- Model: "claude-haiku-4-5".
+- max_tokens: 100 (jawabannya singkat).
 
 CONTEXT:
-- Import askAdvisor dari "@/features/advisor".
-- Mock messages awal dari Section 1 dipertahankan sebagai
-  initial state (jangan hapus dulu — Section selanjutnya
-  akan mengurus welcome message).
-- Komponen Loader2 dipakai dengan animate-spin dari Tailwind.
+- File standalone seperti experiments/claude-test.ts dari
+  Module 03.
+- Jalankan dengan: npx tsx --env-file=.env.local
+  experiments/temperature-test.ts
 
 GUARDRAIL:
-- JANGAN ubah struktur header / footer panel — hanya
-  modifikasi handler dan body messages area.
-- ID pesan unik: gunakan crypto.randomUUID() atau Date.now()
-  untuk id setiap message baru.
-- Indikator "sedang mengetik" muncul di posisi yang sama
-  dengan bubble assistant biasa (kiri, tanpa background
-  bubble).
+- JANGAN modifikasi askAdvisor — eksperimen ini terpisah.
+- Print clear separator antar temperature setting.
 ```
 
 **Verifikasi:**
 
-1. Reload browser. Mock messages masih tampil (initial state).
-2. Ketik pertanyaan "Berikan tip menghemat pengeluaran" → klik kirim.
-3. Pesan user muncul, lalu indikator "AI sedang mengetik..." tampil.
-4. Beberapa detik kemudian, respons asli dari Claude muncul sebagai bubble assistant dengan markdown ter-render.
-5. Input kembali aktif, dapat ketik pertanyaan baru.
+1. Jalankan file. Hasilnya:
+   - Temperature 0.0 → dua attempt biasanya identik atau hampir identik.
+   - Temperature 0.5 → variasi sedang.
+   - Temperature 1.0 → variasi tinggi, kadang sangat berbeda.
+2. Eksperimen ini melatih intuisi Anda tentang parameter temperature.
 
 ---
 
-## Prompt 3 — Error Handling + Tombol Retry
+## Prompt 3 — Eksplorasi `max_tokens` dan `stop_reason`
 
 **Salin prompt berikut:**
 
 ```
-Tambahkan penanganan error di alur pemanggilan askAdvisor.
+Bantu saya membuat eksperimen tentang max_tokens dan
+stop_reason.
 
 GOAL:
-- Bungkus pemanggilan askAdvisor di Prompt 2 dengan
-  try/catch.
-- Tambahkan state baru:
-  - lastError: { message: string; userQuestion: string } | null
-- Saat catch:
-  1. Set isThinking = false.
-  2. Set lastError dengan pesan error dan pertanyaan yang
-     gagal.
-- Saat lastError != null, tampilkan di bawah daftar pesan
-  sebuah bubble error berstyle khusus:
-  - Background bg-rose-50 dark:bg-rose-950/40.
-  - Border border-rose-200.
-  - Ikon AlertCircle (lucide-react) warna rose.
-  - Pesan: "Terjadi kesalahan saat menghubungi AI: {error
-    message}".
-  - Tombol "Coba lagi" — saat di-klik:
-    a. Set lastError = null.
-    b. Panggil ulang alur kirim dengan userQuestion dari
-       lastError.
-- Saat user mengetik pesan baru manual (mengganti input),
-  TIDAK perlu menghapus error — biarkan tetap tampil sampai
-  retry sukses atau pesan baru terkirim.
-- Saat pesan baru terkirim sukses, set lastError = null.
+- Buat file baru experiments/max-tokens-test.ts.
+- Pakai pertanyaan: "Jelaskan secara detail strategi
+  menghemat pengeluaran bulanan."
+- Loop melalui 3 nilai max_tokens: 50, 200, 1024.
+- Untuk setiap nilai, print:
+  --- max_tokens: 50 ---
+  stop_reason: <reason>
+  output_tokens: <jumlah>
+  Hasil: <teks>
+  (panjang teks dapat di-truncate jika sangat panjang)
+  ---
 
 CONTEXT:
-- File yang dimodifikasi: src/components/chat/ai-chat-panel.tsx.
-- Pakai komponen Button variant="outline" untuk tombol Coba
-  lagi.
-- Pesan error biasanya datang dari error.message — apabila
-  error bukan instance Error, gunakan "Unknown error".
+- File standalone.
+- Model: claude-haiku-4-5.
+- temperature: 0.5.
 
 GUARDRAIL:
-- JANGAN menggunakan toast — error harus tampil INLINE di
-  chat area, agar user tetap punya konteks pertanyaan apa
-  yang gagal.
-- Tombol retry tidak boleh push pesan user duplikat ke
-  state messages — gunakan userQuestion langsung sebagai
-  argumen ke askAdvisor.
-- Indikator error tidak muncul jika lastError = null.
+- Print stop_reason dengan jelas — ini intinya.
+- JANGAN tambah system parameter.
 ```
 
 **Verifikasi:**
 
-1. Sengaja salahkan API key di `.env.local` (tambah karakter di akhir). Restart dev server.
-2. Kirim pertanyaan → indikator typing → kemudian muncul **bubble error merah** dengan tombol "Coba lagi".
-3. Perbaiki API key, restart dev server.
-4. Klik "Coba lagi" → error hilang, indikator typing muncul, respons asli akhirnya tampil.
-5. (Edge case) Ketik pertanyaan baru saat error tampil → error tetap tampil sampai pertanyaan baru sukses.
+1. Jalankan file. Amati:
+   - max_tokens 50 → output terpotong, `stop_reason: "max_tokens"`.
+   - max_tokens 200 → mungkin masih terpotong, atau pas.
+   - max_tokens 1024 → biasanya selesai natural, `stop_reason: "end_turn"`.
+2. Anda sekarang punya intuisi: max_tokens harus **cukup** untuk pertanyaan terpanjang yang ekspektasi.
 
 ---
 
-## Prompt 4 — Bersihkan Mock Messages, Tambah Welcome
+## Prompt 4 — Prompt Prefixing untuk Mengarahkan Format
 
 **Salin prompt berikut:**
 
 ```
-Bersihkan mock messages dari Section 1 dan ganti dengan satu
-welcome message dari assistant.
+Saya ingin mengarahkan format output (markdown, bahasa,
+gaya) lewat user message, bukan system parameter.
 
 GOAL:
-- Ubah initial state messages di AIChatPanel dari array
-  berisi 3-4 mock menjadi array dengan SATU pesan welcome
-  dari assistant.
-- Pesan welcome:
-  - role: "assistant"
-  - content (markdown):
-    "Halo! Saya **AI Financial Advisor** Anda. Saya dapat
-    membantu Anda dengan:
+- Modifikasi src/features/advisor.ts.
+- Sebelum mengirim ke API, "prefix" user message dengan
+  instruksi format. Buat konstanta INSTRUCTION_PREFIX di
+  file yang sama:
 
-    - Analisis pola pengeluaran
-    - Tips menghemat dan menabung
-    - Pertanyaan umum tentang keuangan personal
+  const INSTRUCTION_PREFIX = `Anda menjawab dalam Bahasa
+  Indonesia, ramah dan to-the-point. Pakai markdown:
+  list bertanda untuk poin, bold untuk angka penting.
+  Format Rupiah: "Rp 1.500.000". Persentase: "15%".
 
-    Apa yang ingin Anda tanyakan?"
+  Pertanyaan: `;
+
+- Saat memanggil API, gabungkan:
+  content: INSTRUCTION_PREFIX + message
+
+- Pertahankan parameter temperature dari Prompt 1.
 
 CONTEXT:
-- File: src/components/chat/ai-chat-panel.tsx.
-- Pesan welcome ditulis langsung di state initialization,
-  bukan dari API.
-- Format markdown dengan list dan bold dipertahankan saat
-  render.
+- Inilah pola "prompt prefixing" — instruksi tetap di user
+  message, tidak di system parameter.
 
 GUARDRAIL:
-- HANYA satu welcome message di initial state — bukan
-  banyak.
-- Welcome message TIDAK boleh berasal dari panggilan API
-  (hemat biaya, instant tampil).
-- JANGAN ubah behavior lain (handler kirim, error, dll.).
+- JANGAN tambahkan parameter system: ke API call.
+- Pertahankan return type dan validasi kosong.
+- JANGAN pindahkan INSTRUCTION_PREFIX ke file lain dulu —
+  cukup di advisor.ts.
 ```
 
 **Verifikasi:**
 
-1. Reload browser.
-2. Panel chatbot menampilkan satu pesan welcome yang ramah dari assistant.
-3. Pesan welcome ter-format dengan baik (bold + list).
-4. Kirim pertanyaan baru → respons asli dari Claude muncul setelah welcome.
+1. Reload browser. Kirim: "Tips menghemat pengeluaran bulanan."
+2. Respons seharusnya:
+   - Dalam Bahasa Indonesia.
+   - Pakai list bertanda.
+   - Format Rupiah dan persen sesuai instruksi.
+3. (Opsional) Sengaja kirim pertanyaan dengan English: "How to save money?" — Claude masih akan menjawab dalam Bahasa Indonesia karena instruksi prefix.
 
 ---
 
 ## Validasi Akhir Section 2
 
-Pastikan checklist berikut tercapai sebelum lanjut ke Section 3:
-
-- [ ] Server action `askAdvisor` ada di `src/features/advisor.ts`.
-- [ ] API key diambil dari env (TANPA prefix `NEXT_PUBLIC_`).
-- [ ] Pertanyaan user mendapat respons asli dari Claude (bukan mock).
-- [ ] Indikator "AI sedang mengetik..." muncul saat menunggu respons.
-- [ ] Input & tombol kirim disabled selama menunggu.
-- [ ] Pesan error tampil inline (bukan toast) saat API call gagal.
-- [ ] Tombol "Coba lagi" berfungsi tanpa duplikasi pesan user.
-- [ ] Welcome message tampil saat panel pertama kali dibuka.
-- [ ] Tidak ada warning di console browser tentang process.env client-side.
+- [ ] Parameter `temperature: 0.5` aktif di `askAdvisor`.
+- [ ] File eksperimen `temperature-test.ts` jalan tanpa error.
+- [ ] File eksperimen `max-tokens-test.ts` jalan tanpa error.
+- [ ] Prompt prefixing aktif — respons konsisten Bahasa Indonesia + markdown.
+- [ ] **TIDAK ADA** parameter `system` di mana pun di Module 04.
+- [ ] Tidak ada regresi dari Section 1 (+ Latihan UI Module 03).
 
 ## Refleksi Section 2
 
-Tuliskan pada catatan pribadi:
-
-1. **Berapa detik** rata-rata waktu respons Claude untuk pertanyaan sederhana?
-2. Adakah perbedaan kualitas jawaban ketika Anda mengubah pertanyaan dari **vague** ke **spesifik**? (Coba: "Beri tips" vs "Beri tiga tips konkret untuk mengurangi biaya makan di luar")
-3. Apakah ada **format yang tidak ter-render** dengan baik di chatbot? (Misalnya tabel, code block)
-4. Apa **error pertama** yang Anda temui saat membangun Section 2? Bagaimana Anda mendiagnosisnya?
-5. Apakah Anda berpikir untuk menambahkan **rate limit di sisi UI** (mencegah spam)? Mengapa atau mengapa tidak?
+1. Pada temperature berapa Anda merasa respons paling **alami** untuk konteks keuangan?
+2. Apa kerugian prompt prefixing dibanding system instruction? (Hint: token usage.)
+3. Apakah Anda menemui pertanyaan yang Claude **abaikan** instruction prefix-nya? (Mis. tetap jawab dalam English.)
+4. Untuk task ekstraksi data terstruktur (mis. parse "Rp 50.000 makan siang"), apakah temperature 0.0 atau 0.5 lebih cocok? Mengapa?
 
 ---
 
-⬅️ Kembali: **[Section 1](./latihan-section-1.md)** · ➡️ Lanjut: **[Section 3 — Text Generation](./latihan-section-3.md)**
+⬅️ Kembali: **[Section 1](./latihan-section-1.md)** · ➡️ Lanjut: **[Section 3 — Thinking / Thought](./latihan-section-3.md)**

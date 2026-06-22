@@ -8,17 +8,17 @@
 
 ## Outline Section
 
-Module 04 terdiri dari **7 section** yang dirangkai berurutan. Setiap section menambah satu lapis kemampuan pada chatbot:
+Module 04 terdiri dari **6 section** (+ 1 latihan UI di Module 03 sebagai prasyarat) yang dirangkai berurutan. Setiap section menambah satu lapis kemampuan pada chatbot:
 
 | # | Section | Fokus | Status |
 |---|---|---|---|
-| **1** | **UI Chatbot** | Bangun panel kanan dengan header, body, input, markdown, toggle | ✅ Siap |
-| **2** | **Integrasi Claude API ke Chatbot** | Hubungkan UI ke Claude API (server action) — mock content jadi respons asli | 🚧 To be written |
-| **3** | **Text Generation** | Parameter generation: `temperature`, `max_tokens`, `stop_sequences`, prompt prefixing untuk format output | 🚧 To be written |
-| **4** | **Thinking / Thought** | Menggunakan *extended thinking* model Claude (Opus 4.x) untuk menampilkan proses berpikir | 🚧 To be written |
-| **5** | **Switching Thinking Mode** | Toggle on/off thinking, atau pilih effort level (low / medium / high) | 🚧 To be written |
-| **6** | **Streaming Process** | Stream respons kata-demi-kata seperti aplikasi chat modern | 🚧 To be written |
-| **7** | **Multi-Turn Conversation** | Simpan riwayat percakapan dan kirim sebagai konteks ke Claude untuk percakapan berkelanjutan | 🚧 To be written |
+| **0** | **[UI Chatbot (prasyarat — Module 03)](../Module-03-Claude-API/materi-ui-chatbot.md)** | Bangun panel kanan dengan header, body, input, markdown, toggle | ✅ Siap |
+| **1** | **Integrasi Claude API ke Chatbot** | Hubungkan UI ke Claude API (server action) — mock content jadi respons asli | ✅ Siap |
+| **2** | **Text Generation** | Parameter generation: `temperature`, `max_tokens`, `stop_sequences`, prompt prefixing untuk format output | ✅ Siap |
+| **3** | **Thinking / Thought** | Menggunakan *extended thinking* model Claude (Opus 4.x) untuk menampilkan proses berpikir | ✅ Siap |
+| **4** | **Switching Thinking Mode** | Toggle on/off thinking, atau pilih effort level (low / medium / high) | ✅ Siap |
+| **5** | **Streaming Process** | Stream respons kata-demi-kata seperti aplikasi chat modern | ✅ Siap |
+| **6** | **Multi-Turn Conversation** | Simpan riwayat percakapan dan kirim sebagai konteks ke Claude untuk percakapan berkelanjutan | ✅ Siap |
 
 **Total estimasi durasi**: ±4–5 jam efektif (di luar break & diskusi).
 
@@ -26,7 +26,7 @@ Module 04 terdiri dari **7 section** yang dirangkai berurutan. Setiap section me
 
 ## Prinsip Kontinuitas Antar Section
 
-**Penting**: kode yang Anda bangun di setiap section akan **terus berlanjut** ke section berikutnya. Section 2 mengubah file yang dibuat di Section 1; Section 3 menambah kemampuan pada hasil Section 2; dan seterusnya.
+**Penting**: kode yang Anda bangun di setiap section akan **terus berlanjut** ke section berikutnya. Section 1 mengubah file yang dibuat di latihan UI Module 03; Section 2 menambah kemampuan pada hasil Section 1; dan seterusnya.
 
 Artinya:
 
@@ -37,94 +37,35 @@ Artinya:
 Alur evolusinya kira-kira seperti ini:
 
 ```
-Section 1 → UI shell + mock messages
+[Latihan UI Module 03] → UI shell + mock messages
    │
-Section 2 → Ganti mock dengan panggilan Claude API (server action)
+Section 1 → Ganti mock dengan panggilan Claude API (server action)
    │
-Section 3 → Tambah parameter `temperature` + prompt prefixing untuk format output
+Section 2 → Tambah parameter `temperature` + prompt prefixing untuk format output
    │
-Section 4 → Aktifkan extended thinking, tampilkan di UI
+Section 3 → Aktifkan extended thinking, tampilkan di UI
    │
-Section 5 → Tambah toggle thinking di header chatbot
+Section 4 → Tambah toggle thinking di header chatbot
    │
-Section 6 → Ubah respons biasa jadi streaming (efek typewriter)
+Section 5 → Ubah respons biasa jadi streaming (efek typewriter)
    │
-Section 7 → Simpan riwayat percakapan, kirim sebagai konteks
+Section 6 → Simpan riwayat percakapan, kirim sebagai konteks
 ```
 
 Setiap "→" adalah peningkatan inkremental pada **kode yang sama**, bukan project baru.
 
 ---
 
-# Section 1 — UI Chatbot
+# Section 1 — Integrasi Claude API ke Chatbot
 
-**Tujuan section**: membangun panel chatbot di sisi kanan aplikasi Fin-App sebagai antarmuka untuk fitur AI Financial Advisor. Pada section ini, isinya masih *mock content* — wiring ke Claude API dilakukan di Section 2.
-
-## Apa yang Akan Anda Bangun?
-
-Tampilan akhir aplikasi yang Anda tuju kurang lebih seperti berikut (deskripsi tekstual):
-
-```
-┌───────────────┬─────────────────────────────┬──────────────────────┐
-│               │                             │  AI Financial Adv.  ✕│
-│  Fina App     │   Transaction               │  Get personalized.. │
-│               │   View and manage your...   │ ───────────────────  │
-│ ▸ Dashboard   │                             │ [pesan AI: markdown │
-│ ▸ Transaction │   ┌─────────────────────┐   │  dengan bold + list]│
-│               │   │ Recent Transaction  │   │                     │
-│               │   │ ─────────────────── │   │                     │
-│               │   │ ...                 │   │                     │
-│               │   └─────────────────────┘   │                     │
-│               │                             │ ────────────────── │
-│               │                             │ [Ask AI Advisor   ➤]│
-└───────────────┴─────────────────────────────┴──────────────────────┘
-```
-
-**Karakteristik panel chatbot di sisi kanan:**
-
-- **Lebar tetap** sekitar 380–400px, selalu terlihat di sisi kanan layar (sticky).
-- **Header**: judul "AI Financial Advisor" warna emerald + subtitle "Get personalized financial advice." + tombol close (✕) di pojok kanan.
-- **Area pesan**: scrollable, mendukung markdown rendering (**bold**, list, paragraf).
-- **Input area** di bawah: text input dengan placeholder "Ask AI Advisor here" + tombol kirim berupa ikon pesawat (paper plane).
-- **Toggle visibility**: tombol ✕ menutup panel; nantinya akan ada tombol di header untuk membuka kembali.
-
-> 💡 **Pada section ini fokus hanya pada UI** — belum ada koneksi ke Claude API. Pesan-pesan masih *mock data* yang ditulis manual. Wiring ke API akan dilakukan di Section 2.
-
-## Alur Latihan Section 1
-
-Anda akan mengeksekusi **5 prompt** ke Claude Code secara berurutan. Setiap prompt menghasilkan satu lapis UI:
-
-| # | Prompt | Hasil |
-|---|---|---|
-| 1 | Setup layout 3-kolom | Layout root menampung sidebar kiri + main + panel kanan |
-| 2 | Buat komponen `<AIChatPanel />` shell | Header + body kosong + footer input (struktur saja) |
-| 3 | Render pesan dengan markdown | Area pesan menampilkan mock chat dengan bold/list |
-| 4 | Input area interaktif | Input + tombol kirim, state lokal untuk menampung typing |
-| 5 | Toggle open/close | Tombol close menyembunyikan panel; tombol toggle membuka kembali |
-
-## Prasyarat Section 1
-
-- [ ] Module 01–03 selesai. Halaman Dashboard + Transactions berfungsi penuh. File `experiments/claude-test.ts` sudah berhasil dipanggil minimal sekali.
-- [ ] Dev server jalan: `npm run dev`.
-- [ ] Claude Code aktif di terminal terpisah.
-- [ ] Sudah install `react-markdown` (Claude akan menambahkan otomatis di Prompt 3, atau Anda dapat install duluan: `npm install react-markdown remark-gfm`).
-
-Lanjutkan ke `latihan.md` untuk mulai mengeksekusi prompt-prompt Section 1.
-
-📂 Lihat: `latihan.md` (bagian "Section 1 — Latihan").
-
----
-
-# Section 2 — Integrasi Claude API ke Chatbot
-
-**Tujuan section**: mengganti *mock messages* dari Section 1 dengan respons asli dari Claude API. Pada akhir section ini, pertanyaan user benar-benar dijawab oleh model Claude.
+**Tujuan section**: mengganti *mock messages* dari latihan UI Module 03 dengan respons asli dari Claude API. Pada akhir section ini, pertanyaan user benar-benar dijawab oleh model Claude.
 
 ## Apa yang Akan Dibangun?
 
-Lapis baru di atas Section 1:
+Lapis baru di atas latihan UI Module 03:
 
 ```
-Section 1 (sudah ada):       Section 2 (yang Anda tambah):
+[Latihan UI Module 03]:       Section 1 (yang Anda tambah):
 
   [ UI Panel + Mock ]    →    [ UI Panel + Server Action → Claude API ]
                                                    │
@@ -191,29 +132,29 @@ Pertanyaan keuangan personal biasanya sederhana. Estimasi token per request:
 | Item | Tokens (perkiraan) |
 |---|---|
 | Pertanyaan user ("Berapa total expense bulan ini?") | 10–20 |
-| Konteks tambahan (akan ditambah di Section 3) | 200–500 |
+| Konteks tambahan (akan ditambah di Section 2) | 200–500 |
 | Respons Claude (jawaban + format) | 200–600 |
 | **Total per request** | **400–1200 tokens** |
 
 Dengan model **Haiku 4.5** (sekitar $1 input / $5 output per 1M token), biaya per request **kurang dari $0.005** — sekitar Rp 80 per pertanyaan. Cukup hemat untuk eksperimen dan iterasi.
 
-Lanjutkan ke `latihan.md` Section 2 untuk eksekusi prompt-promptnya.
+Lanjutkan ke `latihan.md` Section 1 untuk eksekusi prompt-promptnya.
 
-📂 Lihat: `latihan.md` (bagian "Section 2").
+📂 Lihat: `latihan.md` (bagian "Section 1").
 
 ---
 
-# Section 3 — Text Generation
+# Section 2 — Text Generation
 
 **Tujuan section**: memahami dan mengontrol **parameter generation** Claude API — `max_tokens`, `temperature`, dan `stop_sequences` — agar respons sesuai kebutuhan aplikasi.
 
 > 📌 **Catatan**: Module 04 sengaja **belum menggunakan system instruction** (`system: "..."`). Persona dan format akan kita kontrol murni lewat **user message** dan **parameter generation**. System instruction adalah topik tersendiri yang akan dibahas pada modul terpisah.
 
-## Apa Bedanya dari Section 2?
+## Apa Bedanya dari Section 1?
 
-Pada Section 2, Anda memanggil Claude dengan parameter minimal: `model`, `max_tokens: 1024`, dan `messages`. Itu sudah cukup untuk respons dasar — tetapi Anda belum memanfaatkan parameter lain yang dapat **secara dramatis** mengubah karakter output.
+Pada Section 1, Anda memanggil Claude dengan parameter minimal: `model`, `max_tokens: 1024`, dan `messages`. Itu sudah cukup untuk respons dasar — tetapi Anda belum memanfaatkan parameter lain yang dapat **secara dramatis** mengubah karakter output.
 
-Section 3 mengeksplorasi tiga parameter penting:
+Section 2 mengeksplorasi tiga parameter penting:
 
 | Parameter | Apa yang dikontrol |
 |---|---|
@@ -223,7 +164,7 @@ Section 3 mengeksplorasi tiga parameter penting:
 
 ## 1. `max_tokens` — Batas Panjang Output
 
-Sudah Anda pakai di Section 2 (nilainya `1024`). Sekarang mari pahami dampaknya:
+Sudah Anda pakai di Section 1 (nilainya `1024`). Sekarang mari pahami dampaknya:
 
 | Nilai | Implikasi |
 |---|---|
@@ -303,13 +244,13 @@ Pola ini disebut **prompt prefixing** — Anda menambahkan instruksi ke depan pe
 - ⚠️ Setiap request membayar token instruksi ulang-ulang.
 - ⚠️ User dapat secara teori "membatalkan" instruksi dengan kalimat seperti "abaikan instruksi sebelumnya" — kerentanan yang akan dibahas di modul khusus tentang system instruction.
 
-Pada Section 3, Anda akan mempraktikkan prompt prefixing sederhana untuk membentuk gaya respons AI Financial Advisor.
+Pada Section 2, Anda akan mempraktikkan prompt prefixing sederhana untuk membentuk gaya respons AI Financial Advisor.
 
-Lanjutkan ke `latihan.md` Section 3 untuk eksekusi.
+Lanjutkan ke `latihan.md` Section 2 untuk eksekusi.
 
 ---
 
-# Section 4 — Thinking / Thought
+# Section 3 — Thinking / Thought
 
 **Tujuan section**: mengaktifkan fitur **Extended Thinking** pada Claude — proses internal di mana model "memikirkan" jawaban sebelum mengeluarkannya — dan menampilkan proses tersebut di UI sebagai blok yang dapat dilipat.
 
@@ -375,7 +316,7 @@ Extended thinking **bukan gratis**:
 - **Lebih mahal**: token thinking dihitung dalam biaya, sama seperti output text.
 - **Model lebih mahal**: Opus jauh lebih mahal dari Haiku.
 
-Karena itu, di Section 5 nanti Anda akan menambah toggle untuk mengaktifkan/menonaktifkan thinking — bukan dipakai untuk setiap pertanyaan.
+Karena itu, di Section 4 nanti Anda akan menambah toggle untuk mengaktifkan/menonaktifkan thinking — bukan dipakai untuk setiap pertanyaan.
 
 ## Tampilan di Chatbot UI
 
@@ -391,17 +332,17 @@ Untuk section ini, blok thinking ditampilkan sebagai **section collapsible** di 
 
 Default-nya **terlipat** — agar tidak mengganggu user yang hanya ingin jawaban. User yang penasaran dapat membuka untuk melihat thinking.
 
-Lanjutkan ke `latihan.md` Section 4 untuk eksekusi.
+Lanjutkan ke `latihan.md` Section 3 untuk eksekusi.
 
 ---
 
-# Section 5 — Switching Thinking Mode
+# Section 4 — Switching Thinking Mode
 
-**Tujuan section**: memberi user kontrol untuk **mengaktifkan / menonaktifkan** extended thinking dari Section 4, dan memilih *budget tokens* (effort level) sesuai jenis pertanyaan.
+**Tujuan section**: memberi user kontrol untuk **mengaktifkan / menonaktifkan** extended thinking dari Section 3, dan memilih *budget tokens* (effort level) sesuai jenis pertanyaan.
 
 ## Mengapa Perlu Toggle?
 
-Pada Section 4, extended thinking selalu aktif. Ini punya konsekuensi:
+Pada Section 3, extended thinking selalu aktif. Ini punya konsekuensi:
 
 - **Pertanyaan sederhana** ("Berapa saldo saya?") tetap diproses dengan thinking — **boros**.
 - **Pertanyaan kompleks** ("Bandingkan tiga skenario tabungan untuk DP rumah dalam 5 tahun") justru lebih relevan dengan thinking.
@@ -442,13 +383,13 @@ User tidak perlu menghafal tabel ini — UI akan menyediakan **preset** (low / m
 
 ## State Management
 
-State thinking config akan disimpan di **ChatContext** yang sudah dibuat di Section 1:
+State thinking config akan disimpan di **ChatContext** yang sudah dibuat di latihan UI Module 03:
 
 ```ts
 type ChatContextValue = {
   isOpen: boolean;
   toggleOpen: () => void;
-  // Baru di Section 5:
+  // Baru di Section 4:
   thinkingEnabled: boolean;
   thinkingBudget: "low" | "medium" | "high";
   setThinkingEnabled: (v: boolean) => void;
@@ -458,17 +399,17 @@ type ChatContextValue = {
 
 Mengapa di context, bukan local state di AIChatPanel? Karena di masa depan **toggle** mungkin akan dipanggil dari tempat lain (mis. tombol "Eksplorasi lebih dalam" di stat card dashboard).
 
-Lanjutkan ke `latihan.md` Section 5 untuk eksekusi.
+Lanjutkan ke `latihan.md` Section 4 untuk eksekusi.
 
 ---
 
-# Section 6 — Streaming Process
+# Section 5 — Streaming Process
 
 **Tujuan section**: mengubah respons "tunggu lama → muncul sekaligus" menjadi **streaming** kata-demi-kata seperti pengalaman chat modern (ChatGPT, Claude.ai).
 
 ## Apa itu Streaming Response?
 
-Pada Section 2–5, alurnya:
+Pada Section 1–4, alurnya:
 
 ```
 User kirim → ... (tunggu 5 detik) ... → seluruh jawaban muncul
@@ -513,7 +454,7 @@ for await (const chunk of stream) {
 
 ## Tantangan: Server Action Tidak Cocok untuk Streaming
 
-Pada Section 2–5, Anda memakai **server action** (`"use server"`) yang menerima input, menghasilkan output, dan return sekali. Pola request-response ini **tidak cocok** untuk streaming.
+Pada Section 1–4, Anda memakai **server action** (`"use server"`) yang menerima input, menghasilkan output, dan return sekali. Pola request-response ini **tidak cocok** untuk streaming.
 
 Solusinya: ganti dengan **Route Handler** Next.js (`src/app/api/.../route.ts`) yang dapat mengembalikan **Response dengan body berupa ReadableStream**.
 
@@ -562,7 +503,7 @@ while (true) {
 
 ## Implikasi pada State Management
 
-Pada Section 2–5, state messages diisi dengan **respons lengkap** sekaligus. Pada streaming, Anda perlu:
+Pada Section 1–4, state messages diisi dengan **respons lengkap** sekaligus. Pada streaming, Anda perlu:
 
 1. Push placeholder assistant message di awal (content: "").
 2. Setiap chunk yang datang → **append** ke content message terakhir.
@@ -570,17 +511,17 @@ Pada Section 2–5, state messages diisi dengan **respons lengkap** sekaligus. P
 
 Tidak rumit, tetapi pola "mutate last item" perlu diperhatikan agar React tidak meng-skip update.
 
-Lanjutkan ke `latihan.md` Section 6 untuk eksekusi.
+Lanjutkan ke `latihan.md` Section 5 untuk eksekusi.
 
 ---
 
-# Section 7 — Multi-Turn Conversation
+# Section 6 — Multi-Turn Conversation
 
 **Tujuan section**: membuat chatbot dapat memahami **pertanyaan lanjutan** ("Bagaimana dengan bulan lalu?", "Coba contoh lain", "Yang pertama") dengan menyimpan riwayat percakapan dan mengirimnya sebagai konteks pada setiap request.
 
 ## Masalah Saat Ini
 
-Pada Section 2–6, setiap pertanyaan dikirim ke Claude **secara terpisah**:
+Pada Section 1–5, setiap pertanyaan dikirim ke Claude **secara terpisah**:
 
 ```
 User: "Berikan tips menghemat."
@@ -611,7 +552,7 @@ Dengan riwayat lengkap, Claude tahu "tip pertama" merujuk ke "Audit pengeluaran 
 
 ## Implementasi: State Sudah Ada
 
-Kabar baik: state `messages` di `AIChatPanel` **sudah** berisi seluruh riwayat percakapan. Anda sudah punya array `[user, assistant, user, assistant, ...]` dari Section 2.
+Kabar baik: state `messages` di `AIChatPanel` **sudah** berisi seluruh riwayat percakapan. Anda sudah punya array `[user, assistant, user, assistant, ...]` dari Section 1.
 
 Yang perlu diubah:
 
@@ -673,9 +614,9 @@ const newHistory = [
 
 Lebih kompleks, tetapi mempertahankan konteks penting.
 
-Untuk Section 7, kita **belum** implementasi summarization — cukup windowing sederhana (10 pesan terakhir) sebagai safety net.
+Untuk Section 6, kita **belum** implementasi summarization — cukup windowing sederhana (10 pesan terakhir) sebagai safety net.
 
-Lanjutkan ke `latihan.md` Section 7 untuk eksekusi.
+Lanjutkan ke `latihan.md` Section 6 untuk eksekusi.
 
 ---
 

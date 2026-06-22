@@ -1,206 +1,218 @@
-# Section 3 — Text Generation
+# Section 3 — Thinking / Thought
 
 > Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Section 2](./latihan-section-2.md)**.
 
-> Latihan untuk mengeksplorasi parameter generation Claude API: `max_tokens`, `temperature`, `stop_sequences` — serta pola **prompt prefixing** untuk mengarahkan format output tanpa system instruction. Empat prompt siap copy-paste.
+> Latihan untuk mengaktifkan **extended thinking** pada model Claude Opus, dan menampilkan blok pemikiran di chatbot sebagai section yang dapat dilipat. Empat prompt siap copy-paste.
 >
-> **Estimasi Section 3**: 35–45 menit.
-
-> 📌 **Catatan**: Module 04 sengaja **belum menggunakan parameter `system`**. Format dan persona dikontrol murni lewat user message + parameter generation. System instruction adalah topik tersendiri.
+> **Estimasi Section 3**: 40–50 menit.
 
 ## Prasyarat Section 3
 
-- [ ] Section 1 + 2 selesai. Chatbot dapat menerima pertanyaan dan menampilkan respons asli dari Claude.
-- [ ] Anda sudah membaca bagian Section 3 di `materi.md`.
+- [ ] Section 1–2 selesai (+ Latihan UI Module 03). Chatbot konsisten dengan persona AI Financial Advisor.
+- [ ] Anda sudah membaca bagian Section 3 di `materi.md` dan memahami konsep extended thinking.
 
 ---
 
-## Prompt 1 — Tambah Parameter `temperature` ke `askAdvisor`
+## Prompt 1 — Aktifkan Extended Thinking di Server Action
 
-**Salin prompt berikut, paste ke Claude Code:**
+**Salin prompt berikut:**
 
 ```
-Saya ingin mengontrol tingkat kreativitas respons Claude.
-Tambahkan parameter temperature ke server action.
+Saya ingin mengaktifkan extended thinking di askAdvisor agar
+Claude dapat menampilkan proses berpikirnya.
 
 GOAL:
 - Modifikasi src/features/advisor.ts.
-- Tambahkan parameter `temperature: 0.5` ke
-  client.messages.create() (saat ini hanya ada model,
-  max_tokens, messages).
-- Tambahkan JSDoc di atas function yang menjelaskan
-  alasan pemilihan 0.5 (seimbang antara faktual dan
-  natural).
+- Ganti model dari "claude-haiku-4-5" menjadi "claude-opus-4-7"
+  (extended thinking butuh Opus).
+- Tambahkan parameter thinking:
+  thinking: { type: "enabled", budget_tokens: 2000 }
+- Naikkan max_tokens jadi minimal 4096 (karena thinking +
+  text dihitung bersama).
+
+- Ubah return type askAdvisor dari `Promise<string>` menjadi
+  Promise<{ text: string; thinking: string | null }>.
+- Iterasi response.content array:
+  - Untuk block type "thinking", simpan ke variabel thinking.
+  - Untuk block type "text", simpan ke variabel text.
+- Return object { text, thinking }.
 
 CONTEXT:
-- Range temperature 0.0 - 1.0.
-- Untuk chatbot keuangan: 0.5 seimbang (faktual tetapi tidak
-  kaku).
-- JANGAN tambahkan parameter system — Module 04 belum pakai
-  system instruction.
+- SDK Anthropic mengembalikan thinking block dengan field
+  `thinking: string` (bukan `text`).
+- Apabila thinking tidak aktif / tidak ada, thinking = null.
 
 GUARDRAIL:
-- Pertahankan validasi kosong dan return type dari Section 2.
-- JANGAN ubah model atau max_tokens.
+- Pertahankan validasi kosong, parameter temperature, dan
+  prompt prefixing dari Section 2.
+- JANGAN buang text content block — itu jawaban utama yang
+  dipakai UI.
+- JANGAN tambah parameter system — Module 04 belum pakai.
+- Tambahkan JSDoc yang menjelaskan return type baru.
 ```
 
 **Verifikasi:**
 
-1. Kirim pertanyaan yang sama 3 kali di chatbot: "Berikan 3 ide nama tabungan untuk DP rumah."
-2. Bandingkan respons. Dengan temperature 0.5, jawaban biasanya **mirip tetapi tidak identik**.
-3. (Opsional) Untuk eksperimen lebih, ubah temperature jadi `0.0`, restart server, kirim pertanyaan sama 3 kali — jawaban harusnya sangat mirip atau identik.
+1. Test cepat dari `experiments/test-advisor.ts`:
+   ```ts
+   const result = await askAdvisor("Bandingkan menabung di reksadana vs deposito untuk DP rumah 5 tahun.");
+   console.log("THINKING:\n", result.thinking);
+   console.log("\nTEXT:\n", result.text);
+   ```
+2. Output thinking seharusnya berisi pemikiran panjang Claude tentang trade-off, sebelum jawaban final di text.
 
 ---
 
-## Prompt 2 — Eksplorasi `temperature` di File Eksperimen
+## Prompt 2 — Update Handler Chatbot untuk Terima Thinking
 
 **Salin prompt berikut:**
 
 ```
-Bantu saya membuat eksperimen membandingkan temperature.
+Sesuaikan handler di AIChatPanel agar dapat menerima return
+type baru dari askAdvisor.
 
 GOAL:
-- Buat file baru experiments/temperature-test.ts.
-- Loop melalui 3 nilai temperature: 0.0, 0.5, 1.0.
-- Untuk setiap nilai, kirim pertanyaan yang sama 2 kali:
-  "Berikan satu nama unik untuk celengan digital."
-- Print hasil dengan format:
-  --- temperature: 0.0 ---
-  Attempt 1: <jawaban>
-  Attempt 2: <jawaban>
-  --- temperature: 0.5 ---
-  ...
-
-- Pakai Anthropic SDK langsung (bukan via askAdvisor).
-- Model: "claude-haiku-4-5".
-- max_tokens: 100 (jawabannya singkat).
+- Modifikasi src/components/chat/ai-chat-panel.tsx.
+- Update tipe Message agar dapat menampung thinking:
+  type Message = {
+    id: string;
+    role: "user" | "assistant";
+    content: string;
+    thinking?: string | null;  // ← baru
+  };
+- Handler kirim:
+  - askAdvisor sekarang return { text, thinking }.
+  - Push assistant message dengan content = text dan
+    thinking = thinking.
 
 CONTEXT:
-- File standalone seperti experiments/claude-test.ts dari
-  Module 03.
-- Jalankan dengan: npx tsx --env-file=.env.local
-  experiments/temperature-test.ts
+- File yang dimodifikasi: ai-chat-panel.tsx.
+- Hanya pesan dari assistant yang punya thinking — user
+  tidak.
 
 GUARDRAIL:
-- JANGAN modifikasi askAdvisor — eksperimen ini terpisah.
-- Print clear separator antar temperature setting.
+- Pertahankan loading state, error handling, dan welcome
+  message dari Section 1.
+- Welcome message tidak memiliki thinking (thinking = null
+  atau undefined).
+- JANGAN render thinking di UI dulu — itu di prompt 3.
 ```
 
 **Verifikasi:**
 
-1. Jalankan file. Hasilnya:
-   - Temperature 0.0 → dua attempt biasanya identik atau hampir identik.
-   - Temperature 0.5 → variasi sedang.
-   - Temperature 1.0 → variasi tinggi, kadang sangat berbeda.
-2. Eksperimen ini melatih intuisi Anda tentang parameter temperature.
+1. Reload browser. Kirim pertanyaan kompleks.
+2. Buka React DevTools → cari state messages → pesan assistant terbaru harus memiliki field `thinking` yang berisi string panjang.
+3. Belum ada perubahan visual di chatbot (rendering thinking di prompt berikutnya).
 
 ---
 
-## Prompt 3 — Eksplorasi `max_tokens` dan `stop_reason`
+## Prompt 3 — Render Thinking sebagai Collapsible Section
 
 **Salin prompt berikut:**
 
 ```
-Bantu saya membuat eksperimen tentang max_tokens dan
-stop_reason.
+Sekarang tampilkan thinking di UI sebagai section collapsible
+di atas bubble jawaban assistant.
 
 GOAL:
-- Buat file baru experiments/max-tokens-test.ts.
-- Pakai pertanyaan: "Jelaskan secara detail strategi
-  menghemat pengeluaran bulanan."
-- Loop melalui 3 nilai max_tokens: 50, 200, 1024.
-- Untuk setiap nilai, print:
-  --- max_tokens: 50 ---
-  stop_reason: <reason>
-  output_tokens: <jumlah>
-  Hasil: <teks>
-  (panjang teks dapat di-truncate jika sangat panjang)
-  ---
+- Saat render pesan assistant yang memiliki thinking != null:
+  - Di atas content text, tampilkan box collapsible berisi
+    thinking.
+  - Box header: ikon Brain (lucide-react) + label "Proses
+    berpikir" + ikon chevron (ChevronDown saat tertutup,
+    ChevronUp saat terbuka).
+  - Default state: tertutup (terlipat).
+  - Klik header → buka/tutup body.
+  - Body collapsible: render thinking dengan styling text-
+    muted-foreground italic, font-size text-sm, padding kecil,
+    background bg-muted/50, rounded corner.
+  - Thinking ditampilkan apa adanya (plain text, tanpa
+    markdown parsing).
+
+- Pesan tanpa thinking ditampilkan seperti biasa.
 
 CONTEXT:
-- File standalone.
-- Model: claude-haiku-4-5.
-- temperature: 0.5.
+- File: ai-chat-panel.tsx.
+- Pakai komponen Collapsible dari Shadcn apabila sudah
+  ter-install. Apabila belum:
+  npx shadcn@latest add collapsible
+- Ikon Brain dari lucide-react.
 
 GUARDRAIL:
-- Print stop_reason dengan jelas — ini intinya.
-- JANGAN tambah system parameter.
+- Default tertutup — user yang ingin lihat thinking buka
+  manual.
+- JANGAN auto-expand thinking saat pesan baru datang
+  (mengganggu reading flow).
+- Animasi expand/collapse harus smooth (Collapsible Shadcn
+  sudah ini).
+- Thinking dapat panjang sekali — pastikan ada scroll
+  internal max-h-96 + overflow-y-auto.
 ```
 
 **Verifikasi:**
 
-1. Jalankan file. Amati:
-   - max_tokens 50 → output terpotong, `stop_reason: "max_tokens"`.
-   - max_tokens 200 → mungkin masih terpotong, atau pas.
-   - max_tokens 1024 → biasanya selesai natural, `stop_reason: "end_turn"`.
-2. Anda sekarang punya intuisi: max_tokens harus **cukup** untuk pertanyaan terpanjang yang ekspektasi.
+1. Reload. Kirim pertanyaan kompleks.
+2. Bubble assistant baru memiliki box "🧠 Proses berpikir ▼" di atasnya.
+3. Klik header → thinking muncul dengan styling italic abu-abu.
+4. Klik lagi → tertutup.
+5. Welcome message dan pesan tanpa thinking tampil normal tanpa box.
 
 ---
 
-## Prompt 4 — Prompt Prefixing untuk Mengarahkan Format
+## Prompt 4 — Indikator Visual Saat Thinking Aktif
 
 **Salin prompt berikut:**
 
 ```
-Saya ingin mengarahkan format output (markdown, bahasa,
-gaya) lewat user message, bukan system parameter.
+Tambahkan indikator visual saat Claude sedang dalam mode
+thinking — supaya user paham mengapa respons lebih lambat.
 
 GOAL:
-- Modifikasi src/features/advisor.ts.
-- Sebelum mengirim ke API, "prefix" user message dengan
-  instruksi format. Buat konstanta INSTRUCTION_PREFIX di
-  file yang sama:
+- Ganti pesan "AI sedang mengetik..." dari Section 1 menjadi
+  dua tahap:
+  1. Saat sedang menunggu (isThinking = true), tampilkan:
+     "🧠 Sedang menganalisis..."
+     dengan ikon Brain + animate-pulse.
+  2. (Akan diupdate di Section 5 saat streaming masuk.)
 
-  const INSTRUCTION_PREFIX = `Anda menjawab dalam Bahasa
-  Indonesia, ramah dan to-the-point. Pakai markdown:
-  list bertanda untuk poin, bold untuk angka penting.
-  Format Rupiah: "Rp 1.500.000". Persentase: "15%".
-
-  Pertanyaan: `;
-
-- Saat memanggil API, gabungkan:
-  content: INSTRUCTION_PREFIX + message
-
-- Pertahankan parameter temperature dari Prompt 1.
+- Tambahkan estimasi: "Mode thinking aktif — respons mungkin
+  butuh 10-20 detik."
 
 CONTEXT:
-- Inilah pola "prompt prefixing" — instruksi tetap di user
-  message, tidak di system parameter.
+- File: ai-chat-panel.tsx.
+- Pesan ini tetap berada di bawah daftar pesan, sama posisi
+  dengan typing indicator Section 2.
 
 GUARDRAIL:
-- JANGAN tambahkan parameter system: ke API call.
-- Pertahankan return type dan validasi kosong.
-- JANGAN pindahkan INSTRUCTION_PREFIX ke file lain dulu —
-  cukup di advisor.ts.
+- HANYA tampilkan pesan estimasi ini saat thinking aktif
+  (sekarang selalu aktif sejak Prompt 1; akan dikondisikan
+  di Section 4 berdasarkan toggle).
+- JANGAN ganti tata letak atau warna utama.
 ```
 
 **Verifikasi:**
 
-1. Reload browser. Kirim: "Tips menghemat pengeluaran bulanan."
-2. Respons seharusnya:
-   - Dalam Bahasa Indonesia.
-   - Pakai list bertanda.
-   - Format Rupiah dan persen sesuai instruksi.
-3. (Opsional) Sengaja kirim pertanyaan dengan English: "How to save money?" — Claude masih akan menjawab dalam Bahasa Indonesia karena instruksi prefix.
+1. Kirim pertanyaan. Indikator baru muncul: "🧠 Sedang menganalisis..." + estimasi durasi.
+2. Setelah respons datang, indikator hilang, bubble assistant + thinking section tampil.
 
 ---
 
 ## Validasi Akhir Section 3
 
-- [ ] Parameter `temperature: 0.5` aktif di `askAdvisor`.
-- [ ] File eksperimen `temperature-test.ts` jalan tanpa error.
-- [ ] File eksperimen `max-tokens-test.ts` jalan tanpa error.
-- [ ] Prompt prefixing aktif — respons konsisten Bahasa Indonesia + markdown.
-- [ ] **TIDAK ADA** parameter `system` di mana pun di Module 04.
-- [ ] Tidak ada regresi dari Section 1–2.
+- [ ] Server action mengaktifkan extended thinking dengan budget 2000.
+- [ ] Return type askAdvisor adalah `{ text, thinking }`.
+- [ ] Pesan assistant menampilkan box "Proses berpikir" collapsible.
+- [ ] Default state box: tertutup.
+- [ ] Indikator "Sedang menganalisis" muncul saat menunggu.
+- [ ] Tidak ada regresi dari Section 1–2 (+ Latihan UI Module 03).
 
 ## Refleksi Section 3
 
-1. Pada temperature berapa Anda merasa respons paling **alami** untuk konteks keuangan?
-2. Apa kerugian prompt prefixing dibanding system instruction? (Hint: token usage.)
-3. Apakah Anda menemui pertanyaan yang Claude **abaikan** instruction prefix-nya? (Mis. tetap jawab dalam English.)
-4. Untuk task ekstraksi data terstruktur (mis. parse "Rp 50.000 makan siang"), apakah temperature 0.0 atau 0.5 lebih cocok? Mengapa?
+1. Apakah thinking Claude **konsisten** dengan jawaban akhirnya? Atau ada divergensi?
+2. Berapa kali Anda membuka thinking section dari curiosity vs dari kebutuhan praktis?
+3. Apakah Anda merasa thinking section **mengganggu UX** atau **memperkaya**?
+4. Adakah jenis pertanyaan di mana thinking menurut Anda **tidak diperlukan**?
 
 ---
 
-⬅️ Kembali: **[Section 2](./latihan-section-2.md)** · ➡️ Lanjut: **[Section 4 — Thinking / Thought](./latihan-section-4.md)**
+⬅️ Kembali: **[Section 2](./latihan-section-2.md)** · ➡️ Lanjut: **[Section 4 — Switching Thinking Mode](./latihan-section-4.md)**

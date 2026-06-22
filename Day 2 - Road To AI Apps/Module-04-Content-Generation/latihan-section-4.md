@@ -1,218 +1,210 @@
-# Section 4 — Thinking / Thought
+# Section 4 — Switching Thinking Mode
 
 > Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Section 3](./latihan-section-3.md)**.
 
-> Latihan untuk mengaktifkan **extended thinking** pada model Claude Opus, dan menampilkan blok pemikiran di chatbot sebagai section yang dapat dilipat. Empat prompt siap copy-paste.
+> Latihan untuk memberi user kontrol mengaktifkan / menonaktifkan extended thinking dan memilih budget effort. Empat prompt siap copy-paste.
 >
-> **Estimasi Section 4**: 40–50 menit.
+> **Estimasi Section 4**: 30–40 menit.
 
 ## Prasyarat Section 4
 
-- [ ] Section 1–3 selesai. Chatbot konsisten dengan persona AI Financial Advisor.
-- [ ] Anda sudah membaca bagian Section 4 di `materi.md` dan memahami konsep extended thinking.
+- [ ] Section 1–3 selesai (+ Latihan UI Module 03). Extended thinking aktif default; thinking block tampil di UI.
+- [ ] Anda sudah membaca bagian Section 4 di `materi.md`.
 
 ---
 
-## Prompt 1 — Aktifkan Extended Thinking di Server Action
+## Prompt 1 — Tambah State Thinking di ChatContext
 
 **Salin prompt berikut:**
 
 ```
-Saya ingin mengaktifkan extended thinking di askAdvisor agar
-Claude dapat menampilkan proses berpikirnya.
+Tambahkan state thinking config di ChatContext yang sudah ada.
 
 GOAL:
-- Modifikasi src/features/advisor.ts.
-- Ganti model dari "claude-haiku-4-5" menjadi "claude-opus-4-7"
-  (extended thinking butuh Opus).
-- Tambahkan parameter thinking:
-  thinking: { type: "enabled", budget_tokens: 2000 }
-- Naikkan max_tokens jadi minimal 4096 (karena thinking +
-  text dihitung bersama).
-
-- Ubah return type askAdvisor dari `Promise<string>` menjadi
-  Promise<{ text: string; thinking: string | null }>.
-- Iterasi response.content array:
-  - Untuk block type "thinking", simpan ke variabel thinking.
-  - Untuk block type "text", simpan ke variabel text.
-- Return object { text, thinking }.
+- Modifikasi src/components/chat/chat-context.tsx (atau file
+  context yang dibuat di Latihan UI Module 03).
+- Tambah state baru:
+  - thinkingEnabled: boolean (default: false)
+  - thinkingBudget: "low" | "medium" | "high" (default: "medium")
+- Ekspos setter: setThinkingEnabled, setThinkingBudget.
+- Update tipe ChatContextValue.
 
 CONTEXT:
-- SDK Anthropic mengembalikan thinking block dengan field
-  `thinking: string` (bukan `text`).
-- Apabila thinking tidak aktif / tidak ada, thinking = null.
+- Mapping budget ke token count (untuk dipakai di prompt
+  berikutnya):
+  low    → 1024
+  medium → 2048
+  high   → 4096
+- Default thinkingEnabled = false → respons cepat & murah
+  untuk pertanyaan biasa.
 
 GUARDRAIL:
-- Pertahankan validasi kosong, parameter temperature, dan
-  prompt prefixing dari Section 3.
-- JANGAN buang text content block — itu jawaban utama yang
-  dipakai UI.
+- Pertahankan state isOpen dan toggleOpen dari Latihan UI Module 03.
+- JANGAN export budget mapping ke component — dipakai
+  internal di Prompt 3.
+- Tambah JSDoc singkat di tipe baru.
+```
+
+**Verifikasi:**
+
+1. Buka React DevTools → cari ChatProvider → state baru terlihat: `thinkingEnabled: false`, `thinkingBudget: "medium"`.
+2. Belum ada perubahan visual (UI control di Prompt 2).
+
+---
+
+## Prompt 2 — Toggle UI di Header Chatbot
+
+**Salin prompt berikut:**
+
+```
+Tambahkan tombol toggle thinking dan pemilih budget di header
+chatbot.
+
+GOAL:
+- Di header AIChatPanel, tambahkan dua kontrol baru di kiri
+  tombol close:
+  1. Switch (Shadcn Switch component) berlabel "Thinking" —
+     bound ke thinkingEnabled di context.
+  2. Saat thinkingEnabled = true, tampilkan DropdownMenu
+     dengan trigger ikon Settings (lucide-react).
+     - Item menu: 3 radio button untuk budget (Low / Medium / High).
+     - Bound ke thinkingBudget di context.
+
+- Tata letak: <div className="flex items-center gap-2"> dengan
+  switch, settings (kalau aktif), separator, close button.
+
+CONTEXT:
+- Pakai Switch dari Shadcn (apabila belum: npx shadcn@latest
+  add switch).
+- Pakai DropdownMenu yang sudah ter-install.
+- Gunakan useChatContext hook untuk akses state.
+
+GUARDRAIL:
+- Switch dan settings TIDAK boleh shift judul "AI Financial
+  Advisor" — gunakan ukuran kecil dan posisinya konsisten.
+- Saat thinking dimatikan, settings hilang dengan smooth.
+- Label "Thinking" boleh disembunyikan di mobile (sr-only).
+```
+
+**Verifikasi:**
+
+1. Header chatbot kini memiliki switch "Thinking" + (saat aktif) ikon gear ⚙️ + tombol close ✕.
+2. Klik switch → switch berubah state, tombol gear muncul/hilang.
+3. Klik gear → menu Low / Medium / High muncul. Pilih satu → state thinkingBudget berubah.
+
+---
+
+## Prompt 3 — Pass Thinking Config ke Server Action
+
+**Salin prompt berikut:**
+
+```
+Sekarang sambungkan toggle dari UI ke server action agar
+benar-benar mempengaruhi panggilan API.
+
+GOAL:
+- Modifikasi signature askAdvisor di src/features/advisor.ts:
+  askAdvisor(message: string, opts?: {
+    thinking?: boolean;
+    budget?: "low" | "medium" | "high";
+  })
+
+- Di dalam askAdvisor:
+  - Apabila opts.thinking !== true: panggil API TANPA
+    parameter thinking, dan gunakan model "claude-haiku-4-5"
+    (hemat).
+  - Apabila opts.thinking === true: gunakan model
+    "claude-opus-4-7" + parameter thinking dengan budget
+    sesuai opts.budget (default: medium = 2048).
+  - Mapping budget: low=1024, medium=2048, high=4096.
+
+- Return type tetap { text: string; thinking: string | null }.
+  Saat thinking = false, thinking field selalu null.
+
+- Modifikasi handler di AIChatPanel:
+  - Baca thinkingEnabled & thinkingBudget dari useChatContext.
+  - Pass sebagai opts saat memanggil askAdvisor.
+
+CONTEXT:
+- File: src/features/advisor.ts dan
+  src/components/chat/ai-chat-panel.tsx.
+- max_tokens: 1024 saat thinking off, 4096+ saat on.
+
+GUARDRAIL:
+- JANGAN hardcode model di luar branching. Setiap mode pakai
+  model yang sesuai.
+- Pertahankan validasi kosong, prompt prefixing, parameter
+  temperature, dan error handling dari section sebelumnya.
 - JANGAN tambah parameter system — Module 04 belum pakai.
-- Tambahkan JSDoc yang menjelaskan return type baru.
+- Indikator "Sedang menganalisis" dari Section 3 hanya
+  tampil saat thinkingEnabled = true. Saat off, kembalikan
+  ke "AI sedang mengetik..." dari Section 1.
 ```
 
 **Verifikasi:**
 
-1. Test cepat dari `experiments/test-advisor.ts`:
-   ```ts
-   const result = await askAdvisor("Bandingkan menabung di reksadana vs deposito untuk DP rumah 5 tahun.");
-   console.log("THINKING:\n", result.thinking);
-   console.log("\nTEXT:\n", result.text);
-   ```
-2. Output thinking seharusnya berisi pemikiran panjang Claude tentang trade-off, sebelum jawaban final di text.
+1. Switch off → kirim pertanyaan → respons CEPAT (~3 detik) tanpa box thinking. Indikator "sedang mengetik...".
+2. Switch on, budget medium → respons LEBIH LAMBAT (~10 detik) dengan box "Proses berpikir". Indikator "sedang menganalisis...".
+3. Ganti budget ke high → respons lebih panjang & dalam, thinking lebih luas.
+4. Switch off lagi → kembali ke mode cepat tanpa thinking.
 
 ---
 
-## Prompt 2 — Update Handler Chatbot untuk Terima Thinking
+## Prompt 4 — Indikator Konfigurasi Saat ini di Header
 
 **Salin prompt berikut:**
 
 ```
-Sesuaikan handler di AIChatPanel agar dapat menerima return
-type baru dari askAdvisor.
+Tambahkan indikator visual kecil di header agar user paham
+konfigurasi current.
 
 GOAL:
-- Modifikasi src/components/chat/ai-chat-panel.tsx.
-- Update tipe Message agar dapat menampung thinking:
-  type Message = {
-    id: string;
-    role: "user" | "assistant";
-    content: string;
-    thinking?: string | null;  // ← baru
-  };
-- Handler kirim:
-  - askAdvisor sekarang return { text, thinking }.
-  - Push assistant message dengan content = text dan
-    thinking = thinking.
+- Di bawah subtitle "Get personalized financial advice.",
+  tambahkan satu baris keterangan kecil tentang mode aktif:
 
-CONTEXT:
-- File yang dimodifikasi: ai-chat-panel.tsx.
-- Hanya pesan dari assistant yang punya thinking — user
-  tidak.
+  Saat thinkingEnabled = false:
+  "💡 Mode: cepat (Haiku)"
 
-GUARDRAIL:
-- Pertahankan loading state, error handling, dan welcome
-  message dari Section 2.
-- Welcome message tidak memiliki thinking (thinking = null
-  atau undefined).
-- JANGAN render thinking di UI dulu — itu di prompt 3.
-```
+  Saat thinkingEnabled = true:
+  "🧠 Mode: thinking · budget {budget}"
 
-**Verifikasi:**
-
-1. Reload browser. Kirim pertanyaan kompleks.
-2. Buka React DevTools → cari state messages → pesan assistant terbaru harus memiliki field `thinking` yang berisi string panjang.
-3. Belum ada perubahan visual di chatbot (rendering thinking di prompt berikutnya).
-
----
-
-## Prompt 3 — Render Thinking sebagai Collapsible Section
-
-**Salin prompt berikut:**
-
-```
-Sekarang tampilkan thinking di UI sebagai section collapsible
-di atas bubble jawaban assistant.
-
-GOAL:
-- Saat render pesan assistant yang memiliki thinking != null:
-  - Di atas content text, tampilkan box collapsible berisi
-    thinking.
-  - Box header: ikon Brain (lucide-react) + label "Proses
-    berpikir" + ikon chevron (ChevronDown saat tertutup,
-    ChevronUp saat terbuka).
-  - Default state: tertutup (terlipat).
-  - Klik header → buka/tutup body.
-  - Body collapsible: render thinking dengan styling text-
-    muted-foreground italic, font-size text-sm, padding kecil,
-    background bg-muted/50, rounded corner.
-  - Thinking ditampilkan apa adanya (plain text, tanpa
-    markdown parsing).
-
-- Pesan tanpa thinking ditampilkan seperti biasa.
+  (Pakai capitalize untuk budget: Low / Medium / High)
 
 CONTEXT:
 - File: ai-chat-panel.tsx.
-- Pakai komponen Collapsible dari Shadcn apabila sudah
-  ter-install. Apabila belum:
-  npx shadcn@latest add collapsible
-- Ikon Brain dari lucide-react.
+- Style: text-xs text-muted-foreground, padding minimal.
 
 GUARDRAIL:
-- Default tertutup — user yang ingin lihat thinking buka
-  manual.
-- JANGAN auto-expand thinking saat pesan baru datang
-  (mengganggu reading flow).
-- Animasi expand/collapse harus smooth (Collapsible Shadcn
-  sudah ini).
-- Thinking dapat panjang sekali — pastikan ada scroll
-  internal max-h-96 + overflow-y-auto.
+- Indikator tidak boleh berukuran besar — fungsinya hint, bukan
+  call-to-action.
+- JANGAN tambah jargon teknis di indikator (mis. "budget_tokens")
+  — gunakan kata yang dipahami user awam.
 ```
 
 **Verifikasi:**
 
-1. Reload. Kirim pertanyaan kompleks.
-2. Bubble assistant baru memiliki box "🧠 Proses berpikir ▼" di atasnya.
-3. Klik header → thinking muncul dengan styling italic abu-abu.
-4. Klik lagi → tertutup.
-5. Welcome message dan pesan tanpa thinking tampil normal tanpa box.
-
----
-
-## Prompt 4 — Indikator Visual Saat Thinking Aktif
-
-**Salin prompt berikut:**
-
-```
-Tambahkan indikator visual saat Claude sedang dalam mode
-thinking — supaya user paham mengapa respons lebih lambat.
-
-GOAL:
-- Ganti pesan "AI sedang mengetik..." dari Section 2 menjadi
-  dua tahap:
-  1. Saat sedang menunggu (isThinking = true), tampilkan:
-     "🧠 Sedang menganalisis..."
-     dengan ikon Brain + animate-pulse.
-  2. (Akan diupdate di Section 6 saat streaming masuk.)
-
-- Tambahkan estimasi: "Mode thinking aktif — respons mungkin
-  butuh 10-20 detik."
-
-CONTEXT:
-- File: ai-chat-panel.tsx.
-- Pesan ini tetap berada di bawah daftar pesan, sama posisi
-  dengan typing indicator Section 2.
-
-GUARDRAIL:
-- HANYA tampilkan pesan estimasi ini saat thinking aktif
-  (sekarang selalu aktif sejak Prompt 1; akan dikondisikan
-  di Section 5 berdasarkan toggle).
-- JANGAN ganti tata letak atau warna utama.
-```
-
-**Verifikasi:**
-
-1. Kirim pertanyaan. Indikator baru muncul: "🧠 Sedang menganalisis..." + estimasi durasi.
-2. Setelah respons datang, indikator hilang, bubble assistant + thinking section tampil.
+1. Toggle off → indikator: "💡 Mode: cepat (Haiku)".
+2. Toggle on, budget Low → "🧠 Mode: thinking · budget Low".
+3. Ganti budget → indikator update real-time.
 
 ---
 
 ## Validasi Akhir Section 4
 
-- [ ] Server action mengaktifkan extended thinking dengan budget 2000.
-- [ ] Return type askAdvisor adalah `{ text, thinking }`.
-- [ ] Pesan assistant menampilkan box "Proses berpikir" collapsible.
-- [ ] Default state box: tertutup.
-- [ ] Indikator "Sedang menganalisis" muncul saat menunggu.
-- [ ] Tidak ada regresi dari Section 1–3.
+- [ ] State thinkingEnabled & thinkingBudget ada di ChatContext.
+- [ ] Switch + dropdown setting tampil di header chatbot.
+- [ ] Server action menggunakan model & parameter berbeda berdasarkan toggle.
+- [ ] Respons benar-benar lebih cepat saat thinking off.
+- [ ] Indikator mode aktif tampil di header.
+- [ ] Tidak ada regresi dari Section 1–3 (+ Latihan UI Module 03).
 
 ## Refleksi Section 4
 
-1. Apakah thinking Claude **konsisten** dengan jawaban akhirnya? Atau ada divergensi?
-2. Berapa kali Anda membuka thinking section dari curiosity vs dari kebutuhan praktis?
-3. Apakah Anda merasa thinking section **mengganggu UX** atau **memperkaya**?
-4. Adakah jenis pertanyaan di mana thinking menurut Anda **tidak diperlukan**?
+1. Default off — apakah ini pilihan yang Anda setujui? Atau lebih baik default on?
+2. Apakah user awam paham perbedaan budget low/medium/high? Cara menjelaskannya?
+3. Pertanyaan tipe apa yang paling sering Anda toggle thinking?
+4. Apakah perbedaan kualitas jawaban antara low vs high terasa signifikan?
 
 ---
 
-⬅️ Kembali: **[Section 3](./latihan-section-3.md)** · ➡️ Lanjut: **[Section 5 — Switching Thinking Mode](./latihan-section-5.md)**
+⬅️ Kembali: **[Section 3](./latihan-section-3.md)** · ➡️ Lanjut: **[Section 5 — Streaming Process](./latihan-section-5.md)**

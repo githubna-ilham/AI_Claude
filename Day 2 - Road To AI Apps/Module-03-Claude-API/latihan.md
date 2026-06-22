@@ -171,3 +171,10 @@ Section berikutnya dari Module 03 akan membahas:
 - **Integrasi ke Fin-App** — akhirnya menyambungkan API ini ke aplikasi nyata.
 
 Untuk sekarang, pastikan koneksi pertama Anda sudah solid. Selamat — Anda sudah resmi memanggil Claude API.
+
+---
+
+## Latihan Tambahan — Persiapan Module 04
+
+- **[Latihan UI Chatbot — Bangun Panel Chatbot AI Financial Advisor](./latihan-ui-chatbot.md)** (45–60 menit)
+  Latihan pure-UI tanpa logic API. Hasilnya jadi panel chatbot kosong yang siap dihubungkan ke Claude API di Module 04.
