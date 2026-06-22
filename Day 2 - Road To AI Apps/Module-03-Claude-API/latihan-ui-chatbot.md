@@ -55,6 +55,12 @@ Setelah selesai, jelaskan singkat perubahan yang dilakukan.
 2. Resize browser — layout tetap rapi (panel kanan tidak melompat).
 3. Scroll halaman — panel kanan tetap stay di tempatnya.
 
+**Hasil yang Diharapkan:**
+
+![Hasil Setup Layout 3-Kolom — sidebar kiri (Fina App, Dashboard, Transactions), main content di tengah (Dashboard + stat cards), area kanan kosong siap diisi chatbot panel](./assets/prompt-1-setup-layout-3-kolom.png)
+
+Perhatikan: stat cards di tengah tidak terdorong sampai pojok kanan — ada **ruang kosong di sisi kanan** dengan lebar tetap (380px) yang akan diisi panel chatbot di Prompt 2.
+
 ---
 
 ## Prompt 2 — Komponen AIChatPanel: Header + Body + Footer
@@ -107,6 +113,10 @@ GUARDRAIL:
    - Tombol ✕ di kanan-atas.
    - Body kosong dengan teks placeholder.
 2. Layout 3-area (header / body / footer) terlihat rapi.
+
+**Hasil yang Diharapkan:**
+
+![Hasil AIChatPanel Header + Body + Footer — panel kanan dengan judul "AI Financial Advisor" warna emerald, subtitle, tombol close ✕, body area, dan footer placeholder](./assets/prompt-2-aichatpanel-header-body-footer.png)
 
 ---
 
@@ -164,6 +174,10 @@ GUARDRAIL:
 3. Pesan **user** berada di kanan dengan background emerald muda.
 4. Tidak ada bug rendering (raw `**` atau `1.` yang tidak ter-render).
 
+**Hasil yang Diharapkan:**
+
+![Hasil Render Pesan dengan Markdown — bubble user emerald di kanan ("Berikan tips menghemat..."), respons assistant kiri dengan heading "Tips Hemat Bulanan", list bertanda, dan teks bold ter-render](./assets/prompt-3-render-markdown.png)
+
 ---
 
 ## Prompt 4 — Input Area dengan Tombol Kirim
@@ -215,6 +229,10 @@ GUARDRAIL:
 5. Body auto-scroll ke bawah saat pesan baru muncul.
 6. Tekan Enter saat fokus di input → ikut submit.
 
+**Hasil yang Diharapkan:**
+
+![Hasil Input Area dengan Tombol Kirim — footer panel berisi text input dengan placeholder/teks "Hallo" + tombol kirim ikon pesawat (Send) di kanan; pesan user "Test" tampak baru saja terkirim sebagai bubble emerald](./assets/prompt-4-input-area.png)
+
 ---
 
 ## Prompt 5 — Toggle Open/Close Panel
@@ -265,6 +283,10 @@ mengapa.
 3. Klik floating button → panel kembali muncul dengan animasi slide.
 4. Pesan yang sudah pernah dikirim **masih ada** setelah close-open (state tidak reset).
 5. Main content (Dashboard / Transactions) mendapat ruang lebih saat panel tertutup.
+
+**Hasil yang Diharapkan:**
+
+![Hasil Toggle Open/Close Panel — panel chatbot tertutup, main content (Dashboard + 3 stat cards) sekarang melebar memenuhi area kanan; floating button hijau bulat dengan ikon chat muncul di pojok kanan-bawah siap dibuka kembali](./assets/prompt-5-toggle-open-close.png)
 
 ---
 
