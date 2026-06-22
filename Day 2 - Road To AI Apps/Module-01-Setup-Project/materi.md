@@ -748,6 +748,6 @@ Pada modul ini Anda telah:
 9. **Mengisi `.env.local`** dengan URL dan publishable key milik Anda sendiri.
 10. **Memverifikasi koneksi** melalui dashboard — angka pada stat card sudah menampilkan total dari data Anda.
 
-**Module 02** akan membahas **dashboard UI** secara lebih dalam: pola sidebar, stat cards, dan tema emerald. Anda akan mempelajari bagaimana Shadcn UI bekerja bersama Tailwind v4, serta berlatih **memodifikasi tampilan dengan bantuan Claude Code**.
+**Module 02** akan membahas **AI-Assisted Coding dengan Claude Code**: anatomi Claude Code (tools, konteks, permission modes), pola prompt yang efektif untuk coding, serta empat workflow umum (eksplorasi, fitur, refactoring, debugging). Anda juga akan berlatih langsung dengan **generate dokumentasi project** dan **membangun fitur CRUD** untuk halaman Transactions di atas Fina App yang sudah disiapkan di modul ini.
 
-📂 Lihat: `Module-02-Dashboard-UI/materi.md`
+📂 Lihat: `Module-02-AI-Assisted-Coding/materi.md`
