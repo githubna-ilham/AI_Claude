@@ -24,6 +24,40 @@ Module 04 terdiri dari **6 section** (+ 1 latihan UI di Module 03 sebagai prasya
 
 > 💡 **Cara kerja modul ini**: setiap section memberi Anda **prompt-prompt siap copy-paste** untuk dieksekusi ke Claude Code. Anda yang menjalankannya — Claude Code yang menulis kode-nya. Pola ini sama dengan Module 02.
 
+## Peta Visual Module 04
+
+Berikut gambaran arsitektur yang Anda bangun dari awal sampai akhir module:
+
+```
+   ┌──────────────────────────────────────────────────────┐
+   │                  Fin-App (Browser)                   │
+   └───────────────────────┬──────────────────────────────┘
+                           │
+   ── Module 03 (prasyarat) ──────────────────────────────
+   [latihan-ui-chatbot]  AIChatPanel (UI shell + mock)
+                           │
+   ── Module 04 ──────────────────────────────────────────
+   Section 1  →  server action askAdvisor()
+                 Browser → Server → Claude API
+                           │
+   Section 2  →  + temperature + prompt prefixing
+                           │
+   Section 3  →  + extended thinking → { text, thinking }
+                           │
+   Section 4  →  + toggle thinking + budget (Haiku/Opus)
+                           │
+   Section 5  →  route handler /api/advisor
+                 ReadableStream (token-by-token)
+                           │
+   Section 6  →  messages[] (riwayat) + windowing
+                           ↓
+   ┌──────────────────────────────────────────────────────┐
+   │       AI Financial Advisor (production-ready)        │
+   └──────────────────────────────────────────────────────┘
+```
+
+Setiap lapis menambah satu kemampuan **tanpa membongkar lapis sebelumnya**.
+
 ## Prinsip Kontinuitas Antar Section
 
 **Penting**: kode yang Anda bangun di setiap section akan **terus berlanjut** ke section berikutnya. Section 1 mengubah file yang dibuat di latihan UI Module 03; Section 2 menambah kemampuan pada hasil Section 1; dan seterusnya.
@@ -125,6 +159,35 @@ Untuk error, UI harus:
 - **Tampilkan pesan error** sebagai bubble assistant berstyle merah/distinct.
 - **Sediakan tombol retry** agar user dapat mencoba ulang tanpa mengetik ulang pertanyaan.
 
+Alur state pesan dari user klik kirim sampai render respons:
+
+```
+   [idle]
+     │ user klik kirim
+     ↓
+   [pesan user di-push] ─→ input dikosongkan
+     │
+     ↓
+   [isThinking = true]  ─→ tampilkan "AI sedang mengetik..."
+     │                     input + tombol kirim DISABLED
+     │ panggil askAdvisor(message)
+     ↓
+   ┌───────────────────────────┐
+   │   menunggu Claude API     │   (3–8 detik)
+   └─────────────┬─────────────┘
+                 │
+       ┌─────────┴──────────┐
+       ↓                    ↓
+   [SUKSES]             [GAGAL]
+   push assistant       lastError = { msg, q }
+   isThinking=false     isThinking=false
+   lastError=null       tampilkan bubble error + tombol "Coba lagi"
+       │                    │
+       └──────────┬─────────┘
+                  ↓
+              [idle]
+```
+
 ## Estimasi Biaya per Request
 
 Pertanyaan keuangan personal biasanya sederhana. Estimasi token per request:
@@ -186,6 +249,20 @@ Parameter `temperature` adalah angka antara `0.0` dan `1.0` yang menentukan **se
 | `1.0` | **Sangat kreatif** — jawaban sama untuk pertanyaan yang sama bisa berbeda jauh. Cocok untuk brainstorm, ide kreatif. |
 
 Untuk **AI Financial Advisor**, nilai `0.5–0.7` umumnya pas: faktual tetapi tidak kaku.
+
+Visualisasi spektrumnya:
+
+```
+  0.0 ─────── 0.3 ─────── 0.5 ─────── 0.7 ─────── 1.0
+   │           │           │           │           │
+   ▼           ▼           ▼           ▼           ▼
+ Deterministik │      [Default chat]   │       Kreatif
+  Ekstraksi    │      Tanya-jawab,     │      Brainstorm,
+  data,        │      ringkasan,       │      ide nama,
+  klasifikasi  │      financial advice │      slogan
+```
+
+Pertanyaan yang sama, 3x di temperature 0.0 → jawaban identik. Di 1.0 → bisa sangat berbeda.
 
 ```ts
 client.messages.create({
@@ -318,6 +395,25 @@ Extended thinking **bukan gratis**:
 
 Karena itu, di Section 4 nanti Anda akan menambah toggle untuk mengaktifkan/menonaktifkan thinking — bukan dipakai untuk setiap pertanyaan.
 
+Timeline perbandingan respons:
+
+```
+   Tanpa thinking (Haiku):
+   t=0s ─────────────────► t=3s
+   [submit] ............... [respons lengkap]
+
+
+   Dengan thinking (Opus, budget 2000):
+   t=0s ──────────────────────────────────► t=12s
+   [submit] .............................. [respons lengkap]
+            │                          │
+            └─── thinking phase ───────┘
+                 (2000 tokens internal)
+                 user lihat: "🧠 Sedang menganalisis..."
+```
+
+Mata user tetap menunggu — tapi kualitas analisis berbeda kelas. Untuk pertanyaan "Berapa total expense?" tidak perlu thinking; untuk "Bandingkan tiga skenario tabungan" sangat berguna.
+
 ## Tampilan di Chatbot UI
 
 Untuk section ini, blok thinking ditampilkan sebagai **section collapsible** di atas bubble jawaban:
@@ -380,6 +476,26 @@ Berdasarkan jenis pertanyaan keuangan personal, pola umumnya:
 | Strategi jangka panjang ("Rencana finansial 10 tahun untuk pensiun") | ✅ On | 4096 |
 
 User tidak perlu menghafal tabel ini — UI akan menyediakan **preset** (low / medium / high) sehingga user tinggal pilih intuitif.
+
+Decision tree intuitif:
+
+```
+   Pertanyaan datang
+        │
+        ↓
+   ┌────────────────────────────────┐
+   │ Butuh analisis / perbandingan? │
+   └────┬────────────────────┬──────┘
+        │ Tidak              │ Ya
+        ↓                    ↓
+   Thinking OFF         ┌──────────────────────┐
+   (Haiku, ~3s)         │ Seberapa kompleks?   │
+                        └──┬───────┬───────┬───┘
+                           │ low   │ med   │ high
+                           ↓       ↓       ↓
+                        1024 tk  2048 tk 4096 tk
+                        (Opus, 8s)(12s)  (20s)
+```
 
 ## State Management
 
@@ -501,6 +617,31 @@ while (true) {
 }
 ```
 
+Visualisasi pipeline ujung ke ujung:
+
+```
+   Claude API          Route Handler          Client            UI Bubble
+   ──────────          ─────────────          ──────            ─────────
+       │                     │                  │                   │
+       │  "Berikut"          │                  │                   │
+       ├────────────────────►│                  │                   │
+       │                     │ enqueue("Berikut")                   │
+       │                     ├─────────────────►│                   │
+       │                     │                  │ setMessages(...)  │
+       │                     │                  ├──────────────────►│
+       │                     │                  │                   │ "Berikut"
+       │  " tiga"            │                  │                   │
+       ├────────────────────►├─────────────────►├──────────────────►│ "Berikut tiga"
+       │                     │                  │                   │
+       │  " tips"            │                  │                   │
+       ├────────────────────►├─────────────────►├──────────────────►│ "Berikut tiga tips"
+       │     ...             │      ...         │      ...          │      ...
+       │  [done]             │ controller.close │   {done: true}    │
+       └─────────────────────┴──────────────────┴───────────────────┘
+```
+
+Setiap token yang Claude hasilkan langsung mengalir tanpa nunggu seluruh respons selesai.
+
 ## Implikasi pada State Management
 
 Pada Section 1–4, state messages diisi dengan **respons lengkap** sekaligus. Pada streaming, Anda perlu:
@@ -588,6 +729,23 @@ Setiap turn baru meneruskan SELURUH riwayat ke Claude. Implikasi biaya:
 | 50 | 50+49 | ~25.000 |
 
 Pada percakapan **sangat panjang**, biaya menjadi mahal. Strategi yang umum:
+
+Visualisasi pertumbuhan `messages[]` yang dikirim ke API setiap turn:
+
+```
+   Turn 1:  [U1]                                          1 pesan
+   Turn 2:  [U1, A1, U2]                                  3 pesan
+   Turn 3:  [U1, A1, U2, A2, U3]                          5 pesan
+   Turn 4:  [U1, A1, U2, A2, U3, A3, U4]                  7 pesan
+   ...                                                    ...
+   Turn 10: [U1..A9, U10]                                19 pesan
+   Turn 20: [U1..A19, U20]                               39 pesan
+            └─────────┬─────────┘
+                  windowing aktif:
+                  slice(-10) hanya kirim 10 terakhir
+```
+
+Setiap turn membayar ulang seluruh konteks sebelumnya — itulah kenapa windowing/summarization jadi krusial di percakapan panjang.
 
 ### Windowing
 
