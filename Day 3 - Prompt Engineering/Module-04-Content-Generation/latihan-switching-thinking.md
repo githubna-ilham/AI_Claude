@@ -1,6 +1,6 @@
 # Section 4 — Switching Thinking Mode
 
-> Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Section 3](./latihan-section-3.md)**.
+> Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Section 3](./latihan-thinking.md)**.
 
 > Latihan untuk memberi user kontrol mengaktifkan / menonaktifkan extended thinking dan memilih budget effort. Empat prompt siap copy-paste.
 >
@@ -207,4 +207,4 @@ GUARDRAIL:
 
 ---
 
-⬅️ Kembali: **[Section 3](./latihan-section-3.md)** · ➡️ Lanjut: **[Section 5 — Streaming Process](./latihan-section-5.md)**
+⬅️ Kembali: **[Section 3](./latihan-thinking.md)** · ➡️ Lanjut: **[Section 5 — Streaming Process](./latihan-streaming.md)**

@@ -12,7 +12,7 @@ Module 04 terdiri dari **6 section** (+ 1 latihan UI di Module 03 sebagai prasya
 
 | # | Section | Fokus | Status |
 |---|---|---|---|
-| **0** | **[UI Chatbot (prasyarat — Module 03)](../Module-03-Claude-API/materi-ui-chatbot.md)** | Bangun panel kanan dengan header, body, input, markdown, toggle | ✅ Siap |
+| **0** | **[UI Chatbot (prasyarat — Module 03)](../../Day 2 - Road To AI Apps/Module-03-Claude-API/materi-ui-chatbot.md)** | Bangun panel kanan dengan header, body, input, markdown, toggle | ✅ Siap |
 | **1** | **Integrasi Claude API ke Chatbot** | Hubungkan UI ke Claude API (server action) — mock content jadi respons asli | ✅ Siap |
 | **2** | **Text Generation** | Parameter generation: `temperature`, `max_tokens`, `stop_sequences`, prompt prefixing untuk format output | ✅ Siap |
 | **3** | **Thinking / Thought** | Menggunakan *extended thinking* model Claude (Opus 4.x) untuk menampilkan proses berpikir | ✅ Siap |

@@ -1,6 +1,6 @@
 # Section 3 — Thinking / Thought
 
-> Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Section 2](./latihan-section-2.md)**.
+> Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Section 2](./latihan-text-generation.md)**.
 
 > Latihan untuk mengaktifkan **extended thinking** pada model Claude Opus, dan menampilkan blok pemikiran di chatbot sebagai section yang dapat dilipat. Empat prompt siap copy-paste.
 >
@@ -215,4 +215,4 @@ GUARDRAIL:
 
 ---
 
-⬅️ Kembali: **[Section 2](./latihan-section-2.md)** · ➡️ Lanjut: **[Section 4 — Switching Thinking Mode](./latihan-section-4.md)**
+⬅️ Kembali: **[Section 2](./latihan-text-generation.md)** · ➡️ Lanjut: **[Section 4 — Switching Thinking Mode](./latihan-switching-thinking.md)**

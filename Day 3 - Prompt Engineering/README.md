@@ -1,0 +1,73 @@
+# Day 3 — Prompt Engineering
+
+> **Catatan**: Lanjutan dari **[Day 2 — Road To AI Apps](../Day%202%20-%20Road%20To%20AI%20Apps/)**. Pada Day 3 Anda **membangun fitur AI** di atas Fin-App yang sudah disiapkan di Day 2 — mulai dari integrasi Claude API, sampai prompt engineering tingkat lanjut dengan tool use (agentic workflow).
+
+## Tujuan
+
+Setelah menyelesaikan materi ini, peserta diharapkan mampu:
+
+1. **Integrasi Claude API** ke aplikasi Next.js modern: server action, route handler streaming, error handling.
+2. Mengontrol **parameter generation** (`temperature`, `max_tokens`, `stop_sequences`) untuk hasil sesuai kebutuhan.
+3. Memanfaatkan **Extended Thinking** model Opus dan menampilkannya di UI sebagai *collapsible reasoning*.
+4. Membangun pengalaman **streaming** kata-demi-kata untuk chat AI yang responsif.
+5. Mengelola **multi-turn conversation** dengan riwayat percakapan + windowing.
+6. Menerapkan **prompt engineering best practices**: system instruction, role-context-instruction pattern, zero-shot vs few-shot, output control.
+7. Merancang **agentic workflow**: Claude memanggil tool (mis. `get_transactions`) untuk mengambil data dari Supabase secara mandiri.
+
+## Outline Modul
+
+| Modul | Judul | Estimasi |
+|---|---|---|
+| **04** | Content Generation — 6 section: Integrasi API → Text Generation → Thinking → Switching Mode → Streaming → Multi-Turn | 4–5 jam |
+| **05** | Prompt Engineering — 6 section: System Instruction → Parameter & Output Control → Prompt Guides → Zero/Few-Shot → Role-Context-Instruction → Agentic Workflow | 5–6 jam |
+
+Total estimasi: **±9–11 jam efektif** untuk Module 04–05 (di luar break & diskusi).
+
+## Prasyarat
+
+- **Module 01–03 dari [Day 2](../Day%202%20-%20Road%20To%20AI%20Apps/)** sudah selesai.
+- **Latihan UI Chatbot** di [Module 03 Day 2](../Day%202%20-%20Road%20To%20AI%20Apps/Module-03-Claude-API/latihan-ui-chatbot.md) sudah dieksekusi — panel chatbot statis sudah tampil di Fin-App.
+- `@anthropic-ai/sdk` terinstal dan `ANTHROPIC_API_KEY` ada di `.env.local`.
+- Claude Code aktif di terminal kedua.
+
+## Struktur Folder
+
+```
+Day 3 - Prompt Engineering/
+├── README.md                                       (file ini)
+├── Module-04-Content-Generation/         ✅ siap (6 section)
+│   ├── materi.md                         (overview + Section 1–6 detail + diagram Mermaid)
+│   ├── latihan.md                        (index 6 section)
+│   ├── latihan-integrasi-api.md          (Section 1 — Integrasi Claude API ke Chatbot)
+│   ├── latihan-text-generation.md        (Section 2 — Text Generation)
+│   ├── latihan-thinking.md               (Section 3 — Thinking / Thought)
+│   ├── latihan-switching-thinking.md     (Section 4 — Switching Thinking Mode)
+│   ├── latihan-streaming.md              (Section 5 — Streaming Process)
+│   └── latihan-multi-turn.md             (Section 6 — Multi-Turn Conversation)
+└── Module-05-Prompt-Engineering/                   ✅ siap (6 section)
+    ├── materi.md                                   (outline + Section 1–6 detail)
+    └── latihan.md                                  (20 prompt eksekusi siap copy-paste)
+```
+
+## Alur Belajar
+
+```
+Day 2 Module 03 (latihan UI Chatbot)
+        ↓  panel chatbot statis siap
+Day 3 Module 04 Section 1 — Integrasi Claude API
+        ↓  +server action askAdvisor
+Day 3 Module 04 Section 2 — Text Generation
+        ↓  +temperature, prompt prefixing
+Day 3 Module 04 Section 3 — Thinking
+        ↓  +extended thinking + collapsible UI
+Day 3 Module 04 Section 4 — Switching Thinking
+        ↓  +toggle + budget Haiku/Opus
+Day 3 Module 04 Section 5 — Streaming
+        ↓  +route handler /api/advisor
+Day 3 Module 04 Section 6 — Multi-Turn
+        ↓  +messages[] + windowing
+Day 3 Module 05 — Prompt Engineering
+        → system instruction, few-shot, tool use (agentic)
+```
+
+🚀 **Mulai**: [Module 04 — Content Generation](./Module-04-Content-Generation/materi.md)

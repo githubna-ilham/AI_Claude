@@ -1,6 +1,6 @@
 # Section 1 — Integrasi Claude API ke Chatbot
 
-> Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Latihan UI Chatbot di Module 03](../Module-03-Claude-API/latihan-ui-chatbot.md)**.
+> Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Latihan UI Chatbot di Module 03](../../Day 2 - Road To AI Apps/Module-03-Claude-API/latihan-ui-chatbot.md)**.
 
 > Latihan untuk **menghidupkan** chatbot dari Latihan UI Module 03: mengganti mock messages dengan respons asli dari Claude API. Empat prompt siap copy-paste.
 >
@@ -329,4 +329,4 @@ Tuliskan pada catatan pribadi:
 
 ---
 
-⬅️ Kembali: **[Latihan UI Module 03](../Module-03-Claude-API/latihan-ui-chatbot.md)** · ➡️ Lanjut: **[Section 2 — Text Generation](./latihan-section-2.md)**
+⬅️ Kembali: **[Latihan UI Module 03](../../Day 2 - Road To AI Apps/Module-03-Claude-API/latihan-ui-chatbot.md)** · ➡️ Lanjut: **[Section 2 — Text Generation](./latihan-text-generation.md)**

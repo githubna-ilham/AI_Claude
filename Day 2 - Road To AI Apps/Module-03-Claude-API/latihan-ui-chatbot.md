@@ -295,4 +295,4 @@ Tuliskan pada catatan pribadi:
 
 ---
 
-🏠 Kembali: **[Module 03 — Latihan](./latihan.md)** · ➡️ Lanjut: **[Module 04 — Section 1: Integrasi Claude API](../Module-04-Content-Generation/latihan-section-1.md)**
+🏠 Kembali: **[Module 03 — Latihan](./latihan.md)** · ➡️ Lanjut: **[Module 04 — Section 1: Integrasi Claude API](../../Day 3 - Prompt Engineering/Module-04-Content-Generation/latihan-integrasi-api.md)**

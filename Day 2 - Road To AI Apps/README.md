@@ -19,11 +19,11 @@ Setelah menyelesaikan materi ini, peserta diharapkan mampu:
 |---|---|---|
 | **01** | Setup Project & Claude Code (+ Supabase + migration + sample data) | 90 menit |
 | **02** | AI-Assisted Coding (konsep) + Latihan: Generate Dokumentasi + Build CRUD Transactions | 180 menit |
-| **03** | Claude API — Koneksi Pertama (SDK + file eksperimen + console output) | 30 menit (section 1) |
-| **04** | Content Generation — 7 section inkremental: UI Chatbot → Integrasi API → Text Generation → Thinking → Switching Mode → Streaming → Multi-Turn | 4–5 jam (total) |
-| **05** | Prompt Engineering — 6 section: System Instruction → Parameter & Output Control → Prompt Guides → Zero/Few-Shot → Role-Context-Instruction → Agentic Workflow | 5–6 jam (total) |
+| **03** | Claude API — Koneksi Pertama (SDK + file eksperimen + console output) + Latihan UI Chatbot (prasyarat Day 3) | 30–90 menit |
 
-Total estimasi sementara: **±14–15 jam efektif** untuk Module 01–05 (di luar break & diskusi).
+Total estimasi: **±5–6 jam efektif** untuk Module 01–03 (di luar break & diskusi).
+
+> ➡️ **Lanjutan**: Module 04 (Content Generation) dan Module 05 (Prompt Engineering) ada di **[Day 3 — Prompt Engineering](../Day%203%20-%20Prompt%20Engineering/)**.
 
 ## Stack Hasil Akhir
 
@@ -62,31 +62,9 @@ Day 2 - Road To AI Apps/
 ├── Module-02-AI-Assisted-Coding/                   ✅ siap
 │   ├── materi.md                                   (konsep AI-assisted coding + anatomi Claude + prompting + etika)
 │   └── latihan.md                                  (Latihan 1: Generate Dokumentasi · Latihan 2: Build CRUD)
-├── Module-03-Claude-API/                           🔨 in progress
-│   ├── materi.md                                   (section 1: koneksi pertama via SDK + console output)
-│   └── latihan.md                                  (6 eksperimen: prompt, max_tokens, model, biaya, error)
-├── Module-04-Content-Generation/                   ✅ siap (7 section lengkap)
-│   ├── materi.md                                   (overview + Section 1–7 detail)
-│   └── latihan.md                                  (23 prompt eksekusi siap copy-paste)
-└── Module-05-Prompt-Engineering/                   ✅ siap (6 section lengkap)
-    ├── materi.md                                   (outline + Section 1–6 detail)
-    └── latihan.md                                  (20 prompt eksekusi siap copy-paste)
-    ├── materi.md                                   (outline 7 section + prinsip kontinuitas + Section 1 detail)
-    └── latihan.md                                  (Section 1: 5 prompt UI Chatbot · Section 2–7: stub)
+└── Module-03-Claude-API/                           ✅ siap
+    ├── materi.md                                   (koneksi pertama via SDK + console output)
+    ├── latihan.md                                  (6 eksperimen: prompt, max_tokens, model, biaya, error)
+    ├── materi-ui-chatbot.md                        (materi pendamping latihan UI Chatbot)
+    └── latihan-ui-chatbot.md                       (5 prompt UI Chatbot — prasyarat Day 3 Module 04)
 ```
-
-## Struktur Section di Module 04
-
-Module 04 dirancang sebagai **rangkaian inkremental** — satu fitur chatbot dibangun lapis-demi-lapis:
-
-| Section | Fokus | Status |
-|---|---|---|
-| **1** | UI Chatbot (panel kanan + markdown + toggle) | ✅ Siap |
-| **2** | Integrasi Claude API ke chatbot (server action + loading + error + welcome) | ✅ Siap |
-| **3** | Text generation (system prompt + format output + refactor ke prompts.ts) | ✅ Siap |
-| **4** | Thinking / thought (extended thinking visible + collapsible UI) | ✅ Siap |
-| **5** | Switching thinking mode (toggle + budget low/medium/high + branching model) | ✅ Siap |
-| **6** | Streaming process (route handler + ReadableStream + typewriter) | ✅ Siap |
-| **7** | Multi-turn conversation (riwayat + windowing + reset) | ✅ Siap |
-
-> 💡 **Prinsip kontinuitas**: setiap section memperluas kode dari section sebelumnya — bukan project baru. Pada akhir Module 04, Anda memiliki satu fitur AI Financial Advisor yang utuh dan fungsional.

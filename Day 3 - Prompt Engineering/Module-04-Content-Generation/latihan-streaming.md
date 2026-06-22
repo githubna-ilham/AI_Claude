@@ -1,6 +1,6 @@
 # Section 5 — Streaming Process
 
-> Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Section 4](./latihan-section-4.md)**.
+> Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Section 4](./latihan-switching-thinking.md)**.
 
 > Latihan untuk mengubah respons dari Section 1–4 menjadi **streaming** kata-demi-kata. Server action diganti route handler; client component meng-consume `ReadableStream`. Tiga prompt siap copy-paste.
 >
@@ -190,4 +190,4 @@ GUARDRAIL:
 
 ---
 
-⬅️ Kembali: **[Section 4](./latihan-section-4.md)** · ➡️ Lanjut: **[Section 6 — Multi-Turn Conversation](./latihan-section-6.md)**
+⬅️ Kembali: **[Section 4](./latihan-switching-thinking.md)** · ➡️ Lanjut: **[Section 6 — Multi-Turn Conversation](./latihan-multi-turn.md)**
