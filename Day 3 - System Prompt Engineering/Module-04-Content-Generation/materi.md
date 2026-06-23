@@ -24,61 +24,6 @@ Module 04 terdiri dari **6 section** (+ 1 latihan UI di Module 03 sebagai prasya
 
 > 💡 **Cara kerja modul ini**: setiap section memberi Anda **prompt-prompt siap copy-paste** untuk dieksekusi ke Claude Code. Anda yang menjalankannya — Claude Code yang menulis kode-nya. Pola ini sama dengan Module 02.
 
-## Peta Visual Module 04
-
-Berikut gambaran arsitektur yang Anda bangun dari awal sampai akhir module:
-
-```mermaid
-flowchart TD
-    Browser["Fin-App (Browser)"]
-
-    subgraph M3["Module 03 — Prasyarat"]
-        UI["latihan-ui-chatbot<br/>AIChatPanel (UI shell + mock)"]
-    end
-
-    subgraph M4["Module 04 — Content Generation"]
-        S1["Section 1<br/>server action askAdvisor()<br/>Browser → Server → Claude API"]
-        S2["Section 2<br/>+ temperature + prompt prefixing"]
-        S3["Section 3<br/>+ extended thinking<br/>{ text, thinking }"]
-        S4["Section 4<br/>+ toggle thinking + budget<br/>Haiku ↔ Opus"]
-        S5["Section 5<br/>route handler /api/advisor<br/>ReadableStream (token-by-token)"]
-        S6["Section 6<br/>messages[] (riwayat) + windowing"]
-    end
-
-    Final["AI Financial Advisor<br/>(production-ready)"]
-
-    Browser --> UI --> S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> Final
-```
-
-Setiap lapis menambah satu kemampuan **tanpa membongkar lapis sebelumnya**.
-
-## Prinsip Kontinuitas Antar Section
-
-**Penting**: kode yang Anda bangun di setiap section akan **terus berlanjut** ke section berikutnya. Section 1 mengubah file yang dibuat di latihan UI Module 03; Section 2 menambah kemampuan pada hasil Section 1; dan seterusnya.
-
-Artinya:
-
-- ❌ Jangan **menghapus** atau **menulis ulang dari nol** komponen yang sudah jadi di section sebelumnya.
-- ✅ Setiap prompt di section berikutnya akan **eksplisit menyebut** file dan komponen mana yang akan diperluas atau dimodifikasi.
-- ✅ Pada akhir Module 04, Anda akan memiliki **satu fitur chatbot yang utuh** — bukan kumpulan demo terpisah.
-
-Alur evolusinya kira-kira seperti ini:
-
-```mermaid
-flowchart TD
-    M3["Latihan UI Module 03<br/>UI shell + mock messages"]
-    A1["Section 1<br/>Ganti mock dengan panggilan Claude API<br/>(server action)"]
-    A2["Section 2<br/>Tambah parameter temperature<br/>+ prompt prefixing untuk format output"]
-    A3["Section 3<br/>Aktifkan extended thinking,<br/>tampilkan di UI"]
-    A4["Section 4<br/>Tambah toggle thinking di header chatbot"]
-    A5["Section 5<br/>Ubah respons biasa jadi streaming<br/>(efek typewriter)"]
-    A6["Section 6<br/>Simpan riwayat percakapan,<br/>kirim sebagai konteks"]
-
-    M3 --> A1 --> A2 --> A3 --> A4 --> A5 --> A6
-```
-
-Setiap "→" adalah peningkatan inkremental pada **kode yang sama**, bukan project baru.
-
 ---
 
 # Section 1 — Integrasi Claude API ke Chatbot
@@ -166,10 +111,10 @@ Alur state pesan dari user klik kirim sampai render respons:
 stateDiagram-v2
     [*] --> Idle
     Idle --> PushUserMsg: user klik kirim
-    PushUserMsg --> Loading: isThinking = true,<br/>input disabled
+    PushUserMsg --> Loading: isWaiting = true,<br/>input disabled
     Loading --> Success: respons OK
     Loading --> Error: exception
-    Success --> Idle: push assistant,<br/>isThinking=false,<br/>lastError=null
+    Success --> Idle: push assistant,<br/>isWaiting=false,<br/>lastError=null
     Error --> RetryWait: lastError = { msg, q },<br/>tampilkan bubble error
     RetryWait --> Loading: klik "Coba lagi"
     RetryWait --> PushUserMsg: ketik pesan baru

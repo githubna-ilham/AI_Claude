@@ -1,4 +1,4 @@
-# Day 3 — Prompt Engineering
+# Day 3 — System Prompt Engineering
 
 > **Catatan**: Lanjutan dari **[Day 2 — Road To AI Apps](../Day%202%20-%20Road%20To%20AI%20Apps/)**. Pada Day 3 Anda **membangun fitur AI** di atas Fin-App yang sudah disiapkan di Day 2 — mulai dari integrasi Claude API, sampai prompt engineering tingkat lanjut dengan tool use (agentic workflow).
 
@@ -35,17 +35,17 @@ Total estimasi: **±12–15 jam efektif** untuk Module 04–07 (di luar break & 
 ## Struktur Folder
 
 ```
-Day 3 - Prompt Engineering/
+Day 3 - System Prompt Engineering/
 ├── README.md                                       (file ini)
 ├── Module-04-Content-Generation/         ✅ siap (6 section)
 │   ├── materi.md                         (overview + Section 1–6 detail + diagram Mermaid)
 │   ├── latihan.md                        (index 6 section)
-│   ├── latihan-integrasi-api.md          (Section 1 — Integrasi Claude API ke Chatbot)
-│   ├── latihan-text-generation.md        (Section 2 — Text Generation)
-│   ├── latihan-thinking.md               (Section 3 — Thinking / Thought)
-│   ├── latihan-switching-thinking.md     (Section 4 — Switching Thinking Mode)
-│   ├── latihan-streaming.md              (Section 5 — Streaming Process)
-│   └── latihan-multi-turn.md             (Section 6 — Multi-Turn Conversation)
+│   ├── latihan-1-integrasi-api.md          (Section 1 — Integrasi Claude API ke Chatbot)
+│   ├── latihan-2-text-generation.md        (Section 2 — Text Generation)
+│   ├── latihan-3-thinking.md               (Section 3 — Thinking / Thought)
+│   ├── latihan-4-switching-thinking.md     (Section 4 — Switching Thinking Mode)
+│   ├── latihan-5-streaming.md              (Section 5 — Streaming Process)
+│   └── latihan-6-multi-turn.md             (Section 6 — Multi-Turn Conversation)
 ├── Module-05-Prompt-Engineering/         ✅ siap (4 section)
 │   ├── materi.md                         (outline + Section 1–4 detail + diagram Mermaid)
 │   ├── latihan.md                        (index 4 section)

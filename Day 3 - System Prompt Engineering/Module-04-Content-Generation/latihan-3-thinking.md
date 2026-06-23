@@ -1,6 +1,6 @@
 # Section 3 — Thinking / Thought
 
-> Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Section 2](./latihan-text-generation.md)**.
+> Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Section 2](./latihan-2-text-generation.md)**.
 
 > Latihan untuk mengaktifkan **extended thinking** pada model Claude Opus, dan menampilkan blok pemikiran di chatbot sebagai section yang dapat dilipat. Empat prompt siap copy-paste.
 >
@@ -170,7 +170,7 @@ thinking — supaya user paham mengapa respons lebih lambat.
 GOAL:
 - Ganti pesan "AI sedang mengetik..." dari Section 1 menjadi
   dua tahap:
-  1. Saat sedang menunggu (isThinking = true), tampilkan:
+  1. Saat sedang menunggu (isWaiting = true), tampilkan:
      "🧠 Sedang menganalisis..."
      dengan ikon Brain + animate-pulse.
   2. (Akan diupdate di Section 5 saat streaming masuk.)
@@ -215,4 +215,4 @@ GUARDRAIL:
 
 ---
 
-⬅️ Kembali: **[Section 2](./latihan-text-generation.md)** · ➡️ Lanjut: **[Section 4 — Switching Thinking Mode](./latihan-switching-thinking.md)**
+⬅️ Kembali: **[Section 2](./latihan-2-text-generation.md)** · ➡️ Lanjut: **[Section 4 — Switching Thinking Mode](./latihan-4-switching-thinking.md)**

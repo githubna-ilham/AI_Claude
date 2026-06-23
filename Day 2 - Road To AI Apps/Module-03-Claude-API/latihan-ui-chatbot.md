@@ -317,4 +317,4 @@ Tuliskan pada catatan pribadi:
 
 ---
 
-🏠 Kembali: **[Module 03 — Latihan](./latihan.md)** · ➡️ Lanjut: **[Module 04 — Section 1: Integrasi Claude API](../../Day 3 - Prompt Engineering/Module-04-Content-Generation/latihan-integrasi-api.md)**
+🏠 Kembali: **[Module 03 — Latihan](./latihan.md)** · ➡️ Lanjut: **[Module 04 — Section 1: Integrasi Claude API](../../Day 3 - System Prompt Engineering/Module-04-Content-Generation/latihan-1-integrasi-api.md)**

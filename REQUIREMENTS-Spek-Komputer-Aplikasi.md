@@ -259,7 +259,7 @@ node_modules/
 
 ## E. Per-Hari Yang Perlu Disiapkan
 
-### Day 1 — Prompt Engineering Fundamentals
+### Day 1 — Introduction LLM Fundamentals
 
 **Peserta cukup browser + akun Anthropic Console. Belum perlu coding.**
 

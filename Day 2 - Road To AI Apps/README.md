@@ -23,7 +23,7 @@ Setelah menyelesaikan materi ini, peserta diharapkan mampu:
 
 Total estimasi: **±5–6 jam efektif** untuk Module 01–03 (di luar break & diskusi).
 
-> ➡️ **Lanjutan**: Module 04 (Content Generation) dan Module 05 (Prompt Engineering) ada di **[Day 3 — Prompt Engineering](../Day%203%20-%20Prompt%20Engineering/)**.
+> ➡️ **Lanjutan**: Module 04 (Content Generation) dan Module 05 (Prompt Engineering) ada di **[Day 3 — System Prompt Engineering](../Day%203%20-%20System%20Prompt%20Engineering/)**.
 
 ## Stack Hasil Akhir
 

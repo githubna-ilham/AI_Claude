@@ -497,6 +497,265 @@ flowchart TD
 
 **Loop point**: kalau Claude mengembalikan `tool_use` lagi setelah `tool_result`, ulangi langkah 3–4. Ini cara model bisa chain beberapa tool calls. Pasang **max iterations** (mis. 5) untuk safety.
 
+## Parallel Function Calling
+
+Sejauh ini kita anggap Claude memanggil **satu** tool per turn. Tetapi Claude API mendukung **parallel function calling** — beberapa `tool_use` block dalam **satu response**, yang aplikasi Anda dapat eksekusi secara bersamaan.
+
+### Kapan Berguna?
+
+Ketika user query butuh **multiple independent data** yang tidak saling bergantung:
+
+> _"Tampilkan ringkasan keuangan saya: total expense food, total income bulan ini, dan 3 transaksi terbesar."_
+
+Tanpa parallel: Claude harus 3 turn — query food, lalu income, lalu top transactions. Total latensi = 3× API + 3× DB roundtrip.
+
+Dengan parallel: Claude mengeluarkan **3 `tool_use` block** sekaligus, app eksekusi paralel via `Promise.all`, semua selesai dalam waktu yang hampir sama dengan 1 query.
+
+### Anatomi Response Paralel
+
+Claude mengembalikan **array content blocks** dengan beberapa `tool_use`:
+
+```ts
+response.content = [
+  { type: "text", text: "Saya akan ambil data berikut..." },
+  { type: "tool_use", id: "tu_1", name: "get_total_by_category", input: { category: "food" } },
+  { type: "tool_use", id: "tu_2", name: "get_total_income", input: { month: "2026-06" } },
+  { type: "tool_use", id: "tu_3", name: "get_top_transactions", input: { limit: 3 } },
+];
+```
+
+App memprosesnya:
+
+```ts
+const toolUseBlocks = response.content.filter((c) => c.type === "tool_use");
+
+// Eksekusi semua tool paralel
+const results = await Promise.all(
+  toolUseBlocks.map(async (tu) => ({
+    type: "tool_result" as const,
+    tool_use_id: tu.id,
+    content: JSON.stringify(await executeToolByName(tu.name, tu.input)),
+  }))
+);
+
+// Kirim semua tool_result ke Claude dalam satu user message
+messages.push({ role: "user", content: results });
+```
+
+### Visualisasi
+
+```mermaid
+flowchart TB
+    subgraph Seq["Sequential (default)"]
+        S1["tool A"] --> S2["tool B"] --> S3["tool C"] --> SF["respons"]
+    end
+
+    subgraph Par["Parallel"]
+        P0["1 response Claude"] --> P1["tool A"]
+        P0 --> P2["tool B"]
+        P0 --> P3["tool C"]
+        P1 --> PF["semua tool_result"]
+        P2 --> PF
+        P3 --> PF
+        PF --> PR["respons"]
+    end
+```
+
+### Kapan TIDAK Pakai Parallel?
+
+- Tool kedua **butuh hasil tool pertama** (mis. `get_user_id` → `get_user_balance(user_id)`). Claude akan otomatis chaining sequential — tidak perlu paksa paralel.
+- Tool yang **side-effect** (insert/update DB) — paralel berisiko race condition. Lebih aman sequential dengan idempotency key.
+
+> 📌 Parallel function calling **aktif by default** di model Claude 4.x. Tidak perlu setting khusus — Claude akan memutuskan sendiri kapan paralel masuk akal.
+
+## Menangani Multiple Function (Multi-Tool Dispatcher)
+
+Saat aplikasi Anda punya **banyak tool** terdaftar (3, 5, 10+ tools), Anda butuh pola **dispatcher** yang clean untuk routing tool_use ke handler yang tepat.
+
+### Anti-Pattern: Switch Raksasa
+
+Hindari switch panjang di route handler:
+
+```ts
+// ❌ Tidak skalabel
+if (toolUse.name === "create_transaction") return executeCreateTransaction(...);
+else if (toolUse.name === "get_balance_summary") return executeGetBalance(...);
+else if (toolUse.name === "search_transactions") return executeSearchTx(...);
+// ... 20 baris lagi
+```
+
+### Pattern: Tool Registry
+
+Definisikan registry yang mapping `name` → `(declaration, handler)`:
+
+```ts
+// src/lib/tool-registry.ts
+import { z } from "zod";
+
+type ToolDef<TInput> = {
+  name: string;
+  description: string;
+  input_schema: object;
+  inputSchema: z.ZodType<TInput>;  // Zod untuk validasi runtime
+  handler: (input: TInput) => Promise<unknown>;
+};
+
+export const toolRegistry: Record<string, ToolDef<any>> = {
+  create_transaction: {
+    name: "create_transaction",
+    description: "Catat transaksi baru ...",
+    input_schema: { /* JSON Schema untuk Claude */ },
+    inputSchema: CreateTransactionSchema,  // Zod schema
+    handler: executeCreateTransaction,
+  },
+  get_balance_summary: { /* ... */ },
+  search_transactions: { /* ... */ },
+};
+```
+
+Lalu dispatcher generik:
+
+```ts
+export async function executeToolByName(name: string, input: unknown) {
+  const tool = toolRegistry[name];
+  if (!tool) {
+    return { success: false, error: `Unknown tool: ${name}` };
+  }
+
+  // Validasi input dengan Zod
+  const parsed = tool.inputSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: `Invalid input: ${parsed.error.message}` };
+  }
+
+  try {
+    const result = await tool.handler(parsed.data);
+    return { success: true, data: result };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
+  }
+}
+```
+
+Untuk passing tools ke Claude API:
+
+```ts
+const tools = Object.values(toolRegistry).map(({ name, description, input_schema }) => ({
+  name,
+  description,
+  input_schema,
+}));
+```
+
+### Keuntungan Pattern Registry
+
+| Aspek | Switch | Registry |
+|---|---|---|
+| **Tambah tool baru** | Edit 2+ tempat (declaration + handler dispatch) | Edit 1 entry registry |
+| **Validasi input** | Manual per tool | Otomatis via Zod |
+| **Error handling** | Per case | Terpusat |
+| **Type safety** | Manual cast | Bisa di-infer dari Zod |
+| **Testing** | Test seluruh route | Test per handler isolated |
+
+> 💡 **Best practice**: kalau Anda punya >5 tool, refactor ke registry **wajib**. Maintenance kode jadi jauh lebih murah.
+
+## Multi-Modal Tool Use (Image, PDF)
+
+Claude API mendukung **multi-modal input** — selain teks, message bisa berisi **gambar** atau **PDF**. Saat dikombinasikan dengan tool use, ini membuka use case yang sangat powerful.
+
+### Use Case Fin-App: Catat Struk Belanja dari Foto
+
+User mengirim foto struk + pesan _"Catat semua belanjaan ini"_. Alur:
+
+1. User upload foto struk ke chatbot.
+2. Aplikasi kirim ke Claude API dengan content block tipe `image`.
+3. Claude **membaca struk** (vision) → ekstrak items → **panggil tool `create_transaction`** untuk masing-masing item.
+4. Aplikasi eksekusi insert ke DB → return tool_result.
+5. Claude konfirmasi: _"3 transaksi sudah dicatat: kopi Rp 25.000, kue Rp 15.000, ..."_
+
+### Anatomi Message dengan Image
+
+Format Anthropic SDK:
+
+```ts
+client.messages.create({
+  model: "claude-sonnet-4-6",
+  max_tokens: 1024,
+  tools,
+  messages: [
+    {
+      role: "user",
+      content: [
+        {
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: "image/jpeg",
+            data: base64ImageString,
+          },
+        },
+        {
+          type: "text",
+          text: "Catat semua transaksi di struk ini.",
+        },
+      ],
+    },
+  ],
+});
+```
+
+Format alternatif: `source.type: "url"` apabila gambar di-host publicly.
+
+### Pipeline Vision + Tool Use
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant App as App (Server)
+    participant Claude as Claude API
+    participant DB as Supabase
+
+    U->>App: Upload foto struk + "Catat ini"
+    App->>App: Convert ke base64
+    App->>Claude: messages: [image + text] + tools
+    Note over Claude: Vision: baca struk<br/>Reasoning: ekstrak items
+    Claude-->>App: multiple tool_use:<br/>create_transaction × 3
+    par eksekusi paralel
+        App->>DB: insert kopi 25rb
+        App->>DB: insert kue 15rb
+        App->>DB: insert teh 10rb
+    end
+    DB-->>App: 3 row created
+    App->>Claude: tool_result × 3
+    Claude-->>App: "3 transaksi dicatat: ..."
+    App-->>U: konfirmasi natural
+```
+
+Perhatikan ini gabungan **3 fitur**: vision, parallel function calling, dan dispatcher multi-tool. Pattern arsitektur Anda yang sudah baik akan menampung semua tanpa refactor besar.
+
+### Use Case Multi-Modal Lain di Fin-App
+
+| Use case | Input | Tool yang dipanggil |
+|---|---|---|
+| Catat dari foto struk | Image (struk) | `create_transaction` (multiple) |
+| Analisis pengeluaran dari screenshot mobile banking | Image (notifikasi mutasi) | `create_transaction`, `categorize` |
+| Audit dokumen PDF kontrak/invoice | PDF (kontrak) | `extract_payment_terms`, `create_reminder` |
+| Klasifikasi receipt vs invoice vs lainnya | Image | `classify_document`, branch ke handler beda |
+| Convert handwritten ledger ke digital | Image (catatan tangan) | `create_transaction` (batch) |
+
+### Trade-off Multi-Modal
+
+| Aspek | Catatan |
+|---|---|
+| **Biaya** | Image dihitung tokens (Sonnet/Opus: ~1500 token per gambar resolusi standar). Lebih mahal dari pure text. |
+| **Latensi** | Tambah ~1–2 detik vs pure text. |
+| **Akurasi vision** | Sangat baik untuk struk cetak. Untuk handwriting/blur, hasilnya tidak konsisten — selalu validasi via tool_result yang menampilkan hasil parsing ke user untuk konfirmasi. |
+| **Privasi** | Gambar dikirim ke Anthropic. Untuk data sensitif (mis. dokumen finansial perusahaan), pertimbangkan policy yang sesuai. |
+| **Model support** | Vision butuh **Claude Sonnet/Opus**, tidak tersedia di Haiku versi lama. Pakai `claude-sonnet-4-6` atau yang lebih baru. |
+
+> ⚠️ **Untuk action destruktif via vision** (mis. auto-insert 10 transaksi dari foto struk), **wajib** ada layer konfirmasi user di UI sebelum eksekusi. Vision bisa salah parse — user harus punya kesempatan review.
+
 ## Best Practices
 
 1. **Tool description sejelas mungkin** — itu satu-satunya cara Claude tahu kapan memakainya. Sertakan contoh penggunaan kalau perlu.

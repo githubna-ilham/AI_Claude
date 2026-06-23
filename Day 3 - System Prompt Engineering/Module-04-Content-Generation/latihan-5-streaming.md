@@ -1,6 +1,6 @@
 # Section 5 — Streaming Process
 
-> Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Section 4](./latihan-switching-thinking.md)**.
+> Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Section 4](./latihan-4-switching-thinking.md)**.
 
 > Latihan untuk mengubah respons dari Section 1–4 menjadi **streaming** kata-demi-kata. Server action diganti route handler; client component meng-consume `ReadableStream`. Tiga prompt siap copy-paste.
 >
@@ -92,7 +92,7 @@ GOAL:
   1. Push user message (sama seperti Section 1).
   2. PUSH placeholder assistant message ke state dengan
      content: "" dan thinking: thinkingEnabled ? "" : null.
-  3. Set isThinking = true.
+  3. Set isWaiting = true.
   4. fetch POST /api/advisor dengan body { message,
      thinking, budget } dari context.
   5. Baca response.body sebagai stream:
@@ -107,7 +107,7 @@ GOAL:
        thinking dari pesan placeholder.
      - Else: append ke field content dari pesan placeholder.
      - Update state messages dengan placeholder yang ter-update.
-  8. Saat done = true: set isThinking = false.
+  8. Saat done = true: set isWaiting = false.
 
 CONTEXT:
 - File: ai-chat-panel.tsx.
@@ -190,4 +190,4 @@ GUARDRAIL:
 
 ---
 
-⬅️ Kembali: **[Section 4](./latihan-switching-thinking.md)** · ➡️ Lanjut: **[Section 6 — Multi-Turn Conversation](./latihan-multi-turn.md)**
+⬅️ Kembali: **[Section 4](./latihan-4-switching-thinking.md)** · ➡️ Lanjut: **[Section 6 — Multi-Turn Conversation](./latihan-6-multi-turn.md)**

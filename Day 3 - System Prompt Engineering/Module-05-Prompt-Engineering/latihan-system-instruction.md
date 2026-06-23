@@ -1,6 +1,6 @@
 # Section 1 — System Instruction
 
-> Bagian dari **[Module 05 — Latihan](./latihan.md)**. Lanjutan dari **[Module 04 — Section 6: Multi-Turn](../Module-04-Content-Generation/latihan-multi-turn.md)**.
+> Bagian dari **[Module 05 — Latihan](./latihan.md)**. Lanjutan dari **[Module 04 — Section 6: Multi-Turn](../Module-04-Content-Generation/latihan-6-multi-turn.md)**.
 
 > Latihan untuk bermigrasi dari **prompt prefixing** (Module 04) ke **parameter `system`**. Tiga prompt siap copy-paste.
 >
@@ -152,4 +152,4 @@ GUARDRAIL:
 
 ---
 
-⬅️ Kembali: **[Module 04 — Multi-Turn](../Module-04-Content-Generation/latihan-multi-turn.md)** · ➡️ Lanjut: **[Section 2 — Sample Parameter & Output Control](./latihan-output-control.md)**
+⬅️ Kembali: **[Module 04 — Multi-Turn](../Module-04-Content-Generation/latihan-6-multi-turn.md)** · ➡️ Lanjut: **[Section 2 — Sample Parameter & Output Control](./latihan-output-control.md)**

@@ -1,6 +1,6 @@
 # Section 6 — Multi-Turn Conversation
 
-> Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Section 5](./latihan-streaming.md)**.
+> Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Section 5](./latihan-5-streaming.md)**.
 
 > Latihan untuk menjadikan chatbot **memahami pertanyaan lanjutan** dengan mengirim riwayat percakapan ke Claude pada setiap request. Tiga prompt siap copy-paste.
 >
@@ -200,4 +200,4 @@ Apabila seluruh checklist tercapai, Anda telah membangun fitur AI percakapan pro
 
 ---
 
-⬅️ Kembali: **[Section 5](./latihan-streaming.md)** · 🏠 Index: **[Module 04 — Latihan](./latihan.md)**
+⬅️ Kembali: **[Section 5](./latihan-5-streaming.md)** · 🏠 Index: **[Module 04 — Latihan](./latihan.md)**

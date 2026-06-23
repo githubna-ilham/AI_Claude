@@ -1,6 +1,6 @@
 # Day 4 — AI Agent & Tools
 
-> **Catatan**: Lanjutan dari **[Day 3 — Prompt Engineering](../Day%203%20-%20Prompt%20Engineering/)**. Day 4 membahas **paradigma AI Agent** — sistem AI otonom yang bisa menjalankan task multi-step dengan reasoning + integrasi tools.
+> **Catatan**: Lanjutan dari **[Day 3 — System Prompt Engineering](../Day%203%20-%20System%20Prompt%20Engineering/)**. Day 4 membahas **paradigma AI Agent** — sistem AI otonom yang bisa menjalankan task multi-step dengan reasoning + integrasi tools.
 >
 > Setelah Day 3 menyiapkan fondasi (Claude API, prompt engineering, embedding, RAG), Day 4 menggabungkan semuanya jadi **agent yang otonom**.
 
@@ -24,7 +24,7 @@ Setelah menyelesaikan materi ini, peserta diharapkan mampu:
 
 ## Prasyarat
 
-- **Module 04–07 dari [Day 3](../Day%203%20-%20Prompt%20Engineering/)** sudah selesai (atau setidaknya Module 05 Section 4 — Agentic Workflow / tool use dasar).
+- **Module 04–07 dari [Day 3](../Day%203%20-%20System%20Prompt%20Engineering/)** sudah selesai (atau setidaknya Module 05 Section 4 — Agentic Workflow / tool use dasar).
 - Pemahaman dasar tentang `tool_use` di Claude API.
 - Claude Code aktif di terminal kedua.
 

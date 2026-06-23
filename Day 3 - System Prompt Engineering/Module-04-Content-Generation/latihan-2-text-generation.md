@@ -1,6 +1,6 @@
 # Section 2 — Text Generation
 
-> Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Section 1](./latihan-integrasi-api.md)**.
+> Bagian dari **[Module 04 — Latihan](./latihan.md)**. Lanjutan dari **[Section 1](./latihan-1-integrasi-api.md)**.
 
 > Latihan untuk mengeksplorasi parameter generation Claude API: `max_tokens`, `temperature`, `stop_sequences` — serta pola **prompt prefixing** untuk mengarahkan format output tanpa system instruction. Empat prompt siap copy-paste.
 >
@@ -203,4 +203,4 @@ GUARDRAIL:
 
 ---
 
-⬅️ Kembali: **[Section 1](./latihan-integrasi-api.md)** · ➡️ Lanjut: **[Section 3 — Thinking / Thought](./latihan-thinking.md)**
+⬅️ Kembali: **[Section 1](./latihan-1-integrasi-api.md)** · ➡️ Lanjut: **[Section 3 — Thinking / Thought](./latihan-3-thinking.md)**

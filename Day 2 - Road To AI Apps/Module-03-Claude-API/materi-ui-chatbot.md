@@ -57,4 +57,4 @@ Lanjutkan ke [`latihan-ui-chatbot.md`](./latihan-ui-chatbot.md) untuk mulai meng
 
 ---
 
-➡️ Setelah latihan ini selesai, lanjut: **[Module 04 — Section 1: Integrasi Claude API](../../Day 3 - Prompt Engineering/Module-04-Content-Generation/latihan-integrasi-api.md)**
+➡️ Setelah latihan ini selesai, lanjut: **[Module 04 — Section 1: Integrasi Claude API](../../Day 3 - System Prompt Engineering/Module-04-Content-Generation/latihan-1-integrasi-api.md)**

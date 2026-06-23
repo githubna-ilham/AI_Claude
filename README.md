@@ -76,7 +76,7 @@ AI_Claude/
 ├── README.md                                  # file ini
 ├── pretest/                                   # profiling peserta
 ├── posttest/                                  # evaluasi akhir
-├── Day-1-Prompt-Engineering/                  # Module 1–3
+├── Day 1 - Introduction LLM/                  # Module 1–3
 ├── Day-2-AI-Workflow-Agent/                   # Module 4–9 (M4 dipindahkan dari Day 1)
 ├── Day-3-AI-App-RAG/                          # Module 10–12
 ├── Day-4-Product-Governance-Capstone/         # Module 13–14 + Capstone

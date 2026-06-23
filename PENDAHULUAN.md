@@ -245,4 +245,4 @@ Jika Anda mengalami kendala, gunakan tabel berikut untuk menentukan saluran yang
 
 ---
 
-*Sudah siap belajar? Silakan lanjut ke [Day-1 — Prompt Engineering](Day-1-Prompt-Engineering/README.md).*
+*Sudah siap belajar? Silakan lanjut ke [Day-1 — Prompt Engineering](Day 1 - Introduction LLM/README.md).*

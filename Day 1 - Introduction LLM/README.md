@@ -1,4 +1,4 @@
-# DAY 1 — Prompt Engineering Fundamentals + Advanced
+# DAY 1 — Introduction LLM
 
 **Program**: Prompt Engineering, AI Agent & AI App Development with Claude
 **Penyelenggara**: Multimatics
@@ -66,7 +66,7 @@ Day 1 total efektif: **±6,5 jam**. Slot tersisa dapat digunakan untuk diskusi m
 ## Struktur Folder
 
 ```
-Day-1-Prompt-Engineering/
+Day 1 - Introduction LLM/
 ├── README.md                                       <- file ini
 ├── Module-01-Introduction-LLM-Claude/
 │   ├── materi.md
