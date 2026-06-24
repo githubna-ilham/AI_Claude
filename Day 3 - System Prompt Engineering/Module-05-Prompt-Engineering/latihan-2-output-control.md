@@ -2,7 +2,7 @@
 
 > Bagian dari **[Module 05 — Latihan](./latihan.md)**. Lanjutan dari **[Section 1 — System Instruction](./latihan-1-system-instruction.md)**.
 
-> Latihan ini membangun fitur **Parse Transaksi via AI** secara bertahap — dari parser stand-alone, ke server action dengan DB integration, sampai UI yang user-facing. Setiap prompt menambah satu lapis ke fitur yang sama, tanpa file eksperimen terpisah. Teori `top_p`, `top_k`, `stop_sequences` sudah dibahas di `materi.md`; di sini kita fokus implementasi.
+> Latihan ini membangun fitur **Catat Transaksi via Chatbot** — user mengetik di chatbot AI Financial Advisor _"ngopi 25rb tadi siang"_, parser AI ekstrak struktur transaksinya, lalu otomatis tersimpan di Supabase + chatbot konfirmasi di bubble. Tidak ada halaman/UI baru — semua terintegrasi ke `AIChatPanel` yang sudah Anda bangun. Teori `top_p`, `top_k`, `stop_sequences` sudah dibahas di `materi.md`; di sini fokus implementasi.
 >
 > **Estimasi**: 60–75 menit.
 
@@ -435,185 +435,205 @@ GUARDRAIL:
 
 ---
 
-## Prompt 4 — Integrasi ke UI (Halaman Transactions)
+## Prompt 4 — Integrasi ke Chatbot AI Financial Advisor
 
 ### Walkthrough Manual (sebelum pakai prompt)
 
-Sebelum copy-paste prompt, pahami pola **preview before commit**. UI baru: tombol "Quick Add via AI" → textarea + button "Parse via AI" → preview struktur → Confirm/Cancel. User tetap punya kendali terakhir sebelum data masuk.
+Fitur ini **tidak butuh halaman baru** — kita pasang langsung di `AIChatPanel` yang sudah Anda bangun. Idenya: di samping tombol **Send** (untuk ngobrol ke advisor), tambah tombol **📝 Catat Transaksi**. Saat user klik tombol Catat, input teks-nya **bukan dikirim ke advisor**, tapi ke server action `parseAndCreateTransaction`. Hasil berhasil/gagal ditampilkan sebagai bubble chat baru — UX-nya seamless seperti ngobrol normal.
 
-📂 **File baru**: `src/components/transactions/quick-add-ai.tsx` (client component).
-📂 **File yang diubah**: `src/app/transactions/page.tsx` (atau path halaman Transactions sesuai struktur project).
+📂 **File yang diubah**: `src/components/chat/ai-chat-panel.tsx` (modifikasi)
 
-**1. Buat client component `QuickAddAi`**
+**1. Import server action + ikon tambahan**
 
-📍 Lokasi: **file baru** `src/components/transactions/quick-add-ai.tsx`. Wajib `"use client"` di baris 1 karena pakai `useState` + handler interaktif.
+📍 Lokasi: **bagian import** di atas.
 
 ```tsx
-// src/components/transactions/quick-add-ai.tsx — baris pertama
-"use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+// src/components/chat/ai-chat-panel.tsx — bagian import
+import { Receipt } from "lucide-react"; // ikon untuk tombol Catat
 import { parseAndCreateTransaction } from "@/features/transaction-from-text";
 ```
 
-**2. State component**
+**2. Handler baru `handleCatatTransaksi`**
 
-📍 Lokasi: **di dalam fungsi `QuickAddAi`**.
-
-```tsx
-// src/components/transactions/quick-add-ai.tsx — dalam komponen
-const router = useRouter();
-const [text, setText] = useState("");
-const [isProcessing, setIsProcessing] = useState(false);
-const [result, setResult] = useState<
-  | { ok: true; transaction: { type: string; amount: number; category: string; description: string } }
-  | { ok: false; error: string }
-  | null
->(null);
-```
-
-**3. Handler `handleSubmit`**
-
-📍 Lokasi: **function di dalam komponen**. Panggil server action langsung — Next.js handle networking.
+📍 Lokasi: **di dalam function `AIChatPanel`**, sejajar dengan `handleSend` yang sudah ada.
 
 ```tsx
-// src/components/transactions/quick-add-ai.tsx — dalam komponen
-async function handleSubmit() {
-  setIsProcessing(true);
-  setResult(null);
-  const res = await parseAndCreateTransaction(text);
-  setResult(res);
-  setIsProcessing(false);
-  if (res.ok) {
-    setText("");
-    router.refresh(); // refetch list transaksi
+// src/components/chat/ai-chat-panel.tsx — di dalam function AIChatPanel()
+async function handleCatatTransaksi() {
+  const text = input.trim();
+  if (!text || isWaiting) return;
+
+  // 1. Push user message ke chat (biar user lihat apa yang dia kirim)
+  setMessages((prev) => [
+    ...prev,
+    { id: crypto.randomUUID(), role: "user", content: text },
+  ]);
+  setInput("");
+  setIsWaiting(true);
+
+  try {
+    // 2. Call server action — BUKAN advisor
+    const res = await parseAndCreateTransaction(text);
+
+    // 3. Tampilkan hasil sebagai bubble assistant
+    const reply = res.ok
+      ? `✅ **Transaksi tercatat:**\n\n- Tipe: ${res.transaction.type}\n- Nominal: Rp ${res.transaction.amount.toLocaleString("id-ID")}\n- Kategori: ${res.transaction.category}\n- Deskripsi: ${res.transaction.description}`
+      : `❌ Gagal mencatat: ${res.error}\n\nCoba ketik ulang dengan format yang lebih jelas, contoh: _"Kopi Starbucks 25rb tadi siang"_.`;
+
+    setMessages((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), role: "assistant", content: reply },
+    ]);
+    setLastError(null);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    setLastError({ message, userQuestion: text });
+  } finally {
+    setIsWaiting(false);
   }
 }
 ```
 
-**4. JSX dengan textarea + tombol + preview/error**
+**3. Tombol baru di footer panel — sebelah tombol Send**
 
-📍 Lokasi: **return** komponen.
+📍 Lokasi: **di JSX return**, **footer area**, di sebelah `<Button>` Send yang sudah ada.
 
 ```tsx
-// src/components/transactions/quick-add-ai.tsx — return
-return (
-  <div className="space-y-3 rounded-lg border p-4">
-    <h3 className="font-semibold">Quick Add via AI</h3>
-    <textarea
-      className="w-full rounded border p-2 text-sm"
-      rows={3}
-      value={text}
-      onChange={(e) => setText(e.target.value)}
-      placeholder="Contoh: Tadi siang ngopi 35rb di Starbucks"
-      disabled={isProcessing}
-    />
-    <button
-      onClick={handleSubmit}
-      disabled={isProcessing || !text.trim()}
-      className="inline-flex items-center gap-2 rounded bg-blue-600 px-3 py-2 text-sm text-white disabled:opacity-50"
-    >
-      {isProcessing && <Loader2 className="h-4 w-4 animate-spin" />}
-      Parse via AI
-    </button>
+// src/components/chat/ai-chat-panel.tsx — di JSX return, area footer
+<div className="flex items-end gap-2">
+  <Textarea
+    value={input}
+    onChange={(e) => setInput(e.target.value)}
+    onKeyDown={handleKeyDown}
+    disabled={isWaiting}
+    placeholder="Ask AI Advisor here"
+    /* ...props lain... */
+  />
 
-    {result?.ok === true && (
-      <div className="rounded border border-green-200 bg-green-50 p-3 text-sm">
-        <p className="font-medium text-green-800">Berhasil ditambahkan</p>
-        <p>Type: {result.transaction.type}</p>
-        <p>Amount: Rp {result.transaction.amount.toLocaleString("id-ID")}</p>
-        <p>Category: {result.transaction.category}</p>
-        <p>Description: {result.transaction.description}</p>
-      </div>
-    )}
+  <Button
+    type="button"
+    size="icon"
+    variant="outline"
+    onClick={handleCatatTransaksi}
+    disabled={isWaiting || !input.trim()}
+    aria-label="Catat sebagai transaksi"
+    title="Catat sebagai transaksi (bukan tanya advisor)"
+  >
+    <Receipt className="size-4" />
+  </Button>
 
-    {result?.ok === false && (
-      <p className="rounded border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
-        {result.error}
-      </p>
-    )}
-  </div>
-);
+  <Button
+    type="button"
+    size="icon"
+    onClick={handleSend}
+    disabled={!canSend}
+    aria-label="Send message"
+    /* ...class emerald yang sudah ada... */
+  >
+    <Send className="size-4" />
+  </Button>
+</div>
 ```
 
-**5. Pasang ke halaman Transactions**
+**4. (Opsional) Update welcome message agar mention fitur baru**
 
-📍 Lokasi: **`src/app/transactions/page.tsx`** (atau path yang sesuai). Mount `<QuickAddAi />` di atas tabel transaksi.
+📍 Lokasi: **`INITIAL_MESSAGES`** di atas component. Tambah satu bullet point.
 
 ```tsx
-// src/app/transactions/page.tsx — di dalam JSX
-import { QuickAddAi } from "@/components/transactions/quick-add-ai";
+// src/components/chat/ai-chat-panel.tsx — INITIAL_MESSAGES
+content: `Halo! Saya **AI Financial Advisor** Anda. Saya dapat membantu Anda dengan:
 
-// ... di dalam return:
-<QuickAddAi />
-{/* lalu list transaksi yang sudah ada */}
+- Analisis pola pengeluaran
+- Tips menghemat dan menabung
+- Pertanyaan umum tentang keuangan personal
+- **Mencatat transaksi otomatis** — ketik "kopi 25rb tadi siang" lalu tekan tombol 🧾 di sebelah Send.
+
+Apa yang ingin Anda tanyakan?`,
 ```
 
 ### Yang TIDAK perlu
 
-- ❌ Voice input / OCR — di luar scope module.
-- ❌ Multi-language detection — Claude handle Indonesian + English secara natural via prompt.
-- ❌ Edit hasil parse sebelum confirm — iterasi berikutnya; untuk sekarang server action langsung insert (user lihat hasil setelah berhasil).
-- ❌ Animasi loading fancy — `Loader2` spinner sederhana cukup.
-- ❌ Optimistic update — `router.refresh()` cukup responsif untuk fitur ini.
+- ❌ **Halaman/route baru** — semua di `AIChatPanel`. Tidak modifikasi `src/app/transactions/page.tsx`.
+- ❌ **Auto-detect intent** ("ini transaksi apa pertanyaan?") — terlalu rumit untuk Section 2; user memilih eksplisit via tombol. Auto-detect bisa di Section 4 dengan **tool use**.
+- ❌ **Streaming respons konfirmasi** — hasil parse sangat singkat (~50 token), streaming malah overkill. Push sekaligus.
+- ❌ **Optimistic UI** (langsung tampil sebelum DB confirm) — buat bingung kalau parse gagal di tengah jalan.
+- ❌ **Preview-sebelum-confirm** — bisa di iterasi berikutnya. Untuk sekarang flow: kirim → langsung insert → konfirmasi bubble.
 
 ### Verifikasi setelah file diubah
 
-1. Reload halaman `/transactions`. Komponen "Quick Add via AI" muncul di atas list.
-2. Ketik "Beli kopi 25rb" → klik **Parse via AI** → spinner muncul.
-3. ~2 detik kemudian, kartu hijau muncul: type=expense, amount=25000, category=Food, description=...
-4. List transaksi di bawah otomatis ter-refresh, row baru terlihat.
-5. Test error: ketik teks aneh "asdf asdf 123" → kartu merah muncul dengan pesan error Zod/parse.
-6. Build production: `npm run build` sukses tanpa error TypeScript.
+1. Reload browser. Chatbot panel muncul dengan **2 tombol** di footer: ikon 🧾 (Catat) + ✈️ (Send) di sebelah Textarea.
+2. Ketik `"Beli kopi 25rb tadi siang di Starbucks"` → klik tombol 🧾 (BUKAN Send).
+3. ~2 detik kemudian, bubble assistant muncul: ✅ Transaksi tercatat dengan detail type/nominal/kategori/deskripsi.
+4. Buka tab Transactions → row baru muncul di list (kalau halaman pakai server component, perlu reload manual atau Anda tambahkan `router.refresh()` di handler).
+5. Test error: ketik `"asdf asdf 123"` → klik 🧾 → bubble assistant muncul dengan ❌ pesan gagal yang ramah.
+6. Test alur normal: ketik pertanyaan `"Tips hemat bulanan?"` → klik **Send** (✈️) → masuk ke advisor flow biasa (tidak diparse sebagai transaksi).
+7. Build production sukses: `npm run build`.
+
+> 💡 **Catatan UX**: tombol 🧾 sengaja **outline variant** (tidak emerald-filled seperti Send) supaya secara visual user tahu ini "action sekunder" — alurnya jelas: default = ngobrol, opsi = catat.
 
 ---
 
 **Salin prompt berikut:**
 
 ```
-Buat UI untuk fitur Quick Add via AI di halaman
-Transactions. Pakai server action yang sudah ada.
+Tambahkan fitur "Catat Transaksi" ke chatbot AI Financial
+Advisor. Pasang langsung di AIChatPanel, BUKAN buat
+halaman/komponen terpisah.
 
 GOAL:
-- Buat client component
-  src/components/transactions/quick-add-ai.tsx ("use client").
-  State:
-    text: string
-    isProcessing: boolean
-    result: { ok: true, transaction } | { ok: false, error } | null
-- Textarea + button "Parse via AI" + Loader2 saat processing.
-- Saat sukses (ok=true): tampilkan preview hijau berisi
-  type/amount/category/description, reset textarea, call
-  router.refresh().
-- Saat error (ok=false): tampilkan box merah inline (BUKAN
-  toast).
-- Pasang <QuickAddAi /> di src/app/transactions/page.tsx
-  (atau file halaman Transactions yang sesuai) di atas list.
+- Modifikasi src/components/chat/ai-chat-panel.tsx.
+- Tambah handler baru handleCatatTransaksi():
+  1. Ambil input.trim(), validasi non-empty + tidak isWaiting.
+  2. Push user message ke state messages.
+  3. setIsWaiting(true).
+  4. Call parseAndCreateTransaction(text) dari
+     @/features/transaction-from-text.
+  5. Push bubble assistant berisi:
+     - Saat ok=true: "✅ Transaksi tercatat" + detail
+       type/amount/category/description (markdown list).
+     - Saat ok=false: "❌ Gagal mencatat: <error>"
+       + saran format yang lebih jelas.
+  6. setIsWaiting(false).
+- Tambah satu tombol icon baru di footer (sebelah Send):
+  ikon Receipt dari lucide-react, variant="outline",
+  size="icon".
+  - Click → panggil handleCatatTransaksi.
+  - disabled saat isWaiting || !input.trim().
+  - aria-label + title yang menjelaskan ("Catat sebagai
+    transaksi").
+- Update INITIAL_MESSAGES welcome (assistant) untuk menambah
+  satu bullet point yang menjelaskan cara catat transaksi
+  via tombol 🧾.
 
 CONTEXT:
-- Server action: parseAndCreateTransaction dari
-  @/features/transaction-from-text.
-- Pakai useRouter dari next/navigation untuk refetch.
-- Lucide-react sudah ter-install (Loader2).
-- Tailwind sudah ter-setup.
+- parseAndCreateTransaction sudah ada di
+  src/features/transaction-from-text.ts (Prompt 3).
+- Tombol Send (Send icon, emerald) sudah ada — JANGAN diganti
+  fungsi-nya. Tombol Catat adalah TAMBAHAN, bukan
+  pengganti.
+- isWaiting + lastError + state messages sudah ada di
+  component.
 
 GUARDRAIL:
-- JANGAN panggil parseTransactionFromText langsung dari
-  client — selalu lewat parseAndCreateTransaction.
-- JANGAN tambah voice input / OCR / multi-language switch.
-- JANGAN auto-submit — user harus klik tombol.
-- Error harus inline, BUKAN toast.
-- Disable button saat isProcessing atau text.trim() kosong.
+- JANGAN buat halaman/route baru.
+- JANGAN auto-detect intent (user memilih lewat tombol —
+  Send vs Receipt).
+- JANGAN streaming bubble konfirmasi — push sekaligus.
+- JANGAN ubah handler handleSend yang sudah ada.
+- Tombol Receipt HARUS variant="outline" supaya secara visual
+  beda dari Send (action sekunder).
+- Push user message sebelum call server action (UX: user
+  lihat apa yang dia kirim).
 ```
 
 **Verifikasi:**
 
-1. Halaman Transactions tampil komponen Quick Add via AI.
-2. "Beli kopi 25rb" → preview hijau + row baru di list.
-3. Teks aneh → box merah inline dengan pesan error.
-4. `npm run build` sukses.
+1. Chatbot panel sekarang punya 2 tombol di footer: 🧾 Catat (outline) + ✈️ Send (emerald).
+2. Ketik transaksi → 🧾 → bubble assistant konfirmasi.
+3. Ketik pertanyaan → ✈️ → masuk advisor flow normal.
+4. Test gagal: teks aneh → bubble error ramah.
+5. Welcome message di awal chat sudah mention fitur catat transaksi.
+6. `npm run build` sukses.
 
 ---
 
@@ -623,17 +643,22 @@ GUARDRAIL:
 - [ ] `stop_sequences` aktif di API call parser.
 - [ ] Zod validation tangkap halusinasi (test dengan teks aneh).
 - [ ] Server action `parseAndCreateTransaction` di `src/features/transaction-from-text.ts` berhasil insert ke Supabase.
-- [ ] UI "Quick Add via AI" di halaman Transactions berfungsi end-to-end (parse → insert → list ter-refresh).
+- [ ] Tombol 🧾 Catat Transaksi muncul di footer `AIChatPanel` (sebelah Send).
+- [ ] Ketik transaksi + klik 🧾 → bubble konfirmasi ✅ muncul + row baru di Supabase.
+- [ ] Ketik pertanyaan + klik Send → masih masuk advisor flow (tidak diparse sebagai transaksi).
+- [ ] Test gagal: teks aneh → bubble error ramah dengan saran format.
+- [ ] Welcome message awal sudah mention fitur catat transaksi via tombol.
 - [ ] Build production sukses (`npm run build`).
-- [ ] Tidak ada regresi dari Section 1 (AI Advisor tetap jalan).
+- [ ] Tidak ada regresi dari Section 1 (AI Advisor tetap jalan normal lewat Send).
 
 ## Refleksi Section 2
 
 1. Apa risiko terbesar dari fitur "parse via AI" ini di production? (mis. user input typo, halusinasi kategori, amount salah konversi, dll.)
-2. Bagaimana Anda akan handle case Claude return `category` yang tidak ada di enum Supabase Anda? (saat ini Zod tidak constrain category ke enum spesifik — sengaja, supaya fleksibel.)
-3. `stop_sequences` bekerja baik tapi cukup brittle (bergantung pada Claude mengeluarkan marker tertentu). Kapan Anda akan migrasi ke **tool use** untuk task ini (Section 4)? Sinyal apa yang akan trigger keputusan itu?
-4. Bagaimana cara Anda monitor akurasi parser di production? (logging input/output sample, eval set bulanan, user feedback button, dll.)
-5. `temperature: 0` di parser vs `temperature` default di Advisor — kenapa beda? Kalau Advisor diset `temperature: 0`, apa yang akan berubah?
+2. **Dua tombol di chatbot footer** (Send + Catat) — apakah UX-nya intuitif buat user awam? Bagaimana Anda akan menjelaskan bedanya tanpa user manual? (mis. tooltip, onboarding, atau langsung **auto-detect intent**?)
+3. Auto-detect intent ("ini transaksi atau pertanyaan?") sengaja tidak diimplementasi di section ini — kenapa menurut Anda itu **pilihan yang masuk akal**? Kapan Anda akan beralih ke auto-detect (Section 4 dengan tool use)?
+4. Bagaimana Anda akan handle case Claude return `category` yang tidak ada di enum Supabase Anda? (saat ini Zod tidak constrain category ke enum spesifik — sengaja, supaya fleksibel.)
+5. `stop_sequences` bekerja baik tapi cukup brittle (bergantung pada Claude mengeluarkan marker tertentu). Kapan Anda akan migrasi ke **tool use** untuk task ini (Section 4)? Sinyal apa yang akan trigger keputusan itu?
+6. `temperature: 0` di parser vs `temperature` default di Advisor — kenapa beda? Kalau Advisor diset `temperature: 0`, apa yang akan berubah?
 
 ---
 

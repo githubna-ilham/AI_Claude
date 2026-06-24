@@ -170,6 +170,8 @@ Lanjutkan ke `latihan.md` Section 1 untuk eksekusi.
 
 **Tujuan section**: praktik mendalam **parameter sampling** Claude API (`temperature`, `top_p`, `top_k`, `stop_sequences`) dan teknik **structured output** untuk mendapatkan respons yang dapat diandalkan oleh kode.
 
+**Aplikasi konkret di Fin-App**: Anda akan menambah fitur **Catat Transaksi via Chatbot** — user mengetik di `AIChatPanel` (mis. _"ngopi 25rb tadi siang"_), Claude ekstrak struktur transaksi sebagai JSON, parser validasi via Zod, lalu otomatis tersimpan di Supabase. Tidak ada halaman baru — semua terintegrasi ke chatbot yang sudah Anda bangun di Module 04. Detail flow dibahas di akhir section ini dan implementasinya di `latihan.md`.
+
 ## Parameter Sampling — Recap & Lanjutan
 
 Pada Module 04 Anda sudah mengenal `temperature`. Anthropic API juga menyediakan dua parameter sampling lain:
@@ -339,26 +341,55 @@ if (!parsed.success) {
 
 Tanpa Zod validation, halusinasi ini akan **lolos ke kode Anda** dan menyebabkan bug subtle (mis. `amount: "35000"` saat di-`+` di JavaScript → string concatenation `"3500035000"` bukan penjumlahan). Validate at the boundary, **jangan trust output AI mentah**.
 
-Lanjutkan ke `latihan.md` Section 2 untuk eksekusi.
+## Integrasi ke AI Chatbot — Dua Tombol di Footer
 
----
+Pertanyaan desain: setelah parser jadi, **di mana user akan mengaksesnya**?
 
-Alur ujung-ke-ujung dari natural language jadi data tervalidasi:
+Pilihan yang **tidak** kita ambil: halaman/komponen UI terpisah. Itu menambah navigation overhead — user harus pindah dari chatbot ke halaman lain.
+
+Pilihan yang **kita ambil**: integrasi langsung ke `AIChatPanel`. User sudah biasa ngobrol di chatbot untuk advice; sekarang chatbot itu juga bisa **mencatat transaksi**.
+
+Caranya: di footer chatbot, ada **dua tombol**:
+
+| Tombol | Aksi | Tujuan |
+|---|---|---|
+| **✈️ Send** (emerald, primary) | Kirim input ke AI Advisor | Tanya jawab / advice umum (dari Module 04) |
+| **🧾 Catat** (outline, secondary) | Kirim input ke parser → Supabase | Catat transaksi baru via natural language |
+
+User memilih intent **secara eksplisit**. Tidak ada auto-detect — itu kompleks dan baru relevan saat **tool use** (Section 4 — Agentic Workflow).
+
+### Alur Lengkap Ketika User Klik 🧾
 
 ```mermaid
-flowchart LR
-    User["User: 'Beli kopi 25rb di Starbucks tadi siang'"]
-    Claude["Claude API<br/>prompt minta JSON"]
-    Raw["Raw response<br/>{ amount: 25000, ... }"]
-    Zod["Zod parse"]
-    Valid{"Valid?"}
-    Saved["Tersimpan di Supabase"]
-    Err["Tampilkan error<br/>minta klarifikasi"]
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant Chat as AIChatPanel
+    participant SA as parseAndCreate<br/>Transaction
+    participant Claude as Claude API<br/>(parser)
+    participant DB as Supabase
 
-    User --> Claude --> Raw --> Zod --> Valid
-    Valid -- yes --> Saved
-    Valid -- no --> Err
+    U->>Chat: ketik "ngopi 25rb tadi siang"
+    U->>Chat: klik tombol 🧾 Catat
+    Chat->>Chat: push user bubble ke state messages
+    Chat->>SA: parseAndCreateTransaction(text)
+    SA->>Claude: client.messages.create (temp=0, stop_sequences)
+    Claude-->>SA: JSON { type, amount, category, description }
+    SA->>SA: Zod safeParse
+    alt Valid
+        SA->>DB: INSERT INTO transactions
+        DB-->>SA: row { id, ... }
+        SA-->>Chat: { ok: true, transaction }
+        Chat->>Chat: push assistant bubble "✅ Tercatat..."
+    else Invalid
+        SA-->>Chat: { ok: false, error }
+        Chat->>Chat: push assistant bubble "❌ Gagal..."
+    end
 ```
+
+Perhatikan: **chatbot panel tetap satu komponen** — tidak ada modal, tidak ada navigation. Hanya satu tombol tambahan + satu handler tambahan. Skill arsitektural di sini: **menambah kemampuan tanpa menggemukkan UI**.
+
+Lanjutkan ke `latihan.md` Section 2 untuk eksekusi.
 
 # Section 3 — Role, Context, & Instruction
 
@@ -615,9 +646,11 @@ Saat Claude memanggil tool, ada **delay tambahan** sebelum respons final. UX yan
 
 Untuk modul ini, agentic workflow dibatasi pada:
 
-- **Read-only tool**: Claude bisa baca data, tidak bisa modify (tidak ada `create_transaction`, `delete_transaction` — terlalu berisiko untuk eksperimen awal).
+- **Read-only tool**: Claude bisa baca data via `get_transactions` / `get_balance_summary`, **tidak bisa modify** secara mandiri. Tidak ada `create_transaction` atau `delete_transaction` sebagai tool — terlalu berisiko untuk eksperimen awal kalau Claude bisa autonomously memutuskan kapan menulis ke DB.
 - **Lokal scope**: hanya tool yang dipanggil dari route handler chatbot (bukan MCP atau server eksternal).
 - **Tanpa retry/error logic kompleks**: apabila tool gagal, kembalikan pesan error ke Claude dan biarkan ia merespons gracefully.
+
+> 💡 **Catatan untuk Section 2 yang sudah Anda buat**: di Section 2 Anda sudah membangun aksi write (parser → `parseAndCreateTransaction`), tetapi pemicunya adalah **klik eksplisit user** pada tombol 🧾 Catat — bukan keputusan otonom Claude. Ini perbedaan fundamental: **gesture-triggered write** (Section 2) aman karena user yang inisiatif; **autonomous-write tool use** butuh permission system + audit trail yang akan dibahas di modul lanjutan.
 
 Versi production-grade dari agentic workflow membutuhkan permission system, audit trail, dan safeguards yang lebih kuat. Itu modul tersendiri.
 
