@@ -17,6 +17,17 @@
 
 ---
 
+## 📚 Referensi Dokumentasi
+
+Sebelum mulai, akan sangat membantu kalau Anda buka tab dokumentasi resmi Claude untuk referensi cepat saat ada kebingungan:
+
+- **[Messages API reference](https://docs.claude.com/en/api/messages)** — parameter `model`, `max_tokens`, `messages`, struktur response (`content` array, `text` block).
+- **[TypeScript SDK (`@anthropic-ai/sdk`)](https://docs.claude.com/en/api/client-sdks)** — cara install, inisialisasi `new Anthropic(...)`, panggil `client.messages.create(...)`.
+- **[Models overview](https://docs.claude.com/en/docs/about-claude/models/overview)** — daftar model + ID resmi (`claude-haiku-4-5`, `claude-opus-4-7`, dll.).
+- **[Error handling](https://docs.claude.com/en/api/errors)** — kode error umum yang mungkin Anda temui (401, 429, 500).
+
+---
+
 ## Prompt 1 — Buat Server Action `askAdvisor`
 
 ### Walkthrough Manual (sebelum pakai prompt)

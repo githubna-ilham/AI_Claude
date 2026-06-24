@@ -305,22 +305,24 @@ Pada SDK Anthropic, aktifkan extended thinking dengan parameter `thinking`:
 client.messages.create({
   model: "claude-opus-4-7",        // Wajib pakai Opus untuk thinking
   max_tokens: 4096,
-  thinking: {
-    type: "enabled",
-    budget_tokens: 2000,            // Berapa banyak token untuk thinking
-  },
-  system: "Anda adalah AI Financial Advisor...",
+  temperature: 1,                  // Wajib 1 saat thinking aktif (constraint API)
+  thinking: { type: "adaptive" },
+  output_config: { effort: "medium" },  // 'low' | 'medium' | 'high'
   messages: [{ role: "user", content: question }],
 });
 ```
 
-**`budget_tokens`** menentukan berapa banyak token yang Claude boleh pakai untuk thinking. Nilai umum:
+> ⚠️ **Constraint `temperature` saat thinking aktif**: parameter `temperature` **wajib `1`** (atau dihilangkan untuk pakai default 1) saat `thinking` aktif. Kalau biarkan `temperature: 0.5` peninggalan Section 2, API menolak dengan error 400. Extended thinking butuh kreativitas maksimum model untuk menghasilkan chain-of-thought berkualitas — itulah mengapa Anthropic memaksa temperature di puncak. Lihat [Extended Thinking — Important Considerations](https://docs.claude.com/en/docs/build-with-claude/extended-thinking#important-considerations-when-using-extended-thinking).
 
-| Budget | Cocok untuk |
+**`effort`** menentukan **seberapa dalam** Claude memikirkan jawaban. Model adaptif — pakai sedikit untuk pertanyaan ringan, banyak untuk kompleks:
+
+| Effort | Cocok untuk |
 |---|---|
-| **1024** | Pertanyaan singkat / klarifikasi |
-| **2048** | Pertanyaan keuangan umum |
-| **4096+** | Analisis kompleks (perencanaan multi-tahun, perbandingan skenario) |
+| **`"low"`** | Pertanyaan singkat / klarifikasi |
+| **`"medium"`** | Pertanyaan keuangan umum (default) |
+| **`"high"`** | Analisis kompleks (perencanaan multi-tahun, perbandingan skenario) |
+
+> 📌 **Catatan format API**: Sebelum Opus 4.7, parameter ini bernama `budget_tokens` dengan angka eksplisit (1024/2048/4096). Sekarang Anda cukup beri **petunjuk usaha** (`effort`) dan model menyesuaikan sendiri berdasarkan kompleksitas pertanyaan.
 
 ## Trade-off: Latensi & Biaya
 
@@ -345,7 +347,7 @@ sequenceDiagram
     Note over H: Total: ~3 detik
 
     U->>O: submit (t=0s)
-    Note over O: thinking phase aktif<br/>(2000 token internal)<br/>UI: "🧠 Sedang menganalisis..."
+    Note over O: thinking phase aktif<br/>(effort: medium)<br/>UI: "🧠 Sedang menganalisis..."
     O-->>U: respons lengkap (t≈12s)
     Note over O: Total: ~12 detik — kualitas analisis berbeda kelas
 ```
@@ -409,9 +411,9 @@ Berdasarkan jenis pertanyaan keuangan personal, pola umumnya:
 |---|---|---|
 | Query data sederhana ("Berapa total expense bulan ini?") | ❌ Off | — |
 | Tips umum ("Cara hemat belanja bulanan?") | ❌ Off | — |
-| Analisis pola ("Kenapa expense saya naik bulan ini?") | ✅ On | 1024 |
-| Perencanaan multi-skenario ("Bandingkan tabung di reksadana vs deposito") | ✅ On | 2048 |
-| Strategi jangka panjang ("Rencana finansial 10 tahun untuk pensiun") | ✅ On | 4096 |
+| Analisis pola ("Kenapa expense saya naik bulan ini?") | ✅ On | Low |
+| Perencanaan multi-skenario ("Bandingkan tabung di reksadana vs deposito") | ✅ On | Medium |
+| Strategi jangka panjang ("Rencana finansial 10 tahun untuk pensiun") | ✅ On | High |
 
 User tidak perlu menghafal tabel ini — UI akan menyediakan **preset** (low / medium / high) sehingga user tinggal pilih intuitif.
 
@@ -423,9 +425,9 @@ flowchart TD
     D1{"Butuh analisis /<br/>perbandingan?"}
     Off["Thinking OFF<br/>Haiku, ~3s"]
     D2{"Seberapa kompleks?"}
-    Low["Low: 1024 tk<br/>Opus, ~8s"]
-    Med["Medium: 2048 tk<br/>Opus, ~12s"]
-    High["High: 4096 tk<br/>Opus, ~20s"]
+    Low["Low effort<br/>Opus, ~8s"]
+    Med["Medium effort<br/>Opus, ~12s"]
+    High["High effort<br/>Opus, ~20s"]
 
     Q --> D1
     D1 -- Tidak --> Off

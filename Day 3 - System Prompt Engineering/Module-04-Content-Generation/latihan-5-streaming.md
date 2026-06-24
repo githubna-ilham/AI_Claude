@@ -15,7 +15,117 @@
 
 ---
 
+## 📚 Referensi Dokumentasi
+
+Section ini bekerja dengan **streaming** + **route handler Next.js**. Tab dokumentasi yang perlu Anda buka:
+
+- **[Streaming Messages](https://docs.claude.com/en/api/streaming)** — `client.messages.stream(...)`, async iterator pattern, SSE event types.
+- **[Streaming events](https://docs.claude.com/en/api/messages-streaming)** — daftar event: `message_start`, `content_block_start`, `content_block_delta` (`text_delta`, `thinking_delta`), `message_stop`.
+- **[Web Streams API (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API)** — `ReadableStream`, `controller.enqueue()`, `TextEncoder`, `TextDecoder`.
+- **[Next.js Route Handlers](https://nextjs.org/docs/app/building-your-application/routing/route-handlers)** — `POST(request)`, return `new Response(stream, ...)`, streaming response patterns.
+
+> 💡 Streaming dengan thinking aktif menghasilkan **dua jenis delta**: `text_delta` dan `thinking_delta`. Walkthrough Section ini bungkus thinking dengan marker khusus `[[THINKING_DELTA]]...[[/THINKING_DELTA]]` supaya client dapat membedakan keduanya.
+
+---
+
 ## Prompt 1 — Buat Route Handler Streaming
+
+### Walkthrough Manual (sebelum pakai prompt)
+
+Perubahan arsitektur: dari server action sinkron ke route handler streaming. Kunci: `client.messages.stream()` + bungkus dengan `ReadableStream` yang enqueue tiap delta.
+
+📂 **File yang diubah**: `src/app/api/advisor/route.ts` (file baru)
+
+**1. Setup client + helper budget**
+
+📍 Lokasi: **paling atas file**.
+
+```ts
+// src/app/api/advisor/route.ts — bagian atas
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+const INSTRUCTION_PREFIX = `Anda menjawab dalam Bahasa Indonesia, ramah dan to-the-point. Pakai markdown: list bertanda untuk poin, bold untuk angka penting. Format Rupiah: "Rp 1.500.000". Persentase: "15%".
+
+Pertanyaan: `;
+```
+
+**2. `POST` handler dengan `ReadableStream`**
+
+📍 Lokasi: **di bawah setup**.
+
+```ts
+// src/app/api/advisor/route.ts
+export async function POST(request: Request) {
+  const body = await request.json();
+  const { message, thinking: useThinking, budget } = body ?? {};
+
+  if (typeof message !== "string" || !message.trim()) {
+    return new Response("Pesan tidak boleh kosong", { status: 400 });
+  }
+
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        const sdkStream = client.messages.stream({
+          model: useThinking ? "claude-opus-4-7" : "claude-haiku-4-5",
+          max_tokens: useThinking ? 4096 : 1024,
+          temperature: useThinking ? 1 : 0.5,                       // ← thinking aktif wajib 1
+          ...(useThinking && {
+            thinking: { type: "adaptive" as const },
+            output_config: { effort: budget ?? "medium" },
+          }),
+          messages: [{ role: "user", content: INSTRUCTION_PREFIX + message }],
+        });
+
+        for await (const chunk of sdkStream) {
+          if (chunk.type !== "content_block_delta") continue;
+          if (chunk.delta.type === "text_delta") {
+            controller.enqueue(encoder.encode(chunk.delta.text));
+          } else if (chunk.delta.type === "thinking_delta") {
+            controller.enqueue(
+              encoder.encode(`[[THINKING_DELTA]]${chunk.delta.thinking}[[/THINKING_DELTA]]`)
+            );
+          }
+        }
+        controller.close();
+      } catch (err) {
+        controller.error(err);
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
+  });
+}
+```
+
+### Yang TIDAK perlu
+
+- ❌ Server-Sent Events (SSE) — plain text stream sudah cukup.
+- ❌ Hapus `src/features/advisor.ts` sekarang (itu Prompt 3).
+- ❌ Parameter `system` (Module 04 belum pakai).
+- ❌ Logging atau telemetry production-grade.
+
+### Verifikasi setelah file diubah
+
+1. Dev server jalan tanpa error.
+2. Test curl:
+   ```bash
+   curl -N -X POST http://localhost:3000/api/advisor \
+     -H "Content-Type: application/json" \
+     -d '{"message":"Berikan tip menabung."}'
+   ```
+3. Respons muncul potongan demi potongan, bukan sekaligus di akhir.
+4. Test dengan `"thinking": true, "budget": "medium"` → terlihat tag `[[THINKING_DELTA]]...[[/THINKING_DELTA]]` di antara token.
+
+---
 
 **Salin prompt berikut:**
 
@@ -78,6 +188,108 @@ GUARDRAIL:
 
 ## Prompt 2 — Update Client untuk Konsumsi Stream
 
+### Walkthrough Manual (sebelum pakai prompt)
+
+Client konsumsi stream lewat `response.body.getReader()`. Push placeholder assistant dulu, lalu append chunk demi chunk via setState ke pesan terakhir.
+
+📂 **File yang diubah**: `src/components/chat/ai-chat-panel.tsx` (modifikasi)
+
+**1. Helper kecil untuk append ke pesan terakhir**
+
+📍 Lokasi: **di luar function component** (atau di dalam, asal stabil). Helper mempermudah update content & thinking dari pesan placeholder.
+
+```tsx
+// src/components/chat/ai-chat-panel.tsx — helper
+function appendToLast(
+  prev: Message[],
+  patch: { content?: string; thinking?: string }
+): Message[] {
+  if (prev.length === 0) return prev;
+  const last = prev[prev.length - 1];
+  const updated: Message = {
+    ...last,
+    content: last.content + (patch.content ?? ""),
+    thinking: (last.thinking ?? "") + (patch.thinking ?? ""),
+  };
+  return [...prev.slice(0, -1), updated];
+}
+```
+
+**2. Helper parsing chunk → text vs thinking**
+
+```tsx
+// src/components/chat/ai-chat-panel.tsx — helper
+function parseChunk(chunk: string): { content: string; thinking: string } {
+  let content = "";
+  let thinking = "";
+  const re = /\[\[THINKING_DELTA\]\]([\s\S]*?)\[\[\/THINKING_DELTA\]\]/g;
+  let lastIdx = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(chunk)) !== null) {
+    content += chunk.slice(lastIdx, m.index);
+    thinking += m[1];
+    lastIdx = m.index + m[0].length;
+  }
+  content += chunk.slice(lastIdx);
+  return { content, thinking };
+}
+```
+
+**3. Ganti pemanggilan `askAdvisor` di handler kirim**
+
+📍 Lokasi: **di dalam function component**, di `runAdvisor` / `handleSend`. Push placeholder dulu, lalu loop reader.
+
+```tsx
+// src/components/chat/ai-chat-panel.tsx — handler kirim
+setMessages((prev) => [
+  ...prev,
+  { id: crypto.randomUUID(), role: "user", content: text },
+  { id: crypto.randomUUID(), role: "assistant", content: "", thinking: thinkingEnabled ? "" : null },
+]);
+setIsWaiting(true);
+
+try {
+  const res = await fetch("/api/advisor", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: text, thinking: thinkingEnabled, budget: thinkingBudget }),
+  });
+  if (!res.ok || !res.body) throw new Error(await res.text());
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value, { stream: true });
+    const { content, thinking } = parseChunk(chunk);
+    setMessages((prev) => appendToLast(prev, { content, thinking }));
+  }
+  setLastError(null);
+} catch (err) {
+  const m = err instanceof Error ? err.message : "Unknown error";
+  setLastError({ message: m, userQuestion: text });
+} finally {
+  setIsWaiting(false);
+}
+```
+
+### Yang TIDAK perlu
+
+- ❌ `flushSync` — batching React 18 sudah cukup smooth.
+- ❌ Mengubah error bubble / retry button.
+- ❌ Mengganti `react-markdown` setup.
+- ❌ Manual debounce — biarkan render se-cepat chunk datang.
+
+### Verifikasi setelah file diubah
+
+1. Reload, kirim pertanyaan.
+2. Indikator typing hilang segera setelah token pertama datang; kata-kata muncul satu per satu di bubble assistant.
+3. Markdown ter-render sambil token mengalir.
+4. Thinking on: area "Proses berpikir" terisi token demi token.
+
+---
+
 **Salin prompt berikut:**
 
 ```
@@ -138,6 +350,49 @@ GUARDRAIL:
 ---
 
 ## Prompt 3 — Cleanup: Hapus File `askAdvisor` Lama
+
+### Walkthrough Manual (sebelum pakai prompt)
+
+Cleanup file dead code. Manual sebenarnya cepat: grep dulu, hapus kalau bersih.
+
+📂 **File yang diubah**: `src/features/advisor.ts` (hapus) + `src/components/chat/ai-chat-panel.tsx` (hapus import lama jika ada)
+
+**1. Pastikan tidak ada caller `askAdvisor`**
+
+📍 Lokasi: **terminal di root project**.
+
+```bash
+grep -rn "askAdvisor" src/ experiments/
+```
+
+Hasil yang diharapkan: kosong, atau hanya match di file `experiments/test-advisor.ts` (yang juga akan dihapus).
+
+**2. Hapus file yang sudah tidak dipakai**
+
+```bash
+rm src/features/advisor.ts
+rm experiments/test-advisor.ts   # apabila ada dari Section 1
+```
+
+**3. Bersihkan import di `ai-chat-panel.tsx` jika masih ada**
+
+📍 Lokasi: **bagian import**. Kalau di Prompt 2 sebelumnya Anda lupa hapus baris `import { askAdvisor } from "@/features/advisor"`, hapus sekarang.
+
+### Yang TIDAK perlu
+
+- ❌ Menghapus `INSTRUCTION_PREFIX` constant (sudah dipindah ke route handler).
+- ❌ Menghapus file `chat-context.tsx`.
+- ❌ Refactor struktur folder.
+- ❌ Menghapus file lain di `experiments/` (mis. `temperature-test.ts`) — bukan tujuan cleanup ini.
+
+### Verifikasi setelah file diubah
+
+1. `grep -rn "askAdvisor" src/` → kosong.
+2. `npm run build` → sukses tanpa error.
+3. Reload, chatbot tetap streaming jawab seperti biasa.
+4. Toggle thinking on/off tetap berfungsi.
+
+---
 
 **Salin prompt berikut:**
 
