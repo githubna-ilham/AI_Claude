@@ -178,17 +178,26 @@ Pada Module 04 Anda sudah mengenal `temperature`. Anthropic API juga menyediakan
 
 `top_p` membatasi pilihan kata berikutnya ke **subset paling probable** yang **kumulatif** mencapai probabilitas `p`.
 
+**Analogi sederhana**: bayangkan Claude punya 1000 kandidat kata berikutnya, masing-masing dengan probabilitas. `top_p` bilang: "ambil kata-kata teratas yang kalau dijumlah probabilitasnya minimal `p`, baru pilih dari situ."
+
 | Nilai | Karakter |
 |---|---|
 | `1.0` (default) | Pertimbangkan semua kata kandidat |
 | `0.9` | Hanya pertimbangkan kata-kata paling probable yang kumulatifnya 90% |
 | `0.5` | Pilihan jauh lebih terbatas — sangat fokus |
 
+**Contoh konkret**: pertanyaan _"Sebutkan satu kategori pengeluaran bulanan."_
+
+| Setting | Hasil tipikal di 5x pengulangan |
+|---|---|
+| `top_p: 1.0` | "Makanan", "Transport", "Hiburan", "Listrik", "Investasi" — variatif |
+| `top_p: 0.5` | "Makanan", "Makanan", "Transport", "Makanan", "Transport" — top probable saja |
+
 `top_p` sering dipakai **sebagai alternatif** `temperature`, bukan bersamaan. Anthropic menyarankan: pilih salah satu, jangan kedua-duanya.
 
 ### `top_k`
 
-`top_k` membatasi pilihan kata berikutnya ke **K kata paling probable**.
+`top_k` membatasi pilihan kata berikutnya ke **K kata paling probable** secara absolut (bukan kumulatif seperti `top_p`).
 
 | Nilai | Karakter |
 |---|---|
@@ -196,7 +205,12 @@ Pada Module 04 Anda sudah mengenal `temperature`. Anthropic API juga menyediakan
 | `40` | Hanya pertimbangkan 40 kata teratas |
 | `10` | Sangat fokus, kemungkinan repetitif |
 
-Dipakai untuk **kontrol eksperimen** — jarang dibutuhkan di production.
+**Contoh konkret**: pertanyaan _"Tips menabung untuk pemula?"_
+
+- `top_k: 40` (default-ish) → respons natural, kalimat bervariasi.
+- `top_k: 5` → kalimat sering mulai dengan kata yang sama (mis. "Mulai dengan...", "Atur..."), terasa kaku.
+
+Dipakai untuk **kontrol eksperimen** — jarang dibutuhkan di production untuk chatbot biasa.
 
 ### Kombinasi yang Praktis
 
@@ -210,7 +224,16 @@ Dipakai untuk **kontrol eksperimen** — jarang dibutuhkan di production.
 
 ## Structured Output — Mendapatkan JSON yang Konsisten
 
-Untuk fitur Fin-App yang membutuhkan **output terstruktur** (mis. parse "Saya habis Rp 50.000 untuk makan siang" menjadi `{ amount: 50000, category: "Food", description: "makan siang" }`), Anda memerlukan teknik khusus.
+Untuk fitur Fin-App yang membutuhkan **output terstruktur** (mis. parse _"Saya habis Rp 50.000 untuk makan siang"_ menjadi `{ amount: 50000, category: "Food", description: "makan siang" }`), Anda memerlukan teknik khusus karena Claude **default-nya menjawab dalam prosa**, bukan JSON.
+
+**Use case Fin-App**:
+
+| Skenario | Mengapa butuh structured output |
+|---|---|
+| Parse SMS bank → buat transaksi otomatis | Kode insert butuh field `amount`, `category`, `date` |
+| User ketik "tadi ngopi 25rb di Starbucks" | Convert ke entry transaksi sebelum simpan |
+| Klasifikasi expense ke kategori | Output harus salah satu enum yang sudah ada |
+| Generate budget recommendation | Frontend perlu array `{category, suggested_amount}[]` |
 
 ### Teknik 1: Instruksi Eksplisit
 
@@ -228,6 +251,23 @@ Tidak ada teks lain di luar JSON.`
 
 Tambah `temperature: 0.0` untuk deterministik.
 
+**Contoh konkret**:
+
+> **Input user**: _"Tadi siang ngopi di Starbucks habis 35rb"_
+>
+> **Output Claude (dengan teknik 1)**:
+> ```json
+> {
+>   "type": "expense",
+>   "amount": 35000,
+>   "category": "Food",
+>   "description": "Kopi di Starbucks"
+> }
+> ```
+
+⚠️ **Tanpa teknik 1**, output bisa jadi:
+> _"Saya akan ekstrak transaksinya: ini adalah expense Rp 35.000 untuk kopi di Starbucks. Berikut JSON-nya: ..."_ — ada prosa yang harus Anda strip dulu.
+
 ### Teknik 2: Stop Sequence
 
 Tambahkan stop sequence yang mencegah Claude menulis penjelasan setelah JSON:
@@ -236,13 +276,39 @@ Tambahkan stop sequence yang mencegah Claude menulis penjelasan setelah JSON:
 stop_sequences: ["```", "\n\nPenjelasan"]
 ```
 
+**Contoh konkret**: tanpa stop sequence, Claude kadang nambah penjelasan:
+
+> ```json
+> { "amount": 35000, "category": "Food" }
+> ```
+>
+> Penjelasan: kopi di Starbucks termasuk kategori Food karena...
+
+Dengan `stop_sequences: ["\n\nPenjelasan"]`, generation berhenti tepat sebelum "Penjelasan" → Anda dapat **hanya JSON** tanpa noise.
+
 ### Teknik 3: Wrap dalam Markdown Code Block
 
 Minta Claude memulai output dengan ` ```json ` — ini sering lebih reliable karena Claude terlatih mengenali pola tersebut. Lalu parse dengan regex sederhana.
 
+**Contoh konkret**:
+
+```ts
+system: `Ekstrak transaksi dari pesan user.
+Output wajib dimulai dengan tag berikut, tidak ada teks lain sebelumnya:
+
+\`\`\`json
+{ ... }
+\`\`\`
+`;
+
+// Cara parse di kode:
+const match = claudeResponse.match(/```json\n([\s\S]*?)\n```/);
+const json = match ? JSON.parse(match[1]) : null;
+```
+
 ## Validasi Output di Sisi Kode
 
-Selalu **validasi** output JSON sebelum dipakai:
+Selalu **validasi** output JSON sebelum dipakai. Claude bisa **halusinasi struktur** — misal mengirim `amount` sebagai string `"35000"` alih-alih number, atau pakai field `category` dengan nama yang tidak ada di enum Anda.
 
 ```ts
 import { z } from "zod";
@@ -261,6 +327,17 @@ if (!parsed.success) {
   throw new Error("Output Claude tidak valid");
 }
 ```
+
+**Contoh kasus halusinasi yang Zod tangkap**:
+
+| Input dari Claude | Masalah | Yang Zod katakan |
+|---|---|---|
+| `{ "type": "spending", "amount": 35000, ... }` | `type` bukan enum yang valid | `Invalid enum value. Expected 'income' \| 'expense'` |
+| `{ "type": "expense", "amount": "35000", ... }` | `amount` string, bukan number | `Expected number, received string` |
+| `{ "type": "expense", "amount": -35000, ... }` | `amount` negatif | `Number must be greater than 0` |
+| `{ "type": "expense", "amount": 35000 }` | `category` hilang | `Required at path "category"` |
+
+Tanpa Zod validation, halusinasi ini akan **lolos ke kode Anda** dan menyebabkan bug subtle (mis. `amount: "35000"` saat di-`+` di JavaScript → string concatenation `"3500035000"` bukan penjumlahan). Validate at the boundary, **jangan trust output AI mentah**.
 
 Lanjutkan ke `latihan.md` Section 2 untuk eksekusi.
 
