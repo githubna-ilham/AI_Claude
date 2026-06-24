@@ -286,23 +286,32 @@ client.messages.create({
   model: "claude-opus-4-7",        // Wajib pakai Opus untuk thinking
   max_tokens: 4096,
   temperature: 1,                  // Wajib 1 saat thinking aktif (constraint API)
-  thinking: { type: "adaptive" },
-  output_config: { effort: "medium" },  // 'low' | 'medium' | 'high'
+  thinking: { type: "adaptive", display: "summarized" },
+  output_config: { effort: "max" },  // 'low' | 'medium' | 'high' | 'xhigh' | 'max'
   messages: [{ role: "user", content: question }],
 });
 ```
 
 > ⚠️ **Constraint `temperature` saat thinking aktif**: parameter `temperature` **wajib `1`** (atau dihilangkan untuk pakai default 1) saat `thinking` aktif. Kalau biarkan `temperature: 0.5` peninggalan Section 2, API menolak dengan error 400. Extended thinking butuh kreativitas maksimum model untuk menghasilkan chain-of-thought berkualitas — itulah mengapa Anthropic memaksa temperature di puncak. Lihat [Extended Thinking — Important Considerations](https://docs.claude.com/en/docs/build-with-claude/extended-thinking#important-considerations-when-using-extended-thinking).
 
+**`display`** mengontrol bagaimana konten thinking dikirim ke client:
+
+- **`"summarized"`** (recommended): thinking dikembalikan sebagai content block `type: "thinking"` yang dapat di-render di UI.
+- **`"omitted"`**: thinking tetap dilakukan model, tapi konten tidak dikirim ke client (hanya signature untuk multi-turn continuity).
+
+Tulis `display` secara **eksplisit** — supaya tidak bergantung default API yang bisa berubah.
+
 **`effort`** menentukan **seberapa dalam** Claude memikirkan jawaban. Model adaptif — pakai sedikit untuk pertanyaan ringan, banyak untuk kompleks:
 
 | Effort | Cocok untuk |
 |---|---|
 | **`"low"`** | Pertanyaan singkat / klarifikasi |
-| **`"medium"`** | Pertanyaan keuangan umum (default) |
+| **`"medium"`** | Pertanyaan keuangan umum |
 | **`"high"`** | Analisis kompleks (perencanaan multi-tahun, perbandingan skenario) |
+| **`"xhigh"`** | Problem multi-step yang butuh reasoning mendalam |
+| **`"max"`** | Maksimum — paling sering trigger thinking, ideal untuk demo & query analitis |
 
-> 📌 **Catatan format API**: Sebelum Opus 4.7, parameter ini bernama `budget_tokens` dengan angka eksplisit (1024/2048/4096). Sekarang Anda cukup beri **petunjuk usaha** (`effort`) dan model menyesuaikan sendiri berdasarkan kompleksitas pertanyaan.
+> 📌 **Catatan format API**: Sebelum Opus 4.7, parameter ini bernama `budget_tokens` dengan angka eksplisit (1024/2048/4096). Sekarang Anda cukup beri **petunjuk usaha** (`effort`) dan model menyesuaikan sendiri berdasarkan kompleksitas pertanyaan. Untuk Opus 4.7, level `xhigh` dan `max` ditambahkan di atas `high` — kalau pertanyaan tergolong sederhana, Claude tetap bebas memilih thinking ringan / tidak thinking sama sekali (mode `adaptive`).
 
 ## Trade-off: Latensi & Biaya
 

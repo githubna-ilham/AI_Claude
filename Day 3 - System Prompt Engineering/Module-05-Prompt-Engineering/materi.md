@@ -6,47 +6,6 @@
 
 ---
 
-## Peta Visual Module 05
-
-Berikut gambaran arsitektur prompt engineering yang Anda bangun di atas hasil Module 04:
-
-```mermaid
-flowchart TD
-    M4["Module 04 (selesai)<br/>AI Advisor + streaming + multi-turn"]
-
-    subgraph M5["Module 05 — Prompt Engineering"]
-        S1["Section 1<br/>System Instruction<br/>(migrasi dari prompt prefixing)"]
-        S2["Section 2<br/>Sample Parameter & Output Control<br/>top_p, stop_sequences, structured output"]
-        S3["Section 3<br/>Role, Context, Instruction<br/>pola komposisi modular"]
-        S4["Section 4<br/>Agentic Workflow<br/>tool use (Supabase)"]
-    end
-
-    Final["AI Financial Advisor (production-grade)<br/>persona stabil + structured output + tool use"]
-
-    M4 --> S1 --> S2 --> S3 --> S4 --> Final
-```
-
-Setiap section adalah peningkatan kualitas prompt — bukan fitur baru di UI, melainkan **kecerdasan baru** di model yang dipanggil.
-
-## Prinsip Kontinuitas Antar Section
-
-Sama dengan Module 04, kode dari section sebelumnya **terus berlanjut**:
-
-```mermaid
-flowchart TD
-    M4["Module 04 (selesai)<br/>AI Advisor pakai prompt prefixing"]
-    A1["Section 1 → Migrasi ke parameter system"]
-    A2["Section 2 → Eksplorasi parameter control<br/>+ structured output"]
-    A3["Section 3 → Restrukturisasi prompt<br/>dengan pola Role-Context-Instruction"]
-    A4["Section 4 → Aktifkan tool use<br/>(baca transaksi user dari Supabase)"]
-
-    M4 --> A1 --> A2 --> A3 --> A4
-```
-
-Pada akhir Module 05, AI Financial Advisor Anda tidak hanya menjawab pertanyaan — ia **memahami konteks pengguna** (dengan akses ke data transaksi via tool) dan menjawab dengan **format yang konsisten** untuk integrasi UI yang lebih kaya.
-
----
-
 # Section 1 — System Instruction
 
 **Tujuan section**: bermigrasi dari **prompt prefixing** (Module 04 Section 3) ke **parameter `system`** yang lebih kuat dan efisien.
