@@ -6,21 +6,6 @@
 
 ---
 
-## Outline Section
-
-Module 05 terdiri dari **4 section** yang membangun di atas Module 04. Setiap section menambah satu kemampuan prompt engineering pada AI Financial Advisor:
-
-| # | Section | Fokus | Status |
-|---|---|---|---|
-| **1** | **System Instruction** | Pakai parameter `system` untuk menetapkan persona, batasan, dan format output | ✅ Siap |
-| **2** | **Sample Parameter & Output Control** | Praktik mendalam: `temperature`, `top_p`, `top_k`, `stop_sequences`, structured output + parser transaksi | ✅ Siap |
-| **3** | **Role, Context, & Instruction** | Pattern RCI: komposisi modular, reuse untuk fitur Insight Mingguan | ✅ Siap |
-| **4** | **Agentic Workflow** | Tool use — Claude memanggil `get_transactions` & `get_balance_summary` dari Supabase | ✅ Siap |
-
-**Total estimasi durasi**: ±3–4 jam efektif (di luar break & diskusi).
-
-> 💡 **Cara kerja modul ini**: sama dengan Module 04 — setiap section memberi prompt-prompt siap copy-paste untuk dieksekusi ke Claude Code, yang akan memodifikasi fitur AI Financial Advisor di Fin-App secara inkremental.
-
 ## Peta Visual Module 05
 
 Berikut gambaran arsitektur prompt engineering yang Anda bangun di atas hasil Module 04:

@@ -6,26 +6,6 @@
 
 ---
 
-## Outline Section
-
-Module 04 terdiri dari **6 section** (+ 1 latihan UI di Module 03 sebagai prasyarat) yang dirangkai berurutan. Setiap section menambah satu lapis kemampuan pada chatbot:
-
-| # | Section | Fokus | Status |
-|---|---|---|---|
-| **0** | **[UI Chatbot (prasyarat — Module 03)](../../Day 2 - Road To AI Apps/Module-03-Claude-API/materi-ui-chatbot.md)** | Bangun panel kanan dengan header, body, input, markdown, toggle | ✅ Siap |
-| **1** | **Integrasi Claude API ke Chatbot** | Hubungkan UI ke Claude API (server action) — mock content jadi respons asli | ✅ Siap |
-| **2** | **Text Generation** | Parameter generation: `temperature`, `max_tokens`, `stop_sequences`, prompt prefixing untuk format output | ✅ Siap |
-| **3** | **Thinking / Thought** | Menggunakan *extended thinking* model Claude (Opus 4.x) untuk menampilkan proses berpikir | ✅ Siap |
-| **4** | **Switching Thinking Mode** | Toggle on/off thinking, atau pilih effort level (low / medium / high) | ✅ Siap |
-| **5** | **Streaming Process** | Stream respons kata-demi-kata seperti aplikasi chat modern | ✅ Siap |
-| **6** | **Multi-Turn Conversation** | Simpan riwayat percakapan dan kirim sebagai konteks ke Claude untuk percakapan berkelanjutan | ✅ Siap |
-
-**Total estimasi durasi**: ±4–5 jam efektif (di luar break & diskusi).
-
-> 💡 **Cara kerja modul ini**: setiap section memberi Anda **prompt-prompt siap copy-paste** untuk dieksekusi ke Claude Code. Anda yang menjalankannya — Claude Code yang menulis kode-nya. Pola ini sama dengan Module 02.
-
----
-
 # Section 1 — Integrasi Claude API ke Chatbot
 
 **Tujuan section**: mengganti *mock messages* dari latihan UI Module 03 dengan respons asli dari Claude API. Pada akhir section ini, pertanyaan user benar-benar dijawab oleh model Claude.

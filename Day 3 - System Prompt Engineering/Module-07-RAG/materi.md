@@ -6,18 +6,6 @@
 
 ---
 
-## Outline Section
-
-Module ini terdiri dari **1 section konseptual**. Implementasi RAG sengaja **tidak dibahas di sini** — fokus dulu pada intuisi yang kuat.
-
-| # | Bagian | Fokus | Status |
-|---|---|---|---|
-| **—** | **[Konsep RAG](#konsep-rag)** | Halusinasi LLM → kenapa retrain bukan solusi → analogi closed/open book → 3 komponen RAG → alur kerja + contoh | ✅ Siap |
-
-**Total estimasi durasi**: ±30–45 menit membaca.
-
-> 💡 **Cara kerja modul ini**: berbeda dengan module sebelumnya yang implementatif — Module 07 fokus pada **pemahaman konsep**. Tidak ada latihan coding di sini. Implementasi dibahas di iterasi/module terpisah.
-
 ## Peta Visual Module 07
 
 ```mermaid

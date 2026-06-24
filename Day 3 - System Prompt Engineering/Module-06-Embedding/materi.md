@@ -6,23 +6,6 @@
 
 ---
 
-## Outline Section
-
-Module ini terdiri dari **4 section** (lebih banyak akan ditambah di iterasi berikutnya — query, prompt injection, reranking). Setiap section membangun satu lapis fondasi RAG di atas Fin-App yang sudah dibangun di Module 01–05:
-
-| # | Section | Fokus | Status |
-|---|---|---|---|
-| **1** | **Konsep Embedding** | Memahami apa itu embedding, intuisi vektor, distance metrics, dimensi | ✅ Siap |
-| **2** | **Implementasi Embedding** | Setup Voyage AI + `src/lib/embeddings.ts` + caching | ✅ Siap |
-| **3** | **Database Vector** | Pgvector, schema `knowledge_chunks`, distance operators, indexing | ✅ Siap |
-| **4** | **Save Embedding To DB Vector** | Helper save + seed FAQ Fin-App + verifikasi roundtrip | ✅ Siap |
-
-**Total estimasi durasi**: ±4–5 jam efektif (di luar break & diskusi).
-
-> ⚠️ Module ini akan diperluas dengan section tambahan — query natural language, injection ke prompt Claude, dan reranking — di iterasi berikutnya. Untuk sekarang, fokus pada **fondasi data**.
-
-> 💡 **Cara kerja modul ini**: sama dengan Module 04 & 05 — setiap section memberi prompt-prompt siap copy-paste untuk dieksekusi ke Claude Code, yang akan menambah kode RAG di Fin-App secara inkremental.
-
 ## Peta Visual Module 06
 
 Berikut gambaran arsitektur RAG yang Anda bangun di atas hasil Module 05:
