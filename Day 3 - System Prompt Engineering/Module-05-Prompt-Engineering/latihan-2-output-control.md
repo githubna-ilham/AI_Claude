@@ -2,13 +2,16 @@
 
 > Bagian dari **[Module 05 — Latihan](./latihan.md)**. Lanjutan dari **[Section 1 — System Instruction](./latihan-1-system-instruction.md)**.
 
-> Latihan eksplorasi parameter sampling dan teknik structured output. Empat prompt siap copy-paste.
+> Latihan ini membangun fitur **Parse Transaksi via AI** secara bertahap — dari parser stand-alone, ke server action dengan DB integration, sampai UI yang user-facing. Setiap prompt menambah satu lapis ke fitur yang sama, tanpa file eksperimen terpisah. Teori `top_p`, `top_k`, `stop_sequences` sudah dibahas di `materi.md`; di sini kita fokus implementasi.
 >
-> **Estimasi**: 45–60 menit.
+> **Estimasi**: 60–75 menit.
 
 ## Prasyarat Section 2
 
 - [ ] Section 1 selesai. AI Advisor pakai parameter `system`.
+- [ ] Tabel `transactions` di Supabase sudah ada (dari Module 01).
+- [ ] Server action `createTransaction` (atau equivalent) dari Module 02 berfungsi.
+- [ ] Anda sudah membaca bagian Section 2 di `materi.md` (`temperature`, `top_p`, `top_k`, `stop_sequences`).
 
 ---
 
@@ -18,586 +21,619 @@ Sebelum mulai, akan sangat membantu kalau Anda buka tab dokumentasi resmi untuk 
 
 - **[Messages API parameters](https://docs.claude.com/en/api/messages)** — `temperature`, `top_p`, `top_k`, `stop_sequences`, dan kapan satu lebih cocok dari yang lain.
 - **[Structured outputs](https://docs.claude.com/en/docs/build-with-claude/structured-outputs)** — JSON mode, schema enforcement, pola prompting agar Claude return JSON murni.
+- **[Stop sequences guide](https://docs.claude.com/en/api/messages)** — cara pakai `stop_sequences` untuk batasi output di marker tertentu.
 - **[Zod docs](https://zod.dev/)** — schema validation TypeScript yang akan dipakai untuk verifikasi output Claude.
-- **[Stop sequences guide](https://docs.claude.com/en/api/messages)** — cara pakai `stop_sequences` untuk batasi output di marker tertentu (mis. `---END---`).
+- **[Server Actions Next.js](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)** — pola `"use server"`, memanggil server action dari client component.
 
 ---
 
-## Prompt 1 — Eksperimen `top_p` vs `temperature`
+## Prompt 1 — Buat Parser Transaksi (`src/lib/parsers/transaction-parser.ts`)
 
 ### Walkthrough Manual (sebelum pakai prompt)
 
-Sebelum copy-paste prompt ke Claude, pahami dulu struktur file eksperimen `experiments/sampling-test.ts`. Tujuan: **rasakan** efek `temperature` vs `top_p` secara empiris.
+Sebelum copy-paste prompt ke Claude, pahami dulu struktur parser stand-alone yang akan dibuat. Tujuan: function `parseTransactionFromText(text)` yang minta Claude convert natural language ke struktur transaksi, lalu validate dengan Zod.
 
-📂 **File baru**: `experiments/sampling-test.ts` (script eksperimen)
-
-**1. Import SDK + system prompt**
-
-📍 Lokasi: **paling atas file**.
-
-```ts
-// experiments/sampling-test.ts — bagian import
-import Anthropic from "@anthropic-ai/sdk";
-import { ADVISOR_SYSTEM } from "../src/features/prompts";
-```
-
-**2. Definisikan 4 kombinasi sebagai array config**
-
-📍 Lokasi: **module level**, supaya mudah loop.
-
-```ts
-// experiments/sampling-test.ts — module level
-const CONFIGS = [
-  { label: "A: temp=0, top_p=default",      temperature: 0.0 },
-  { label: "B: temp=0.5, top_p=default",    temperature: 0.5 },
-  { label: "C: temp=default, top_p=0.5",    top_p: 0.5 },
-  { label: "D: temp=default, top_p=0.9",    top_p: 0.9 },
-];
-```
-
-> ⚠️ **Anti-pattern**: JANGAN set `temperature` DAN `top_p` bersamaan dalam satu request. Per dokumentasi Anthropic, ini menghasilkan perilaku yang sulit diprediksi. Pilih satu.
-
-**3. Loop tiap config, jalankan 2 kali untuk lihat variasi**
-
-📍 Lokasi: **dalam async function `main()`**. Untuk setiap config: 2x `client.messages.create(...)` dengan pertanyaan yang sama. Print hasil di bawah label.
-
-```ts
-// experiments/sampling-test.ts — di main()
-for (const cfg of CONFIGS) {
-  console.log(`--- ${cfg.label} ---`);
-  for (let i = 1; i <= 2; i++) {
-    const resp = await client.messages.create({
-      model: "claude-haiku-4-5",
-      max_tokens: 200,
-      system: ADVISOR_SYSTEM,
-      messages: [{ role: "user", content: "Berikan 3 ide nama unik untuk celengan digital saya." }],
-      ...(cfg.temperature !== undefined && { temperature: cfg.temperature }),
-      ...(cfg.top_p !== undefined && { top_p: cfg.top_p }),
-    });
-    console.log(`Run ${i}:`, (resp.content[0] as any).text);
-  }
-}
-```
-
-### Yang TIDAK perlu
-
-- ❌ Set `temperature` DAN `top_p` bersamaan (anti-pattern Anthropic).
-- ❌ Test dengan ratusan iterasi — 2 run per config sudah cukup untuk lihat pattern.
-- ❌ Visualisasi grafik — console output sudah cukup informatif.
-- ❌ Simpan hasil ke file — fokus pada observasi langsung di terminal.
-
-### Verifikasi setelah file dibuat
-
-1. Jalankan: `npx tsx --env-file=.env.local experiments/sampling-test.ts`.
-2. Output muncul 4 blok (A, B, C, D), masing-masing 2 run.
-3. **A (temp=0)**: Run 1 ≈ Run 2 (konsisten — sampling deterministik).
-4. **D (top_p=0.9)**: Run 1 ≠ Run 2 (variatif — sampling luas).
-5. Catat observasi pribadi: setting mana paling cocok untuk **brainstorming**? Untuk **answer-the-same-question**?
-
----
-
-**Salin prompt berikut:**
-
-```
-Bantu saya memahami beda top_p dan temperature.
-
-GOAL:
-- Buat file experiments/sampling-test.ts.
-- Pertanyaan: "Berikan 3 ide nama unik untuk celengan
-  digital saya."
-- Jalankan 4 kombinasi:
-  A: temperature=0.0, top_p tidak diset
-  B: temperature=0.5, top_p tidak diset
-  C: temperature tidak diset (default 1.0), top_p=0.5
-  D: temperature tidak diset (default 1.0), top_p=0.9
-
-- Untuk setiap kombinasi, jalankan 2 kali dan print hasil.
-- Format output:
-  --- A: temp=0, top_p=default ---
-  Run 1: <hasil>
-  Run 2: <hasil>
-  ---
-
-CONTEXT:
-- Pakai Anthropic SDK langsung.
-- Model: claude-haiku-4-5.
-- max_tokens: 200.
-- Boleh pakai system: ADVISOR_SYSTEM.
-
-GUARDRAIL:
-- JANGAN set temperature dan top_p bersamaan (anti-pattern
-  per dokumentasi Anthropic).
-- Catat observasi: pada setting mana hasilnya paling variatif?
-  Paling konsisten?
-```
-
-**Verifikasi:**
-
-1. Jalankan file.
-2. Bandingkan output A vs D. A seharusnya konsisten antara Run 1 dan 2; D paling variatif.
-
----
-
-## Prompt 2 — `stop_sequences` untuk Format Terkontrol
-
-### Walkthrough Manual (sebelum pakai prompt)
-
-Sebelum copy-paste prompt, pahami bagaimana `stop_sequences` bekerja. Tujuan: **batasi** output Claude di marker tertentu agar parsing downstream mudah.
-
-📂 **File baru**: `experiments/stop-sequences-test.ts` (script eksperimen)
-
-**1. Import + setup client**
-
-📍 Lokasi: **paling atas file**.
-
-```ts
-// experiments/stop-sequences-test.ts — bagian import
-import Anthropic from "@anthropic-ai/sdk";
-import { ADVISOR_SYSTEM } from "../src/features/prompts";
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-```
-
-**2. Definisikan prompt template + user message**
-
-📍 Lokasi: **module level**, sebagai const string.
-
-```ts
-// experiments/stop-sequences-test.ts — module level
-const USER_MSG = `Bulan ini income Rp 8.000.000, expense Rp 6.500.000.
-Berikan ringkasan keuangan saya dengan format:
-
-RINGKASAN:
-<ringkasan singkat>
-
-REKOMENDASI:
-<rekomendasi>
-
----END---`;
-```
-
-**3. Dua pemanggilan API — dengan dan tanpa `stop_sequences`**
-
-📍 Lokasi: **di async function `main()`**. Panggil dua kali pertanyaan yang sama, satu pakai `stop_sequences: ["---END---"]`, satu tidak. Print hasil + `stop_reason`.
-
-```ts
-// experiments/stop-sequences-test.ts — di main()
-const withStop = await client.messages.create({
-  model: "claude-haiku-4-5",
-  max_tokens: 500,
-  system: ADVISOR_SYSTEM,
-  messages: [{ role: "user", content: USER_MSG }],
-  stop_sequences: ["---END---"],          /* ← KEY */
-});
-
-const withoutStop = await client.messages.create({
-  model: "claude-haiku-4-5",
-  max_tokens: 500,
-  system: ADVISOR_SYSTEM,
-  messages: [{ role: "user", content: USER_MSG }],
-});
-
-console.log("=== DENGAN stop_sequences ===");
-console.log("stop_reason:", withStop.stop_reason);    // expect: "stop_sequence"
-console.log((withStop.content[0] as any).text);
-
-console.log("\n=== TANPA stop_sequences ===");
-console.log("stop_reason:", withoutStop.stop_reason); // expect: "end_turn"
-console.log((withoutStop.content[0] as any).text);
-```
-
-### Yang TIDAK perlu
-
-- ❌ Multiple stop sequences di array — satu marker `---END---` sudah cukup untuk eksperimen.
-- ❌ Parse hasil output ke object — fokus pada **observasi** stop_reason saja.
-- ❌ Loop puluhan kali — satu run per skenario sudah jelas.
-- ❌ Test dengan model lain — Haiku cukup hemat untuk demo ini.
-
-### Verifikasi setelah file dibuat
-
-1. Jalankan: `npx tsx --env-file=.env.local experiments/stop-sequences-test.ts`.
-2. **Dengan stop_sequences**: output berhenti tepat sebelum `---END---`, `stop_reason === "stop_sequence"`.
-3. **Tanpa stop_sequences**: output mungkin terus menulis "kesimpulan tambahan", `stop_reason === "end_turn"`.
-4. Output **tidak mengandung** `---END---` sendiri di skenario dengan stop_sequences — Claude berhenti sebelum mengeluarkannya.
-
----
-
-**Salin prompt berikut:**
-
-```
-Saya ingin Claude menghasilkan output yang berhenti di
-penanda tertentu.
-
-GOAL:
-- Buat file experiments/stop-sequences-test.ts.
-- Minta Claude menghasilkan ringkasan finansial dengan
-  format:
-  
-  RINGKASAN:
-  <ringkasan singkat>
-  
-  REKOMENDASI:
-  <rekomendasi>
-  
-  ---END---
-
-- Tambahkan stop_sequences: ["---END---"].
-- Print hasil + stop_reason.
-- Bandingkan: dengan dan tanpa stop_sequences.
-
-CONTEXT:
-- User message contoh: "Bulan ini income Rp 8.000.000,
-  expense Rp 6.500.000. Berikan ringkasan keuangan saya."
-- Pakai system ADVISOR_SYSTEM.
-
-GUARDRAIL:
-- Tanpa stop_sequences: Claude mungkin terus menulis setelah
-  ---END---. Dengan stop_sequences, berhenti tepat di sana.
-- Print stop_reason: dengan stop_sequences = "stop_sequence";
-  tanpa = "end_turn".
-```
-
-**Verifikasi:**
-
-1. Dengan stop_sequences: output berhenti di ---END---, stop_reason = "stop_sequence".
-2. Tanpa: output mungkin lanjut bercerita, stop_reason = "end_turn".
-
----
-
-## Prompt 3 — Structured Output: Parse Transaksi dari Teks Natural
-
-### Walkthrough Manual (sebelum pakai prompt)
-
-Sebelum copy-paste prompt, pahami pola **structured output** yang akan dibuat. Tujuan: minta Claude return **JSON valid** yang langsung bisa di-validate dengan Zod.
-
-📂 **File baru**: `src/features/parse-transaction.ts` (server action)
+📂 **File baru**: `src/lib/parsers/transaction-parser.ts` (parser utility, dipanggil dari server action di Prompt 3)
 
 **1. Directive `"use server"` di baris pertama**
 
-📍 Lokasi: **baris 1 file**. Wajib karena ini server action yang dipanggil dari client (UI di Prompt 4).
+📍 Lokasi: **baris 1 file**. Wajib karena parser ini panggil Anthropic SDK yang butuh `ANTHROPIC_API_KEY` (server-only).
 
 ```ts
-// src/features/parse-transaction.ts — baris pertama
+// src/lib/parsers/transaction-parser.ts — baris pertama
 "use server";
 ```
 
-**2. Import SDK + Zod**
+**2. Import Anthropic SDK + Zod + setup client**
 
 📍 Lokasi: **bagian import** setelah directive.
 
 ```ts
-// src/features/parse-transaction.ts — bagian import
+// src/lib/parsers/transaction-parser.ts — bagian import
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
+
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 ```
 
-**3. Zod schema untuk validasi output Claude**
+**3. Zod schema sebagai kontrak antara Claude dan app**
 
-📍 Lokasi: **module level**, sebelum function. Schema ini = kontrak antara Claude dan app.
+📍 Lokasi: **module level**, sebelum function. Schema ini = source of truth untuk struktur transaksi.
 
 ```ts
-// src/features/parse-transaction.ts — module level
-const TransactionSchema = z.object({
+// src/lib/parsers/transaction-parser.ts — module level
+export const TransactionSchema = z.object({
   type: z.enum(["income", "expense"]),
   amount: z.number().positive(),
   category: z.string().min(1),
   description: z.string().min(1),
 });
+
+export type ParsedTransaction = z.infer<typeof TransactionSchema>;
 ```
 
-**4. System instruction yang menekankan "JSON murni, tidak ada teks lain"**
+**4. System prompt yang menekankan "JSON murni, tidak ada teks lain"**
 
 📍 Lokasi: **module level**, const string.
 
 ```ts
-// src/features/parse-transaction.ts — module level
-const PARSER_SYSTEM = `Anda parser transaksi. Ekstrak data dari teks user dan return JSON dengan struktur:
+// src/lib/parsers/transaction-parser.ts — module level
+const PARSER_SYSTEM = `Anda parser transaksi keuangan. Ekstrak data dari teks user dan return JSON dengan struktur EKSPLISIT:
 { "type": "income" | "expense", "amount": number, "category": string, "description": string }
 
-Output WAJIB JSON valid murni. JANGAN tulis penjelasan, markdown, atau apapun di luar JSON.`;
+Aturan:
+- Output WAJIB JSON valid murni — TANPA markdown fence, TANPA penjelasan, TANPA prose extra.
+- amount selalu dalam Rupiah penuh (mis. "35rb" → 35000, "1.5jt" → 1500000).
+- type = "expense" untuk pengeluaran, "income" untuk pemasukan.
+- category: tebak kategori singkat (Food, Transport, Shopping, Salary, dll.).
+- description: ringkas, 3-8 kata.`;
 ```
 
-**5. Function `parseTransaction(userText)`**
+**5. Function `parseTransactionFromText(text)`**
 
 📍 Lokasi: **module level**, exported async function. Alur:
 
-- Panggil Claude dengan `temperature: 0.0` (deterministik) + `system: PARSER_SYSTEM`.
-- Ambil `response.content[0].text`.
-- `JSON.parse(text)` di try/catch — kalau gagal, throw error.
-- Validate hasil dengan `TransactionSchema.parse(...)` — Zod throw kalau tidak sesuai.
-- Return parsed object.
+- Call `client.messages.create()` dengan `model: "claude-haiku-4-5"`, `temperature: 0`, `system: PARSER_SYSTEM`.
+- Parse `response.content[0].text` → `JSON.parse` → `TransactionSchema.safeParse`.
+- Kalau gagal Zod, throw error dengan pesan jelas.
 
 ```ts
-// src/features/parse-transaction.ts — module level
-export async function parseTransaction(userText: string) {
-  const resp = await client.messages.create({
+// src/lib/parsers/transaction-parser.ts — module level
+export async function parseTransactionFromText(text: string): Promise<ParsedTransaction> {
+  const response = await client.messages.create({
     model: "claude-haiku-4-5",
     max_tokens: 300,
-    temperature: 0.0,
+    temperature: 0,
     system: PARSER_SYSTEM,
-    messages: [{ role: "user", content: `Parse transaksi dari teks berikut: ${userText}` }],
+    messages: [{ role: "user", content: text }],
   });
-  const block = resp.content[0];
+
+  const block = response.content[0];
   if (block.type !== "text") throw new Error("Response bukan text block");
-  const raw = JSON.parse(block.text);
-  return TransactionSchema.parse(raw);
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(block.text);
+  } catch {
+    throw new Error(`Output Claude bukan JSON valid: ${block.text.slice(0, 120)}`);
+  }
+
+  const parsed = TransactionSchema.safeParse(raw);
+  if (!parsed.success) {
+    throw new Error(`Validasi Zod gagal: ${parsed.error.message}`);
+  }
+  return parsed.data;
 }
 ```
 
 ### Yang TIDAK perlu
 
-- ❌ Retry otomatis kalau parse gagal — biarkan caller (UI) yang putuskan retry atau fallback manual.
-- ❌ Markdown stripping — `temperature: 0.0` + system prompt yang tegas sudah cukup.
-- ❌ Caching hasil — setiap input unik, tidak ada gain.
-- ❌ Logger — cukup throw error message yang jelas.
+- ❌ File `experiments/` sebagai output utama — semua kode produksi di `src/`.
+- ❌ UI rendering — itu di Prompt 4.
+- ❌ Tools / function calling — kita pakai instruksi eksplisit + parse JSON sederhana (tool use dibahas di Section 4).
+- ❌ Streaming — parser ini blocking; response pendek, lebih cepat tanpa stream.
+- ❌ Retry otomatis — biarkan caller (server action) yang putuskan retry/fallback.
 
 ### Verifikasi setelah file dibuat
 
-1. Cek `"use server"` di baris 1.
-2. Buat `experiments/test-parser.ts`:
+1. File `src/lib/parsers/transaction-parser.ts` ada dengan `"use server"` di baris 1.
+2. Export `parseTransactionFromText` dan `TransactionSchema` tersedia.
+3. `npx tsc --noEmit` tidak ada error.
+4. (Opsional) test cepat via `experiments/test-parser.ts`:
    ```ts
-   import { parseTransaction } from "../src/features/parse-transaction";
+   import { parseTransactionFromText } from "../src/lib/parsers/transaction-parser";
    async function main() {
-     console.log(await parseTransaction("habis grab ke kantor 25 ribu"));
+     console.log(await parseTransactionFromText("Tadi siang ngopi 35rb di Starbucks"));
    }
    main().catch(console.error);
    ```
-3. Jalankan: `npx tsx --env-file=.env.local experiments/test-parser.ts`.
-4. Output: `{ type: 'expense', amount: 25000, category: 'Transport', description: 'Grab ke kantor' }`.
-5. Coba input ambigu: "tagihan listrik 500rb" → harus `expense`, amount 500000.
+   Jalankan: `npx tsx --env-file=.env.local experiments/test-parser.ts`. Expected: `{ type: 'expense', amount: 35000, category: 'Food', description: '...' }`.
 
 ---
 
 **Salin prompt berikut:**
 
 ```
-Saya ingin Claude mengekstrak data terstruktur dari pesan
-casual user.
+Saya ingin parser stand-alone yang convert natural language
+ke struktur transaksi via Claude.
 
 GOAL:
-- Buat server action src/features/parse-transaction.ts.
-- Function parseTransaction(userText: string): Promise<{
-    type: "income" | "expense";
-    amount: number;
-    category: string;
-    description: string;
-  }>
-
-- Gunakan Claude API dengan setting:
-  - model: claude-haiku-4-5
-  - temperature: 0.0 (deterministik)
-  - system: instruksi singkat untuk parse ke JSON
-  - User message: "Parse transaksi dari teks berikut: {text}"
-
-- System instruction:
-  "Anda parser. Ekstrak data transaksi dari teks user dan
-  return JSON dengan struktur:
-  { type: 'income' | 'expense', amount: number, category:
-  string, description: string }
-  Output WAJIB JSON valid, tidak ada teks lain."
-
-- Validasi output dengan Zod schema.
-- Return parsed object.
+- Buat file src/lib/parsers/transaction-parser.ts.
+- Baris 1: "use server".
+- Ekspor TransactionSchema (Zod):
+    type: enum("income", "expense"),
+    amount: number positif,
+    category: string non-empty,
+    description: string non-empty.
+- Ekspor type ParsedTransaction = z.infer<typeof TransactionSchema>.
+- Ekspor async function parseTransactionFromText(text: string):
+  Promise<ParsedTransaction>.
+- Definisikan const PARSER_SYSTEM yang menekankan:
+  - Output WAJIB JSON murni (tanpa markdown, tanpa prose).
+  - amount selalu dalam Rupiah penuh (35rb -> 35000).
+  - Tebak category singkat (Food, Transport, dll.).
 
 CONTEXT:
-- Pakai Anthropic SDK dengan parameter system.
-- Pakai zod yang sudah ter-install (kalau belum: npm install zod).
-- Contoh input: "kemarin saya beli kopi 35rb di starbucks"
-- Expected output: { type: "expense", amount: 35000, category:
-  "Food & Drink", description: "Kopi di Starbucks" }.
+- Model: claude-haiku-4-5.
+- temperature: 0 (deterministik).
+- max_tokens: 300.
+- Pakai Anthropic SDK langsung, NOT tool use.
 
 GUARDRAIL:
-- Apabila JSON tidak valid, throw error dengan pesan jelas.
-- Apabila amount tidak ditemukan, throw error.
-- File ini "use server".
+- Apabila JSON.parse gagal, throw error dengan potongan
+  output Claude untuk debugging.
+- Apabila Zod safeParse gagal, throw error berisi pesan Zod.
+- File ini "use server" — JANGAN di-import dari client tanpa
+  perantara server action.
+- JANGAN tambah retry atau caching — biarkan caller yang
+  putuskan.
 ```
 
 **Verifikasi:**
 
-1. Test cepat:
-   ```ts
-   // experiments/test-parser.ts
-   const result = await parseTransaction("habis grab ke kantor 25 ribu");
-   console.log(result);
-   // Expected: { type: "expense", amount: 25000, category: "Transport"/"Transportation", description: "Grab ke kantor" }
-   ```
-2. Coba berbagai input casual: "gajian 5jt", "beli baju 200rb", "freelance 1.5jt".
+1. File terbentuk dengan struktur sesuai walkthrough.
+2. Test dengan "Tadi siang ngopi 35rb di Starbucks" → return `{ type: 'expense', amount: 35000, category: 'Food', description: ... }`.
 
 ---
 
-## Prompt 4 — Integrasikan Parser ke UI
+## Prompt 2 — Tambah `stop_sequences` sebagai Guardrail
 
 ### Walkthrough Manual (sebelum pakai prompt)
 
-Sebelum copy-paste prompt, pahami struktur UI baru yang akan ditambahkan ke halaman Transactions. Pola: **preview before commit** — user lihat hasil parse dulu, baru confirm.
+Sebelum copy-paste prompt, pahami kenapa `stop_sequences` membantu di sini. Kadang Claude (walau sudah di-instruksi "JSON murni") masih nambah prose seperti `"Penjelasan: ..."` setelah closing brace. `stop_sequences` adalah safety net — Claude **berhenti generate** segera setelah marker tertentu muncul.
 
-📂 **File yang diubah**: `src/app/(app)/transactions/page.tsx` (atau komponen turunannya — sesuaikan dengan struktur Module 02). Plus mungkin komponen baru `quick-add-dialog.tsx`.
+📂 **File yang diubah**: `src/lib/parsers/transaction-parser.ts` (modifikasi, BUKAN file baru)
 
-**1. Tombol "✨ Quick Add (AI)" di header Transactions**
+**1. Tambah `stop_sequences` ke `client.messages.create()`**
 
-📍 Lokasi: **JSX header** halaman Transactions, **di samping tombol "+ Add transaction"** yang sudah dibuat di Module 02.
+📍 Lokasi: **di dalam `parseTransactionFromText`**, di parameter pemanggilan API — tepat setelah `messages`.
 
-```tsx
-// src/app/(app)/transactions/page.tsx — di area header
-<div className="flex gap-2">
-  <Button onClick={() => setQuickAddOpen(true)} variant="outline">
-    ✨ Quick Add (AI)
-  </Button>
-  <Button onClick={() => setAddOpen(true)}>+ Add transaction</Button>
-</div>
+```ts
+// src/lib/parsers/transaction-parser.ts — di dalam parseTransactionFromText
+const response = await client.messages.create({
+  model: "claude-haiku-4-5",
+  max_tokens: 300,
+  temperature: 0,
+  system: PARSER_SYSTEM,
+  messages: [{ role: "user", content: text }],
+  stop_sequences: ["\n\n", "\nPenjelasan", "\nNote:", "\nCatatan"],   /* ← BARU */
+});
 ```
 
-**2. State untuk dialog + hasil parse**
+> 💡 Marker `\n\n` ampuh karena JSON satu-baris Claude akan diikuti dua newline kalau ia mau mulai prose. Sebelum prose mulai, Claude sudah berhenti.
 
-📍 Lokasi: **di dalam komponen client** (`"use client"`).
+**2. (Opsional) Logging `stop_reason` untuk debugging awal**
 
-```tsx
-// di dalam komponen
-const [quickAddOpen, setQuickAddOpen] = useState(false);
-const [naturalText, setNaturalText] = useState("");
-const [parsed, setParsed] = useState<ParsedTransaction | null>(null);
-const [isParsing, setIsParsing] = useState(false);
-const [parseError, setParseError] = useState<string | null>(null);
+📍 Lokasi: **tepat setelah API call**, sebelum parse JSON. Boleh dihapus di production.
+
+```ts
+// src/lib/parsers/transaction-parser.ts — di dalam parseTransactionFromText
+if (process.env.NODE_ENV !== "production") {
+  console.log("[parser] stop_reason:", response.stop_reason);
+}
 ```
 
-**3. Dialog Shadcn dengan dua mode: input vs preview**
+> ⚠️ `stop_reason === "stop_sequence"` di sini **bukan masalah** — JSON-nya sudah lengkap sebelum stop. Yang harus diwaspadai justru kalau JSON belum tertutup saat stop terjadi.
 
-📍 Lokasi: **JSX di dalam komponen**. Saat `parsed === null` → tampilkan textarea + tombol Parse. Saat `parsed !== null` → tampilkan preview + tombol Confirm/Edit Manual.
+### Yang TIDAK perlu
 
-```tsx
-// di JSX
-<Dialog open={quickAddOpen} onOpenChange={setQuickAddOpen}>
-  <DialogContent>
-    {!parsed ? (
-      <>
-        <Textarea
-          value={naturalText}
-          onChange={(e) => setNaturalText(e.target.value)}
-          placeholder="Ketik transaksi natural language Anda..."
-        />
-        {parseError && <p className="text-sm text-rose-600">{parseError}</p>}
-        <Button onClick={handleParse} disabled={isParsing || !naturalText.trim()}>
-          {isParsing ? "Parsing..." : "Parse & Add"}
-        </Button>
-      </>
-    ) : (
-      <>
-        <div className="space-y-1 rounded border p-3 text-sm">
-          <p><b>Type:</b> {parsed.type}</p>
-          <p><b>Amount:</b> Rp {parsed.amount.toLocaleString("id-ID")}</p>
-          <p><b>Category:</b> {parsed.category}</p>
-          <p><b>Description:</b> {parsed.description}</p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={handleConfirm}>Confirm Add</Button>
-          <Button variant="outline" onClick={handleEditManual}>Edit Manual</Button>
-        </div>
-      </>
-    )}
-  </DialogContent>
-</Dialog>
+- ❌ Mengubah `PARSER_SYSTEM` — sudah eksplisit di Prompt 1.
+- ❌ Validasi tambahan — Zod sudah cukup tangkap output rusak.
+- ❌ Logging detail `stop_reason` di production — cukup untuk debugging awal.
+- ❌ Menambah retry loop kalau stop terlalu cepat — kalau itu sering kejadian, justru tanda kita perlu pindah ke tool use (Section 4).
+
+### Verifikasi setelah file diubah
+
+1. `npx tsc --noEmit` tidak ada error.
+2. Paste teks yang biasanya bikin Claude nambah penjelasan (mis. "Bayar listrik 250rb, kemungkinan ini PLN ya?") via test script:
+   ```bash
+   npx tsx --env-file=.env.local experiments/test-parser.ts
+   ```
+3. Output sekarang **hanya JSON** — Zod `safeParse` lolos, tidak ada error parse karena prose ikutan.
+4. Cek log development: `stop_reason` biasanya `"end_turn"` (Claude selesai sendiri) atau `"stop_sequence"` (stop ketrigger). Keduanya OK selama JSON valid.
+
+---
+
+**Salin prompt berikut:**
+
+```
+Tambahkan stop_sequences sebagai guardrail kedua di
+parseTransactionFromText supaya Claude tidak nambah prose
+setelah JSON.
+
+GOAL:
+- Modifikasi src/lib/parsers/transaction-parser.ts.
+- Tambah parameter stop_sequences di client.messages.create():
+    ["\n\n", "\nPenjelasan", "\nNote:", "\nCatatan"]
+- (Opsional, dev only) console.log response.stop_reason
+  untuk debugging.
+
+CONTEXT:
+- Walau system prompt sudah tegas "JSON murni", Claude
+  occasionally masih nambah prose. stop_sequences = safety
+  net.
+- JSON Claude biasanya satu baris; \n\n hampir pasti
+  menandai mulai prose ekstra.
+
+GUARDRAIL:
+- JANGAN ubah PARSER_SYSTEM — sudah cukup di Prompt 1.
+- JANGAN tambah retry — kalau stop terlalu cepat berulang,
+  catat sebagai bahan diskusi untuk migrasi ke tool use.
+- Logging stop_reason HANYA di development (cek NODE_ENV).
 ```
 
-**4. Handler `handleParse`**
+**Verifikasi:**
 
-📍 Lokasi: **function di dalam komponen**.
+1. Test dengan teks yang biasanya trigger prose, output sekarang murni JSON.
+2. Zod safeParse lolos, tidak ada error "bukan JSON valid".
 
-```tsx
-async function handleParse() {
-  setIsParsing(true);
-  setParseError(null);
+---
+
+## Prompt 3 — Server Action `parseAndCreateTransaction`
+
+### Walkthrough Manual (sebelum pakai prompt)
+
+Sebelum copy-paste prompt, pahami pembagian tanggung jawab. `parseTransactionFromText` (Prompt 1+2) **hanya** parse teks → struktur. Sekarang kita bikin entry point user-facing yang gabungkan parse + insert ke Supabase.
+
+📂 **File baru**: `src/features/transaction-from-text.ts` (server action, dipanggil langsung dari client component di Prompt 4)
+
+**1. Directive `"use server"` di baris pertama**
+
+📍 Lokasi: **baris 1 file**.
+
+```ts
+// src/features/transaction-from-text.ts — baris pertama
+"use server";
+```
+
+**2. Import parser + Supabase server client**
+
+📍 Lokasi: **bagian import**. Pola Supabase client sesuaikan dengan yang sudah ada di project (mis. `src/features/action.ts` dari Module 02).
+
+```ts
+// src/features/transaction-from-text.ts — bagian import
+import { parseTransactionFromText, type ParsedTransaction } from "@/lib/parsers/transaction-parser";
+import { createClient } from "@/lib/supabase/server"; // sesuaikan dengan helper project
+```
+
+**3. Tipe return discriminated union**
+
+📍 Lokasi: **module level**, sebelum function. Pattern `{ ok: true, ... } | { ok: false, error }` memudahkan UI handle hasil.
+
+```ts
+// src/features/transaction-from-text.ts — module level
+type Result =
+  | { ok: true; transaction: ParsedTransaction & { id: string } }
+  | { ok: false; error: string };
+```
+
+**4. Function `parseAndCreateTransaction(text)`**
+
+📍 Lokasi: **module level**, exported async function. Alur:
+
+- Validasi `text.trim()` non-empty → return `{ ok: false, error }` kalau kosong.
+- Try-catch `parseTransactionFromText(text)` → kalau throw, tangkap dan return `{ ok: false, error: err.message }`.
+- Ambil user_id via Supabase auth helper (pola yang sama dengan Module 02).
+- Insert ke tabel `transactions` dengan `parsed` + `user_id`.
+- Return `{ ok: true, transaction: insertedRow }`.
+
+```ts
+// src/features/transaction-from-text.ts — module level
+export async function parseAndCreateTransaction(text: string): Promise<Result> {
+  if (!text.trim()) {
+    return { ok: false, error: "Teks transaksi tidak boleh kosong" };
+  }
+
+  let parsed: ParsedTransaction;
   try {
-    const result = await parseTransaction(naturalText);
-    setParsed(result);
+    parsed = await parseTransactionFromText(text);
   } catch (err) {
-    setParseError(err instanceof Error ? err.message : "Gagal parse");
-  } finally {
-    setIsParsing(false);
+    return { ok: false, error: err instanceof Error ? err.message : "Parse gagal" };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "User tidak terautentikasi" };
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .insert({ ...parsed, user_id: user.id })
+    .select()
+    .single();
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, transaction: data };
+}
+```
+
+### Yang TIDAK perlu
+
+- ❌ Optimistic update — itu tanggung jawab UI (Prompt 4) kalau diperlukan.
+- ❌ Rate limiting — di Module 09+ saat kita bahas production hardening.
+- ❌ Membuat tabel baru — pakai `transactions` yang sudah ada dari Module 01.
+- ❌ Branching ke advisor — fitur ini berdiri sendiri, terpisah dari chatbot.
+- ❌ Re-export `parseTransactionFromText` — UI tidak boleh panggil parser langsung; selalu lewat server action ini.
+
+### Verifikasi setelah file dibuat
+
+1. File `src/features/transaction-from-text.ts` ada dengan `"use server"` di baris 1.
+2. `npx tsc --noEmit` tidak ada error.
+3. (Opsional) test via `experiments/test-create-from-text.ts`:
+   ```ts
+   import { parseAndCreateTransaction } from "../src/features/transaction-from-text";
+   async function main() {
+     console.log(await parseAndCreateTransaction("Tadi pagi sarapan nasi uduk 15rb"));
+   }
+   main().catch(console.error);
+   ```
+4. Cek Supabase Table Editor → tabel `transactions` punya row baru: `type: expense, amount: 15000, category: Food, description: "sarapan nasi uduk"`.
+5. Test error path: kirim string kosong → return `{ ok: false, error: "Teks transaksi tidak boleh kosong" }`.
+
+---
+
+**Salin prompt berikut:**
+
+```
+Bungkus parser ke server action yang juga insert ke
+Supabase. Ini entry point user-facing.
+
+GOAL:
+- Buat file src/features/transaction-from-text.ts.
+- Baris 1: "use server".
+- Ekspor async function parseAndCreateTransaction(text: string):
+    Promise<{ ok: true, transaction: T } | { ok: false, error: string }>
+- Alur:
+    1. Validasi text.trim() non-empty.
+    2. Call parseTransactionFromText (try/catch).
+    3. Ambil user_id via Supabase auth (pola sama dgn
+       src/features/action.ts dari Module 02).
+    4. Insert ke tabel transactions dengan parsed + user_id.
+    5. Return discriminated union.
+
+CONTEXT:
+- parseTransactionFromText ada di
+  src/lib/parsers/transaction-parser.ts.
+- Supabase server client helper sudah ada di
+  src/lib/supabase/server (sesuaikan kalau path beda).
+- Tabel transactions sudah ada dari Module 01 dengan kolom
+  type, amount, category, description, user_id.
+
+GUARDRAIL:
+- JANGAN throw — selalu return discriminated union supaya
+  UI mudah handle.
+- JANGAN buat tabel baru.
+- JANGAN re-export parseTransactionFromText — UI harus
+  selalu lewat server action ini.
+- Apabila tidak ada user (unauth), return ok: false.
+```
+
+**Verifikasi:**
+
+1. Call dari test script: `parseAndCreateTransaction("Tadi pagi sarapan nasi uduk 15rb")` → return `{ ok: true, transaction: {...} }`.
+2. Cek Supabase Table Editor → row baru muncul dengan field sesuai.
+3. Test string kosong → return `{ ok: false, error: "..." }`.
+
+---
+
+## Prompt 4 — Integrasi ke UI (Halaman Transactions)
+
+### Walkthrough Manual (sebelum pakai prompt)
+
+Sebelum copy-paste prompt, pahami pola **preview before commit**. UI baru: tombol "Quick Add via AI" → textarea + button "Parse via AI" → preview struktur → Confirm/Cancel. User tetap punya kendali terakhir sebelum data masuk.
+
+📂 **File baru**: `src/components/transactions/quick-add-ai.tsx` (client component).
+📂 **File yang diubah**: `src/app/transactions/page.tsx` (atau path halaman Transactions sesuai struktur project).
+
+**1. Buat client component `QuickAddAi`**
+
+📍 Lokasi: **file baru** `src/components/transactions/quick-add-ai.tsx`. Wajib `"use client"` di baris 1 karena pakai `useState` + handler interaktif.
+
+```tsx
+// src/components/transactions/quick-add-ai.tsx — baris pertama
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { parseAndCreateTransaction } from "@/features/transaction-from-text";
+```
+
+**2. State component**
+
+📍 Lokasi: **di dalam fungsi `QuickAddAi`**.
+
+```tsx
+// src/components/transactions/quick-add-ai.tsx — dalam komponen
+const router = useRouter();
+const [text, setText] = useState("");
+const [isProcessing, setIsProcessing] = useState(false);
+const [result, setResult] = useState<
+  | { ok: true; transaction: { type: string; amount: number; category: string; description: string } }
+  | { ok: false; error: string }
+  | null
+>(null);
+```
+
+**3. Handler `handleSubmit`**
+
+📍 Lokasi: **function di dalam komponen**. Panggil server action langsung — Next.js handle networking.
+
+```tsx
+// src/components/transactions/quick-add-ai.tsx — dalam komponen
+async function handleSubmit() {
+  setIsProcessing(true);
+  setResult(null);
+  const res = await parseAndCreateTransaction(text);
+  setResult(res);
+  setIsProcessing(false);
+  if (res.ok) {
+    setText("");
+    router.refresh(); // refetch list transaksi
   }
 }
 ```
 
-**5. Handler `handleConfirm` — panggil `createTransaction` dari Module 02**
+**4. JSX dengan textarea + tombol + preview/error**
 
-📍 Lokasi: **function di dalam komponen**. Setelah sukses, reset state + tutup dialog.
+📍 Lokasi: **return** komponen.
+
+```tsx
+// src/components/transactions/quick-add-ai.tsx — return
+return (
+  <div className="space-y-3 rounded-lg border p-4">
+    <h3 className="font-semibold">Quick Add via AI</h3>
+    <textarea
+      className="w-full rounded border p-2 text-sm"
+      rows={3}
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      placeholder="Contoh: Tadi siang ngopi 35rb di Starbucks"
+      disabled={isProcessing}
+    />
+    <button
+      onClick={handleSubmit}
+      disabled={isProcessing || !text.trim()}
+      className="inline-flex items-center gap-2 rounded bg-blue-600 px-3 py-2 text-sm text-white disabled:opacity-50"
+    >
+      {isProcessing && <Loader2 className="h-4 w-4 animate-spin" />}
+      Parse via AI
+    </button>
+
+    {result?.ok === true && (
+      <div className="rounded border border-green-200 bg-green-50 p-3 text-sm">
+        <p className="font-medium text-green-800">Berhasil ditambahkan</p>
+        <p>Type: {result.transaction.type}</p>
+        <p>Amount: Rp {result.transaction.amount.toLocaleString("id-ID")}</p>
+        <p>Category: {result.transaction.category}</p>
+        <p>Description: {result.transaction.description}</p>
+      </div>
+    )}
+
+    {result?.ok === false && (
+      <p className="rounded border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+        {result.error}
+      </p>
+    )}
+  </div>
+);
+```
+
+**5. Pasang ke halaman Transactions**
+
+📍 Lokasi: **`src/app/transactions/page.tsx`** (atau path yang sesuai). Mount `<QuickAddAi />` di atas tabel transaksi.
+
+```tsx
+// src/app/transactions/page.tsx — di dalam JSX
+import { QuickAddAi } from "@/components/transactions/quick-add-ai";
+
+// ... di dalam return:
+<QuickAddAi />
+{/* lalu list transaksi yang sudah ada */}
+```
 
 ### Yang TIDAK perlu
 
-- ❌ **Langsung create tanpa preview** — selalu tunjukkan hasil parse dulu agar user verify.
-- ❌ **Toast untuk error parsing** — error harus inline di dialog supaya user bisa edit text dan retry.
-- ❌ **Auto-submit kalau confidence tinggi** — Claude tidak return confidence score, dan preview manual lebih aman.
-- ❌ **Rewrite dialog Add Transaction** — tombol "Edit Manual" cukup tutup quick-add lalu buka dialog manual yang sudah ada, pre-fill kalau perlu.
+- ❌ Voice input / OCR — di luar scope module.
+- ❌ Multi-language detection — Claude handle Indonesian + English secara natural via prompt.
+- ❌ Edit hasil parse sebelum confirm — iterasi berikutnya; untuk sekarang server action langsung insert (user lihat hasil setelah berhasil).
+- ❌ Animasi loading fancy — `Loader2` spinner sederhana cukup.
+- ❌ Optimistic update — `router.refresh()` cukup responsif untuk fitur ini.
 
 ### Verifikasi setelah file diubah
 
-1. Reload halaman Transactions.
-2. Klik "✨ Quick Add (AI)" → dialog terbuka dengan textarea.
-3. Ketik "beli sepatu lari 850 ribu" → klik **Parse & Add**.
-4. Preview muncul: type=expense, amount=850000, category=Shopping/Sports, description="Sepatu lari".
-5. Klik **Confirm Add** → transaksi masuk ke tabel, dialog tertutup.
-6. Test error: ketik teks aneh "asdf asdf" → error inline muncul, dialog tetap terbuka.
+1. Reload halaman `/transactions`. Komponen "Quick Add via AI" muncul di atas list.
+2. Ketik "Beli kopi 25rb" → klik **Parse via AI** → spinner muncul.
+3. ~2 detik kemudian, kartu hijau muncul: type=expense, amount=25000, category=Food, description=...
+4. List transaksi di bawah otomatis ter-refresh, row baru terlihat.
+5. Test error: ketik teks aneh "asdf asdf 123" → kartu merah muncul dengan pesan error Zod/parse.
+6. Build production: `npm run build` sukses tanpa error TypeScript.
 
 ---
 
 **Salin prompt berikut:**
 
 ```
-Sekarang sambungkan parser ke UI Transactions agar user
-bisa input dengan natural language.
+Buat UI untuk fitur Quick Add via AI di halaman
+Transactions. Pakai server action yang sudah ada.
 
 GOAL:
-- Di halaman /transactions, tambahkan tombol "✨ Quick Add
-  (AI)" di samping tombol "+ Add transaction" yang sudah
-  ada.
-- Klik tombol → buka dialog kecil dengan:
-  - Textarea: "Ketik transaksi natural language Anda..."
-  - Tombol "Parse & Add"
-- Saat di-klik:
-  1. Tampilkan loading state.
-  2. Panggil parseTransaction(text).
-  3. Hasil parse di-preview di bawah textarea: type, amount,
-     category, description.
-  4. Tombol "Confirm Add" dan "Edit Manual".
-  5. Klik Confirm → panggil createTransaction (yang sudah ada
-     dari Module 02).
+- Buat client component
+  src/components/transactions/quick-add-ai.tsx ("use client").
+  State:
+    text: string
+    isProcessing: boolean
+    result: { ok: true, transaction } | { ok: false, error } | null
+- Textarea + button "Parse via AI" + Loader2 saat processing.
+- Saat sukses (ok=true): tampilkan preview hijau berisi
+  type/amount/category/description, reset textarea, call
+  router.refresh().
+- Saat error (ok=false): tampilkan box merah inline (BUKAN
+  toast).
+- Pasang <QuickAddAi /> di src/app/transactions/page.tsx
+  (atau file halaman Transactions yang sesuai) di atas list.
 
 CONTEXT:
-- Dialog dan komponen Shadcn sudah ter-install dari modul
-  sebelumnya.
-- Pakai useMutation untuk parseTransaction dan
-  createTransaction.
+- Server action: parseAndCreateTransaction dari
+  @/features/transaction-from-text.
+- Pakai useRouter dari next/navigation untuk refetch.
+- Lucide-react sudah ter-install (Loader2).
+- Tailwind sudah ter-setup.
 
 GUARDRAIL:
-- Apabila parsing gagal, tampilkan pesan error inline (bukan
-  toast).
-- Tombol "Edit Manual" → tutup dialog dan buka dialog Add
-  Transaction biasa dengan field yang sudah pre-filled.
-- JANGAN langsung create tanpa konfirmasi user — selalu
-  preview dulu.
+- JANGAN panggil parseTransactionFromText langsung dari
+  client — selalu lewat parseAndCreateTransaction.
+- JANGAN tambah voice input / OCR / multi-language switch.
+- JANGAN auto-submit — user harus klik tombol.
+- Error harus inline, BUKAN toast.
+- Disable button saat isProcessing atau text.trim() kosong.
 ```
 
 **Verifikasi:**
 
-1. Klik "Quick Add (AI)" → dialog terbuka.
-2. Ketik "beli sepatu lari 850 ribu" → klik Parse.
-3. Preview menunjukkan: type=expense, amount=850000, category=Shopping/Sports, description="Sepatu lari".
-4. Confirm → transaksi masuk ke tabel.
+1. Halaman Transactions tampil komponen Quick Add via AI.
+2. "Beli kopi 25rb" → preview hijau + row baru di list.
+3. Teks aneh → box merah inline dengan pesan error.
+4. `npm run build` sukses.
 
 ---
 
 ## Validasi Akhir Section 2
 
-- [ ] File eksperimen sampling-test dan stop-sequences-test jalan.
-- [ ] Server action `parseTransaction` ada di `src/features/parse-transaction.ts`.
-- [ ] Validasi output JSON dengan Zod schema.
-- [ ] Halaman Transactions punya tombol "Quick Add (AI)" yang berfungsi.
-- [ ] Tidak ada regresi dari Section 1.
+- [ ] `src/lib/parsers/transaction-parser.ts` ada dengan `parseTransactionFromText` dan `TransactionSchema`.
+- [ ] `stop_sequences` aktif di API call parser.
+- [ ] Zod validation tangkap halusinasi (test dengan teks aneh).
+- [ ] Server action `parseAndCreateTransaction` di `src/features/transaction-from-text.ts` berhasil insert ke Supabase.
+- [ ] UI "Quick Add via AI" di halaman Transactions berfungsi end-to-end (parse → insert → list ter-refresh).
+- [ ] Build production sukses (`npm run build`).
+- [ ] Tidak ada regresi dari Section 1 (AI Advisor tetap jalan).
 
 ## Refleksi Section 2
 
-1. Pada parameter mana Anda merasa **kontrol paling kuat**?
-2. Apakah parser AI lebih cepat dari mengisi form manual?
-3. Berapa kali parser memberikan hasil yang **salah**? Apa pattern kesalahannya?
+1. Apa risiko terbesar dari fitur "parse via AI" ini di production? (mis. user input typo, halusinasi kategori, amount salah konversi, dll.)
+2. Bagaimana Anda akan handle case Claude return `category` yang tidak ada di enum Supabase Anda? (saat ini Zod tidak constrain category ke enum spesifik — sengaja, supaya fleksibel.)
+3. `stop_sequences` bekerja baik tapi cukup brittle (bergantung pada Claude mengeluarkan marker tertentu). Kapan Anda akan migrasi ke **tool use** untuk task ini (Section 4)? Sinyal apa yang akan trigger keputusan itu?
+4. Bagaimana cara Anda monitor akurasi parser di production? (logging input/output sample, eval set bulanan, user feedback button, dll.)
+5. `temperature: 0` di parser vs `temperature` default di Advisor — kenapa beda? Kalau Advisor diset `temperature: 0`, apa yang akan berubah?
 
 ---
 
