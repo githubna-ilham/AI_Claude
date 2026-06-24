@@ -1,6 +1,6 @@
 # Section 1 — Konsep Embedding
 
-> Bagian dari **[Module 06 — Latihan](./latihan.md)**. Lanjutan dari **[Module 05 — Section 4: Agentic Workflow](../Module-05-Prompt-Engineering/latihan-agentic.md)**.
+> Bagian dari **[Module 06 — Latihan](./latihan.md)**. Lanjutan dari **[Module 05 — Section 4: Agentic Workflow](../Module-05-Prompt-Engineering/latihan-4-agentic.md)**.
 
 > Latihan untuk membangun **intuisi embedding** sebelum integrasi SDK. Dua prompt: satu eksplorasi visual tanpa coding, satu menghitung cosine similarity manual.
 >
@@ -121,4 +121,4 @@ GUARDRAIL:
 
 ---
 
-⬅️ Kembali: **[Module 05 — Agentic Workflow](../Module-05-Prompt-Engineering/latihan-agentic.md)** · 🏠 Index: **[Module 06 — Latihan](./latihan.md)** · ➡️ Lanjut: **[Section 2 — Implementasi Embedding](./latihan-implementasi-embedding.md)**
+⬅️ Kembali: **[Module 05 — Agentic Workflow](../Module-05-Prompt-Engineering/latihan-4-agentic.md)** · 🏠 Index: **[Module 06 — Latihan](./latihan.md)** · ➡️ Lanjut: **[Section 2 — Implementasi Embedding](./latihan-implementasi-embedding.md)**

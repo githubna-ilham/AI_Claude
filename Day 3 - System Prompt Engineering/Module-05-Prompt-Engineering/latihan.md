@@ -16,10 +16,10 @@
 
 | #  | Section | Fokus | Estimasi |
 |----|---------|-------|----------|
-| 1  | **[System Instruction](./latihan-system-instruction.md)** | Migrasi dari prompt prefixing ke parameter `system` (3 prompt) | 40–50 menit |
-| 2  | **[Sample Parameter & Output Control](./latihan-output-control.md)** | `top_p`, `stop_sequences`, structured output + parser transaksi (4 prompt) | 50–60 menit |
-| 3  | **[Role, Context, & Instruction](./latihan-rci.md)** | Refactor RCI + fitur Insight Mingguan (3 prompt) | 50–60 menit |
-| 4  | **[Agentic Workflow](./latihan-agentic.md)** | Tool use — `get_transactions`, `get_balance_summary` (4 prompt) | 60–70 menit |
+| 1  | **[System Instruction](./latihan-1-system-instruction.md)** | Migrasi dari prompt prefixing ke parameter `system` (3 prompt) | 40–50 menit |
+| 2  | **[Sample Parameter & Output Control](./latihan-2-output-control.md)** | `top_p`, `stop_sequences`, structured output + parser transaksi (4 prompt) | 50–60 menit |
+| 3  | **[Role, Context, & Instruction](./latihan-3-rci.md)** | Refactor RCI + fitur Insight Mingguan (3 prompt) | 50–60 menit |
+| 4  | **[Agentic Workflow](./latihan-4-agentic.md)** | Tool use — `get_transactions`, `get_balance_summary` (4 prompt) | 60–70 menit |
 
 ---
 
@@ -27,4 +27,4 @@
 
 Kerjakan section secara berurutan — tiap section mengandalkan output section sebelumnya. Pada akhir Section 4, AI Financial Advisor Anda akan mampu mengakses data transaksi user secara mandiri lewat tool use.
 
-🚀 Mulai: **[Section 1 — System Instruction](./latihan-system-instruction.md)** (asumsi Module 04 sudah selesai).
+🚀 Mulai: **[Section 1 — System Instruction](./latihan-1-system-instruction.md)** (asumsi Module 04 sudah selesai).
