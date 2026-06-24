@@ -255,4 +255,4 @@ GUARDRAIL:
 
 ---
 
-⬅️ Kembali: **[Module 04 — Multi-Turn](../Module-04-Content-Generation/latihan-6-multi-turn.md)** · ➡️ Lanjut: **[Section 2 — Sample Parameter & Output Control](./latihan-2-output-control.md)**
+⬅️ Kembali: **[Module 04 — Multi-Turn](../Module-04-Content-Generation/latihan-6-multi-turn.md)** · ➡️ Lanjut: **[Section 2 — Output Control](./latihan-2-output-control.md)**

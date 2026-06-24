@@ -17,7 +17,7 @@
 | #  | Section | Fokus | Estimasi |
 |----|---------|-------|----------|
 | 1  | **[System Instruction](./latihan-1-system-instruction.md)** | Migrasi dari prompt prefixing ke parameter `system` (2 prompt) | 30–40 menit |
-| 2  | **[Sample Parameter & Output Control](./latihan-2-output-control.md)** | `top_p`, `stop_sequences`, structured output + parser transaksi (4 prompt) | 50–60 menit |
+| 2  | **[Output Control](./latihan-2-output-control.md)** | Structured output (JSON) + `stop_sequences` + Zod + parser transaksi terintegrasi ke chatbot (4 prompt) | 60–75 menit |
 | 3  | **[Role, Context, & Instruction](./latihan-3-rci.md)** | Refactor RCI + fitur Insight Mingguan (3 prompt) | 50–60 menit |
 | 4  | **[Agentic Workflow](./latihan-4-agentic.md)** | Tool use — `get_transactions`, `get_balance_summary` (4 prompt) | 60–70 menit |
 

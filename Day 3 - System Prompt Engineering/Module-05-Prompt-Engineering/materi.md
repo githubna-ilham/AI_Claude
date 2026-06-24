@@ -166,63 +166,13 @@ Lanjutkan ke `latihan.md` Section 1 untuk eksekusi.
 
 ---
 
-# Section 2 — Sample Parameter & Output Control
+# Section 2 — Output Control
 
-**Tujuan section**: praktik mendalam **parameter sampling** Claude API (`temperature`, `top_p`, `top_k`, `stop_sequences`) dan teknik **structured output** untuk mendapatkan respons yang dapat diandalkan oleh kode.
+**Tujuan section**: menguasai teknik **structured output** Claude API agar respons model dapat diandalkan oleh kode — bukan sekadar prosa untuk dibaca user. Anda mempelajari kombinasi `temperature: 0` + system prompt eksplisit + `stop_sequences` + validasi Zod sebagai pola standar untuk **mengubah natural language menjadi data terstruktur**.
 
 **Aplikasi konkret di Fin-App**: Anda akan menambah fitur **Catat Transaksi via Chatbot** — user mengetik di `AIChatPanel` (mis. _"ngopi 25rb tadi siang"_), Claude ekstrak struktur transaksi sebagai JSON, parser validasi via Zod, lalu otomatis tersimpan di Supabase. Tidak ada halaman baru — semua terintegrasi ke chatbot yang sudah Anda bangun di Module 04. Detail flow dibahas di akhir section ini dan implementasinya di `latihan.md`.
 
-## Parameter Sampling — Recap & Lanjutan
-
-Pada Module 04 Anda sudah mengenal `temperature`. Anthropic API juga menyediakan dua parameter sampling lain:
-
-### `top_p` (Nucleus Sampling)
-
-`top_p` membatasi pilihan kata berikutnya ke **subset paling probable** yang **kumulatif** mencapai probabilitas `p`.
-
-**Analogi sederhana**: bayangkan Claude punya 1000 kandidat kata berikutnya, masing-masing dengan probabilitas. `top_p` bilang: "ambil kata-kata teratas yang kalau dijumlah probabilitasnya minimal `p`, baru pilih dari situ."
-
-| Nilai | Karakter |
-|---|---|
-| `1.0` (default) | Pertimbangkan semua kata kandidat |
-| `0.9` | Hanya pertimbangkan kata-kata paling probable yang kumulatifnya 90% |
-| `0.5` | Pilihan jauh lebih terbatas — sangat fokus |
-
-**Contoh konkret**: pertanyaan _"Sebutkan satu kategori pengeluaran bulanan."_
-
-| Setting | Hasil tipikal di 5x pengulangan |
-|---|---|
-| `top_p: 1.0` | "Makanan", "Transport", "Hiburan", "Listrik", "Investasi" — variatif |
-| `top_p: 0.5` | "Makanan", "Makanan", "Transport", "Makanan", "Transport" — top probable saja |
-
-`top_p` sering dipakai **sebagai alternatif** `temperature`, bukan bersamaan. Anthropic menyarankan: pilih salah satu, jangan kedua-duanya.
-
-### `top_k`
-
-`top_k` membatasi pilihan kata berikutnya ke **K kata paling probable** secara absolut (bukan kumulatif seperti `top_p`).
-
-| Nilai | Karakter |
-|---|---|
-| Tidak diset (default) | Tidak ada batas |
-| `40` | Hanya pertimbangkan 40 kata teratas |
-| `10` | Sangat fokus, kemungkinan repetitif |
-
-**Contoh konkret**: pertanyaan _"Tips menabung untuk pemula?"_
-
-- `top_k: 40` (default-ish) → respons natural, kalimat bervariasi.
-- `top_k: 5` → kalimat sering mulai dengan kata yang sama (mis. "Mulai dengan...", "Atur..."), terasa kaku.
-
-Dipakai untuk **kontrol eksperimen** — jarang dibutuhkan di production untuk chatbot biasa.
-
-### Kombinasi yang Praktis
-
-| Skenario | Setting yang umum |
-|---|---|
-| Chatbot keuangan (faktual, sedikit kreatif) | `temperature: 0.5` |
-| Ekstraksi data dari teks (deterministik) | `temperature: 0.0` |
-| Brainstorm ide / nama kreatif | `temperature: 0.9` |
-| Code generation | `temperature: 0.0` atau `0.2` |
-| Output JSON terstruktur | `temperature: 0.0` |
+> 📌 **Sengaja tidak dibahas mendalam**: `top_p`, `top_k`, atau eksperimen sampling-parameter terisolasi. Parameter tersebut secara praktis jarang dipakai di chatbot production — `temperature` saja sudah cukup. Module 05 fokus pada keterampilan **output terkontrol** yang lebih sering Anda butuhkan saat membangun fitur AI nyata.
 
 ## Structured Output — Mendapatkan JSON yang Konsisten
 

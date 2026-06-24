@@ -1,8 +1,8 @@
-# Section 2 — Sample Parameter & Output Control
+# Section 2 — Output Control
 
 > Bagian dari **[Module 05 — Latihan](./latihan.md)**. Lanjutan dari **[Section 1 — System Instruction](./latihan-1-system-instruction.md)**.
 
-> Latihan ini membangun fitur **Catat Transaksi via Chatbot** — user mengetik di chatbot AI Financial Advisor _"ngopi 25rb tadi siang"_, parser AI ekstrak struktur transaksinya, lalu otomatis tersimpan di Supabase + chatbot konfirmasi di bubble. Tidak ada halaman/UI baru — semua terintegrasi ke `AIChatPanel` yang sudah Anda bangun. Teori `top_p`, `top_k`, `stop_sequences` sudah dibahas di `materi.md`; di sini fokus implementasi.
+> Latihan ini membangun fitur **Catat Transaksi via Chatbot** — user mengetik di chatbot AI Financial Advisor _"ngopi 25rb tadi siang"_, parser AI ekstrak struktur transaksinya, lalu otomatis tersimpan di Supabase + chatbot konfirmasi di bubble. Tidak ada halaman/UI baru — semua terintegrasi ke `AIChatPanel` yang sudah Anda bangun. Teori `structured output`, `stop_sequences`, dan validasi Zod sudah dibahas di `materi.md`; di sini fokus implementasi.
 >
 > **Estimasi**: 60–75 menit.
 
@@ -11,7 +11,7 @@
 - [ ] Section 1 selesai. AI Advisor pakai parameter `system`.
 - [ ] Tabel `transactions` di Supabase sudah ada (dari Module 01).
 - [ ] Server action `createTransaction` (atau equivalent) dari Module 02 berfungsi.
-- [ ] Anda sudah membaca bagian Section 2 di `materi.md` (`temperature`, `top_p`, `top_k`, `stop_sequences`).
+- [ ] Anda sudah membaca bagian Section 2 di `materi.md` (structured output, `stop_sequences`, validasi Zod).
 
 ---
 
@@ -19,7 +19,7 @@
 
 Sebelum mulai, akan sangat membantu kalau Anda buka tab dokumentasi resmi untuk referensi cepat:
 
-- **[Messages API parameters](https://docs.claude.com/en/api/messages)** — `temperature`, `top_p`, `top_k`, `stop_sequences`, dan kapan satu lebih cocok dari yang lain.
+- **[Messages API parameters](https://docs.claude.com/en/api/messages)** — `temperature`, `stop_sequences`, dan parameter terkait output control.
 - **[Structured outputs](https://docs.claude.com/en/docs/build-with-claude/structured-outputs)** — JSON mode, schema enforcement, pola prompting agar Claude return JSON murni.
 - **[Stop sequences guide](https://docs.claude.com/en/api/messages)** — cara pakai `stop_sequences` untuk batasi output di marker tertentu.
 - **[Zod docs](https://zod.dev/)** — schema validation TypeScript yang akan dipakai untuk verifikasi output Claude.

@@ -1,6 +1,6 @@
 # Section 3 — Role, Context, & Instruction
 
-> Bagian dari **[Module 05 — Latihan](./latihan.md)**. Lanjutan dari **[Section 2 — Sample Parameter & Output Control](./latihan-2-output-control.md)**.
+> Bagian dari **[Module 05 — Latihan](./latihan.md)**. Lanjutan dari **[Section 2 — Output Control](./latihan-2-output-control.md)**.
 
 > Latihan restrukturisasi system prompt dengan pola RCI dan demonstrasi reuse. Tiga prompt siap copy-paste.
 >

@@ -50,7 +50,7 @@ Day 3 - System Prompt Engineering/
 │   ├── materi.md                         (outline + Section 1–4 detail + diagram Mermaid)
 │   ├── latihan.md                        (index 4 section)
 │   ├── latihan-1-system-instruction.md     (Section 1 — System Instruction)
-│   ├── latihan-2-output-control.md         (Section 2 — Sample Parameter & Output Control)
+│   ├── latihan-2-output-control.md         (Section 2 — Output Control)
 │   ├── latihan-3-rci.md                    (Section 3 — Role, Context, Instruction)
 │   └── latihan-4-agentic.md                (Section 4 — Agentic Workflow)
 ├── Module-06-Embedding/                  ✅ siap (4 section)
