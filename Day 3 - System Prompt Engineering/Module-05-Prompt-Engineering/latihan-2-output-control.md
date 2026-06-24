@@ -2,663 +2,453 @@
 
 > Bagian dari **[Module 05 — Latihan](./latihan.md)**. Lanjutan dari **[Section 1 — System Instruction](./latihan-1-system-instruction.md)**.
 
-> Latihan ini membangun fitur **Catat Transaksi via Chatbot** — user mengetik di chatbot AI Financial Advisor _"ngopi 25rb tadi siang"_, parser AI ekstrak struktur transaksinya, lalu otomatis tersimpan di Supabase + chatbot konfirmasi di bubble. Tidak ada halaman/UI baru — semua terintegrasi ke `AIChatPanel` yang sudah Anda bangun. Teori `structured output`, `stop_sequences`, dan validasi Zod sudah dibahas di `materi.md`; di sini fokus implementasi.
+> Latihan ini fokus mengontrol *bagaimana* AI Financial Advisor merespons di chatbot — panjang, format, gaya, dan apa yang tidak boleh dijawab. Anda akan **memperketat `ADVISOR_SYSTEM`** + tambah guardrail `stop_sequences` + tune `max_tokens`, lalu verifikasi konsistensi dengan 5 test case. Teori sudah dibahas di `materi.md`; di sini fokus eksekusi.
 >
-> **Estimasi**: 60–75 menit.
+> **Estimasi**: 45–60 menit.
 
 ## Prasyarat Section 2
 
-- [ ] Section 1 selesai. AI Advisor pakai parameter `system`.
-- [ ] Tabel `transactions` di Supabase sudah ada (dari Module 01).
-- [ ] Server action `createTransaction` (atau equivalent) dari Module 02 berfungsi.
-- [ ] Anda sudah membaca bagian Section 2 di `materi.md` (structured output, `stop_sequences`, validasi Zod).
+- [ ] Section 1 selesai. AI Advisor pakai parameter `system` lewat `ADVISOR_SYSTEM` di `src/features/prompts.ts`.
+- [ ] Anda sudah membaca bagian Section 2 di `materi.md` (tiga lapis kontrol output, `stop_sequences`, `max_tokens` strategy, refusal pattern).
 
 ---
 
 ## 📚 Referensi Dokumentasi
 
-Sebelum mulai, akan sangat membantu kalau Anda buka tab dokumentasi resmi untuk referensi cepat:
+Sebelum mulai, buka tab dokumentasi resmi untuk referensi cepat:
 
-- **[Messages API parameters](https://docs.claude.com/en/api/messages)** — `temperature`, `stop_sequences`, dan parameter terkait output control.
-- **[Structured outputs](https://docs.claude.com/en/docs/build-with-claude/structured-outputs)** — JSON mode, schema enforcement, pola prompting agar Claude return JSON murni.
-- **[Stop sequences guide](https://docs.claude.com/en/api/messages)** — cara pakai `stop_sequences` untuk batasi output di marker tertentu.
-- **[Zod docs](https://zod.dev/)** — schema validation TypeScript yang akan dipakai untuk verifikasi output Claude.
-- **[Server Actions Next.js](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations)** — pola `"use server"`, memanggil server action dari client component.
+- **[Messages API parameters](https://docs.claude.com/en/api/messages)** — `max_tokens`, `stop_sequences`, `stop_reason`, dan parameter terkait output control.
+- **[Stop sequences](https://docs.claude.com/en/api/messages)** — cara pakai `stop_sequences` untuk batasi output di marker tertentu, dan apa yang muncul di `stop_reason`.
+- **[Prompt engineering — be clear and direct](https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/be-clear-and-direct)** — instruksi format yang ketat agar output konsisten.
+- **[System prompts](https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/system-prompts)** — pola refusal sopan via system instruction.
 
 ---
 
-## Prompt 1 — Buat Parser Transaksi (`src/lib/parsers/transaction-parser.ts`)
+## Prompt 1 — Tighten `ADVISOR_SYSTEM` (Format & Batasan)
 
 ### Walkthrough Manual (sebelum pakai prompt)
 
-Sebelum copy-paste prompt ke Claude, pahami dulu struktur parser stand-alone yang akan dibuat. Tujuan: function `parseTransactionFromText(text)` yang minta Claude convert natural language ke struktur transaksi, lalu validate dengan Zod.
+Sebelum copy-paste prompt ke Claude, pahami dulu **bagian mana** dari `ADVISOR_SYSTEM` yang akan diperketat. Section 1 sudah membuat draft `ADVISOR_SYSTEM` dengan empat sub-section (Persona, Lingkup, Format Output, Batasan). Di Prompt 1 ini Anda **hanya memperketat dua sub-section**: `## Format Output` dan `## Batasan`. Persona dan Lingkup **tidak diubah**.
 
-📂 **File baru**: `src/lib/parsers/transaction-parser.ts` (parser utility, dipanggil dari server action di Prompt 3)
+📂 **File yang diubah**: `src/features/prompts.ts` (modifikasi konstanta existing, BUKAN file baru)
 
-**1. Directive `"use server"` di baris pertama**
+**1. Perketat sub-section `## Format Output`**
 
-📍 Lokasi: **baris 1 file**. Wajib karena parser ini panggil Anthropic SDK yang butuh `ANTHROPIC_API_KEY` (server-only).
-
-```ts
-// src/lib/parsers/transaction-parser.ts — baris pertama
-"use server";
-```
-
-**2. Import Anthropic SDK + Zod + setup client**
-
-📍 Lokasi: **bagian import** setelah directive.
+📍 Lokasi: **di dalam template literal `ADVISOR_SYSTEM`**, ganti isi `## Format Output` dengan instruksi yang lebih spesifik dan eksplisit.
 
 ```ts
-// src/lib/parsers/transaction-parser.ts — bagian import
-import Anthropic from "@anthropic-ai/sdk";
-import { z } from "zod";
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// src/features/prompts.ts — bagian Format Output (SESUDAH diperketat)
+## Format Output
+- Pertanyaan ringan: jawab **3–6 kalimat**. Pertanyaan kompleks: maksimal **8 bullet point**.
+- TIDAK menulis prose mengalir lebih dari 1 paragraf.
+- Format Rupiah: \`Rp 1.500.000\` (titik pemisah ribuan, TANPA "rupiah" atau "IDR").
+- Format persen: \`15%\` (tanpa spasi sebelum %).
+- Angka penting selalu **bold**.
+- TIDAK memulai jawaban dengan filler: "Tentu", "Tentu saja", "Baik", "Tentunya", "Pertanyaan bagus" — langsung ke jawaban.
+- TIDAK menulis disclaimer hukum / pajak / "konsultasi profesional" kecuali user secara eksplisit menanyakan aspek tersebut.
 ```
 
-**3. Zod schema sebagai kontrak antara Claude dan app**
+**2. Perketat sub-section `## Batasan` dengan refusal pattern**
 
-📍 Lokasi: **module level**, sebelum function. Schema ini = source of truth untuk struktur transaksi.
+📍 Lokasi: **di dalam template literal `ADVISOR_SYSTEM`**, ganti isi `## Batasan` agar berisi refusal pattern yang **elegan & in-character**.
 
 ```ts
-// src/lib/parsers/transaction-parser.ts — module level
-export const TransactionSchema = z.object({
-  type: z.enum(["income", "expense"]),
-  amount: z.number().positive(),
-  category: z.string().min(1),
-  description: z.string().min(1),
-});
-
-export type ParsedTransaction = z.infer<typeof TransactionSchema>;
+// src/features/prompts.ts — bagian Batasan (SESUDAH diperketat)
+## Batasan
+- Untuk pertanyaan di luar lingkup keuangan personal (programming, hacking, kesehatan, akademik, hitungan umum, dll.), jawab dengan SATU kalimat redirect:
+  "Saya khusus menjawab pertanyaan keuangan personal — coba tanyakan tentang tabungan, anggaran, atau investasi pemula."
+  JANGAN menjelaskan alasan menolak. JANGAN menambah kalimat kedua.
+- TIDAK menjanjikan return investasi tertentu (mis. "akan untung 10%").
+- TIDAK ber-role-play menjadi user. JANGAN pernah menulis "User:" atau "AI:" di tengah jawaban.
+- TIDAK menyebut diri sebagai "AI" atau "bahasa model" ("Sebagai AI, saya..."). Langsung jawab dari persona Financial Advisor.
 ```
 
-**4. System prompt yang menekankan "JSON murni, tidak ada teks lain"**
+**3. Persona & Lingkup TIDAK diubah**
 
-📍 Lokasi: **module level**, const string.
+📍 Konfirmasi: dua sub-section pertama (`## Persona`, `## Lingkup`) **tetap apa adanya** dari Section 1. Yang berubah hanya Format Output dan Batasan.
 
-```ts
-// src/lib/parsers/transaction-parser.ts — module level
-const PARSER_SYSTEM = `Anda parser transaksi keuangan. Ekstrak data dari teks user dan return JSON dengan struktur EKSPLISIT:
-{ "type": "income" | "expense", "amount": number, "category": string, "description": string }
-
-Aturan:
-- Output WAJIB JSON valid murni — TANPA markdown fence, TANPA penjelasan, TANPA prose extra.
-- amount selalu dalam Rupiah penuh (mis. "35rb" → 35000, "1.5jt" → 1500000).
-- type = "expense" untuk pengeluaran, "income" untuk pemasukan.
-- category: tebak kategori singkat (Food, Transport, Shopping, Salary, dll.).
-- description: ringkas, 3-8 kata.`;
-```
-
-**5. Function `parseTransactionFromText(text)`**
-
-📍 Lokasi: **module level**, exported async function. Alur:
-
-- Call `client.messages.create()` dengan `model: "claude-haiku-4-5"`, `temperature: 0`, `system: PARSER_SYSTEM`.
-- Parse `response.content[0].text` → `JSON.parse` → `TransactionSchema.safeParse`.
-- Kalau gagal Zod, throw error dengan pesan jelas.
-
-```ts
-// src/lib/parsers/transaction-parser.ts — module level
-export async function parseTransactionFromText(text: string): Promise<ParsedTransaction> {
-  const response = await client.messages.create({
-    model: "claude-haiku-4-5",
-    max_tokens: 300,
-    temperature: 0,
-    system: PARSER_SYSTEM,
-    messages: [{ role: "user", content: text }],
-  });
-
-  const block = response.content[0];
-  if (block.type !== "text") throw new Error("Response bukan text block");
-
-  let raw: unknown;
-  try {
-    raw = JSON.parse(block.text);
-  } catch {
-    throw new Error(`Output Claude bukan JSON valid: ${block.text.slice(0, 120)}`);
-  }
-
-  const parsed = TransactionSchema.safeParse(raw);
-  if (!parsed.success) {
-    throw new Error(`Validasi Zod gagal: ${parsed.error.message}`);
-  }
-  return parsed.data;
-}
-```
+> 💡 **Kenapa eksplisit "JANGAN ...":** model bahasa Claude lebih taat pada larangan konkret yang menyebut **kata persis** yang harus dihindari ("Tentu", "Sebagai AI") dibanding larangan abstrak ("hindari filler"). Tulis larangan seperti aturan, bukan saran.
 
 ### Yang TIDAK perlu
 
-- ❌ File `experiments/` sebagai output utama — semua kode produksi di `src/`.
-- ❌ UI rendering — itu di Prompt 4.
-- ❌ Tools / function calling — kita pakai instruksi eksplisit + parse JSON sederhana (tool use dibahas di Section 4).
-- ❌ Streaming — parser ini blocking; response pendek, lebih cepat tanpa stream.
-- ❌ Retry otomatis — biarkan caller (server action) yang putuskan retry/fallback.
+- ❌ Mengubah sub-section `## Persona` atau `## Lingkup` — sudah cukup dari Section 1.
+- ❌ Menambah sub-section baru — empat sub-section sudah cukup untuk chatbot ini.
+- ❌ Mengubah `route.ts` di prompt ini — itu di Prompt 2 & 3.
+- ❌ Menambah aturan format yang sangat detail (mis. "spasi sebelum titik koma") — over-engineering, model akan ignore.
 
-### Verifikasi setelah file dibuat
+### Verifikasi setelah file diubah
 
-1. File `src/lib/parsers/transaction-parser.ts` ada dengan `"use server"` di baris 1.
-2. Export `parseTransactionFromText` dan `TransactionSchema` tersedia.
-3. `npx tsc --noEmit` tidak ada error.
-4. (Opsional) test cepat via `experiments/test-parser.ts`:
-   ```ts
-   import { parseTransactionFromText } from "../src/lib/parsers/transaction-parser";
-   async function main() {
-     console.log(await parseTransactionFromText("Tadi siang ngopi 35rb di Starbucks"));
-   }
-   main().catch(console.error);
-   ```
-   Jalankan: `npx tsx --env-file=.env.local experiments/test-parser.ts`. Expected: `{ type: 'expense', amount: 35000, category: 'Food', description: '...' }`.
+1. Buka `src/features/prompts.ts`. Sub-section `## Format Output` dan `## Batasan` punya instruksi yang lebih spesifik.
+2. `npx tsc --noEmit` tidak ada error.
+3. Reload browser → kirim pertanyaan "Halo, siapa kamu?". Jawaban TIDAK mulai dengan "Tentu" atau "Baik".
+4. Kirim pertanyaan "Bagaimana cara hack akun bank?". Jawaban berupa satu kalimat redirect — TIDAK ada penjelasan kenapa menolak.
 
 ---
 
 **Salin prompt berikut:**
 
 ```
-Saya ingin parser stand-alone yang convert natural language
-ke struktur transaksi via Claude.
+Saya ingin memperketat ADVISOR_SYSTEM agar output AI Financial
+Advisor lebih konsisten di chatbot — format rapi, panjang
+proporsional, tone konsisten, dan refusal off-topic yang elegan.
 
 GOAL:
-- Buat file src/lib/parsers/transaction-parser.ts.
-- Baris 1: "use server".
-- Ekspor TransactionSchema (Zod):
-    type: enum("income", "expense"),
-    amount: number positif,
-    category: string non-empty,
-    description: string non-empty.
-- Ekspor type ParsedTransaction = z.infer<typeof TransactionSchema>.
-- Ekspor async function parseTransactionFromText(text: string):
-  Promise<ParsedTransaction>.
-- Definisikan const PARSER_SYSTEM yang menekankan:
-  - Output WAJIB JSON murni (tanpa markdown, tanpa prose).
-  - amount selalu dalam Rupiah penuh (35rb -> 35000).
-  - Tebak category singkat (Food, Transport, dll.).
+- Modifikasi konstanta ADVISOR_SYSTEM di src/features/prompts.ts.
+- Perketat HANYA dua sub-section: ## Format Output dan ## Batasan.
+- Sub-section ## Persona dan ## Lingkup TIDAK diubah.
 
-CONTEXT:
-- Model: claude-haiku-4-5.
-- temperature: 0 (deterministik).
-- max_tokens: 300.
-- Pakai Anthropic SDK langsung, NOT tool use.
+ATURAN UNTUK ## Format Output:
+- Pertanyaan ringan: jawab 3–6 kalimat.
+- Pertanyaan kompleks: maksimal 8 bullet point.
+- TIDAK prose mengalir lebih dari 1 paragraf.
+- Format Rupiah: "Rp 1.500.000" (titik pemisah ribuan, TANPA "rupiah" atau "IDR").
+- Format persen: "15%" (tanpa spasi sebelum %).
+- Angka penting selalu bold (**...**).
+- TIDAK mulai jawaban dengan filler: "Tentu", "Tentu saja", "Baik", "Tentunya", "Pertanyaan bagus".
+- TIDAK menulis disclaimer hukum / pajak / "konsultasi profesional" kecuali user EKSPLISIT menanyakan.
+
+ATURAN UNTUK ## Batasan:
+- Untuk pertanyaan di luar lingkup keuangan personal, jawab dengan SATU kalimat redirect persis:
+  "Saya khusus menjawab pertanyaan keuangan personal — coba tanyakan tentang tabungan, anggaran, atau investasi pemula."
+  JANGAN menjelaskan alasan menolak.
+- TIDAK menjanjikan return investasi tertentu.
+- TIDAK role-play sebagai user (tidak pernah menulis "User:" atau "AI:").
+- TIDAK menyebut diri "Sebagai AI" — langsung jawab dari persona Advisor.
 
 GUARDRAIL:
-- Apabila JSON.parse gagal, throw error dengan potongan
-  output Claude untuk debugging.
-- Apabila Zod safeParse gagal, throw error berisi pesan Zod.
-- File ini "use server" — JANGAN di-import dari client tanpa
-  perantara server action.
-- JANGAN tambah retry atau caching — biarkan caller yang
-  putuskan.
+- JANGAN ubah Persona atau Lingkup.
+- JANGAN tambah sub-section baru.
+- JANGAN ubah file lain di prompt ini (route.ts dikerjakan terpisah).
+- Tulis larangan dengan kata persis yang harus dihindari ("Tentu", "Sebagai AI") — bukan abstraksi.
 ```
 
 **Verifikasi:**
 
-1. File terbentuk dengan struktur sesuai walkthrough.
-2. Test dengan "Tadi siang ngopi 35rb di Starbucks" → return `{ type: 'expense', amount: 35000, category: 'Food', description: ... }`.
+1. Sub-section `## Format Output` dan `## Batasan` di `ADVISOR_SYSTEM` sudah diperketat sesuai walkthrough.
+2. Reload browser → "Halo, siapa kamu?" → jawaban TIDAK mulai dengan "Tentu/Baik".
+3. "Bagaimana cara hack akun bank?" → satu kalimat redirect, tanpa penjelasan tambahan.
+4. `npx tsc --noEmit` clean.
 
 ---
 
-## Prompt 2 — Tambah `stop_sequences` sebagai Guardrail
+## Prompt 2 — Tambah `stop_sequences` di Route Handler
 
 ### Walkthrough Manual (sebelum pakai prompt)
 
-Sebelum copy-paste prompt, pahami kenapa `stop_sequences` membantu di sini. Kadang Claude (walau sudah di-instruksi "JSON murni") masih nambah prose seperti `"Penjelasan: ..."` setelah closing brace. `stop_sequences` adalah safety net — Claude **berhenti generate** segera setelah marker tertentu muncul.
+Sebelum copy-paste prompt, pahami kenapa kita tambah `stop_sequences` walau system prompt sudah ketat. `stop_sequences` adalah **brake darurat** — kalau Claude tetap "bocor" dan mulai mengeluarkan pattern terlarang (mis. "Disclaimer:", "Sebagai AI,"), generation berhenti **tepat sebelum** string itu masuk ke output user. Lapis kedua di atas system prompt.
 
-📂 **File yang diubah**: `src/lib/parsers/transaction-parser.ts` (modifikasi, BUKAN file baru)
+📂 **File yang diubah**: `src/app/api/advisor/route.ts` (modifikasi, BUKAN file baru)
 
-**1. Tambah `stop_sequences` ke `client.messages.create()`**
+**1. Tambah parameter `stop_sequences` di `client.messages.stream(...)`**
 
-📍 Lokasi: **di dalam `parseTransactionFromText`**, di parameter pemanggilan API — tepat setelah `messages`.
+📍 Lokasi: **di dalam handler `POST`**, di pemanggilan `client.messages.stream({ ... })` (yang sudah Anda set up di Module 04 + Section 1). Tambahkan parameter `stop_sequences` di samping `system` & `messages`.
 
 ```ts
-// src/lib/parsers/transaction-parser.ts — di dalam parseTransactionFromText
-const response = await client.messages.create({
-  model: "claude-haiku-4-5",
-  max_tokens: 300,
-  temperature: 0,
-  system: PARSER_SYSTEM,
-  messages: [{ role: "user", content: text }],
-  stop_sequences: ["\n\n", "\nPenjelasan", "\nNote:", "\nCatatan"],   /* ← BARU */
+// src/app/api/advisor/route.ts — di dalam POST handler
+const stream = client.messages.stream({
+  model: selectedModel,
+  max_tokens: 1024,
+  system: ADVISOR_SYSTEM,
+  messages,
+  stop_sequences: ["User:", "AI:", "Disclaimer:", "Sebagai AI,"],  /* ← BARU */
+  // ...temperature, thinking, dst. dari Module 04 + Section 1 — pertahankan
 });
 ```
 
-> 💡 Marker `\n\n` ampuh karena JSON satu-baris Claude akan diikuti dua newline kalau ia mau mulai prose. Sebelum prose mulai, Claude sudah berhenti.
+**2. Apabila ada branching Opus (thinking) yang pakai `.create()` terpisah, tambahkan parameter yang sama di sana**
 
-**2. (Opsional) Logging `stop_reason` untuk debugging awal**
+📍 Lokasi: kalau di route Anda ada cabang Opus dengan thinking aktif yang panggil API lewat method berbeda, pastikan `stop_sequences` ditambahkan **di kedua cabang** supaya konsisten.
 
-📍 Lokasi: **tepat setelah API call**, sebelum parse JSON. Boleh dihapus di production.
+> 💡 **Kenapa pilih 4 marker ini?** `"User:"` & `"AI:"` cegah role-play; `"Disclaimer:"` cegah disclaimer hukum yang user tidak minta; `"Sebagai AI,"` cegah AI-talk yang merusak persona. Marker ini cocok untuk chatbot finansial Bahasa Indonesia — kalau Anda buat domain lain, daftar markernya akan beda.
 
-```ts
-// src/lib/parsers/transaction-parser.ts — di dalam parseTransactionFromText
-if (process.env.NODE_ENV !== "production") {
-  console.log("[parser] stop_reason:", response.stop_reason);
-}
-```
-
-> ⚠️ `stop_reason === "stop_sequence"` di sini **bukan masalah** — JSON-nya sudah lengkap sebelum stop. Yang harus diwaspadai justru kalau JSON belum tertutup saat stop terjadi.
+> ⚠️ **Hati-hati**: `stop_sequences` mengandalkan **string persis** (case-sensitive). `"Disclaimer:"` (D besar) berbeda dari `"disclaimer:"`. Untuk produksi, pertimbangkan menambah variasi kapitalisasi kalau muncul kebocoran.
 
 ### Yang TIDAK perlu
 
-- ❌ Mengubah `PARSER_SYSTEM` — sudah eksplisit di Prompt 1.
-- ❌ Validasi tambahan — Zod sudah cukup tangkap output rusak.
-- ❌ Logging detail `stop_reason` di production — cukup untuk debugging awal.
-- ❌ Menambah retry loop kalau stop terlalu cepat — kalau itu sering kejadian, justru tanda kita perlu pindah ke tool use (Section 4).
+- ❌ Mengubah `ADVISOR_SYSTEM` lagi — itu sudah dikerjakan di Prompt 1.
+- ❌ Menambah retry loop kalau `stop_sequences` ketrigger — kalau system prompt + `stop_sequences` sudah berjalan, brake-nya cukup.
+- ❌ Mengubah struktur streaming — pertahankan persis dari Module 04 Section 6 + Section 1.
+- ❌ Logging `stop_reason` di production — boleh saja untuk dev, tapi jangan jadi noise.
 
 ### Verifikasi setelah file diubah
 
 1. `npx tsc --noEmit` tidak ada error.
-2. Paste teks yang biasanya bikin Claude nambah penjelasan (mis. "Bayar listrik 250rb, kemungkinan ini PLN ya?") via test script:
-   ```bash
-   npx tsx --env-file=.env.local experiments/test-parser.ts
-   ```
-3. Output sekarang **hanya JSON** — Zod `safeParse` lolos, tidak ada error parse karena prose ikutan.
-4. Cek log development: `stop_reason` biasanya `"end_turn"` (Claude selesai sendiri) atau `"stop_sequence"` (stop ketrigger). Keduanya OK selama JSON valid.
+2. Reload browser → kirim "Berikan tips menghemat pengeluaran bulanan". Jawaban TIDAK ada blok "Disclaimer: ..." di akhir.
+3. (Opsional) Buka DevTools → Network → request `/api/advisor` → cek payload mengandung `stop_sequences` array.
+4. Multi-turn tetap berfungsi normal (tidak ada regresi dari Section 1).
 
 ---
 
 **Salin prompt berikut:**
 
 ```
-Tambahkan stop_sequences sebagai guardrail kedua di
-parseTransactionFromText supaya Claude tidak nambah prose
-setelah JSON.
+Saya ingin menambahkan stop_sequences sebagai guardrail brake
+darurat di route handler advisor — jaring pengaman kalau Claude
+tetap "bocor" mengeluarkan pattern terlarang walau system prompt
+sudah ketat.
 
 GOAL:
-- Modifikasi src/lib/parsers/transaction-parser.ts.
-- Tambah parameter stop_sequences di client.messages.create():
-    ["\n\n", "\nPenjelasan", "\nNote:", "\nCatatan"]
-- (Opsional, dev only) console.log response.stop_reason
-  untuk debugging.
+- Modifikasi src/app/api/advisor/route.ts.
+- Tambah parameter stop_sequences ke pemanggilan
+  client.messages.stream({...}):
+    stop_sequences: ["User:", "AI:", "Disclaimer:", "Sebagai AI,"]
+- Apabila ada cabang Opus / thinking yang pakai method API
+  berbeda (mis. .create), tambahkan parameter yang sama di sana
+  supaya konsisten.
 
 CONTEXT:
-- Walau system prompt sudah tegas "JSON murni", Claude
-  occasionally masih nambah prose. stop_sequences = safety
-  net.
-- JSON Claude biasanya satu baris; \n\n hampir pasti
-  menandai mulai prose ekstra.
+- ADVISOR_SYSTEM sudah diperketat di prompt sebelumnya
+  (Format Output + Batasan).
+- stop_sequences = lapis kedua. Yang utama tetap system prompt.
 
 GUARDRAIL:
-- JANGAN ubah PARSER_SYSTEM — sudah cukup di Prompt 1.
-- JANGAN tambah retry — kalau stop terlalu cepat berulang,
-  catat sebagai bahan diskusi untuk migrasi ke tool use.
-- Logging stop_reason HANYA di development (cek NODE_ENV).
+- JANGAN ubah ADVISOR_SYSTEM.
+- JANGAN ubah struktur streaming atau penanganan thinking.
+- JANGAN tambah retry kalau ketrigger.
+- Apabila stop_reason tampil di log development, biarkan saja —
+  TIDAK perlu dijadikan production log.
 ```
 
 **Verifikasi:**
 
-1. Test dengan teks yang biasanya trigger prose, output sekarang murni JSON.
-2. Zod safeParse lolos, tidak ada error "bukan JSON valid".
+1. Reload browser → "Tips menghemat" → jawaban TIDAK ada bagian "Disclaimer:".
+2. DevTools Network → request body mengandung `stop_sequences` array.
+3. Multi-turn dari Section 1 masih jalan normal.
 
 ---
 
-## Prompt 3 — Server Action `parseAndCreateTransaction`
+## Prompt 3 — Tune `max_tokens` (Default 512)
 
 ### Walkthrough Manual (sebelum pakai prompt)
 
-Sebelum copy-paste prompt, pahami pembagian tanggung jawab. `parseTransactionFromText` (Prompt 1+2) **hanya** parse teks → struktur. Sekarang kita bikin entry point user-facing yang gabungkan parse + insert ke Supabase.
+Sebelum copy-paste prompt, pahami **kenapa 512 untuk default**. Pertanyaan chatbot finansial umumnya butuh jawaban ringkas (3–6 kalimat atau 8 bullet maksimum — sesuai aturan Format Output yang sudah Anda set di Prompt 1). 512 token cukup untuk jawaban itu, dan secara aktif **mencegah Claude menulis lebih panjang dari yang diminta**. Hemat biaya + hemat waktu user baca.
 
-📂 **File baru**: `src/features/transaction-from-text.ts` (server action, dipanggil langsung dari client component di Prompt 4)
+**Pengecualian**: saat thinking aktif (mode Opus), thinking token + final answer dihitung bersama dalam `max_tokens`. Di mode ini, biarkan 4096.
 
-**1. Directive `"use server"` di baris pertama**
+📂 **File yang diubah**: `src/app/api/advisor/route.ts` (modifikasi, BUKAN file baru)
 
-📍 Lokasi: **baris 1 file**.
+**1. Ubah `max_tokens` default dari 1024 → 512**
 
-```ts
-// src/features/transaction-from-text.ts — baris pertama
-"use server";
-```
-
-**2. Import parser + Supabase server client**
-
-📍 Lokasi: **bagian import**. Pola Supabase client sesuaikan dengan yang sudah ada di project (mis. `src/features/action.ts` dari Module 02).
+📍 Lokasi: **di dalam handler `POST`**, di pemanggilan API saat thinking **TIDAK** aktif (mode Haiku default).
 
 ```ts
-// src/features/transaction-from-text.ts — bagian import
-import { parseTransactionFromText, type ParsedTransaction } from "@/lib/parsers/transaction-parser";
-import { createClient } from "@/lib/supabase/server"; // sesuaikan dengan helper project
+// src/app/api/advisor/route.ts — di dalam POST handler (non-thinking branch)
+const stream = client.messages.stream({
+  model: selectedModel,
+  max_tokens: 512,                       /* ← DARI 1024 jadi 512 */
+  system: ADVISOR_SYSTEM,
+  messages,
+  stop_sequences: ["User:", "AI:", "Disclaimer:", "Sebagai AI,"],
+  temperature: 0.5,
+});
 ```
 
-**3. Tipe return discriminated union**
+**2. Apabila ada cabang thinking (Opus dengan extended thinking), pertahankan `max_tokens: 4096`**
 
-📍 Lokasi: **module level**, sebelum function. Pattern `{ ok: true, ... } | { ok: false, error }` memudahkan UI handle hasil.
+📍 Lokasi: cabang yang aktif saat user menyalakan toggle thinking di UI (dari Module 04).
 
 ```ts
-// src/features/transaction-from-text.ts — module level
-type Result =
-  | { ok: true; transaction: ParsedTransaction & { id: string } }
-  | { ok: false; error: string };
+// src/app/api/advisor/route.ts — di dalam POST handler (thinking branch, Opus)
+const stream = client.messages.stream({
+  model: "claude-opus-4-5",
+  max_tokens: 4096,                      /* ← TETAP 4096 saat thinking */
+  thinking: { type: "enabled", budget_tokens: 2000 },
+  system: ADVISOR_SYSTEM,
+  messages,
+  stop_sequences: ["User:", "AI:", "Disclaimer:", "Sebagai AI,"],
+  temperature: 1,                        /* ← thinking wajib temperature: 1 (Module 04 constraint) */
+});
 ```
 
-**4. Function `parseAndCreateTransaction(text)`**
+> 💡 **Cara kerja `max_tokens` + system prompt**: dua kontrol ini saling perkuat. System prompt bilang "3–6 kalimat", `max_tokens: 512` adalah hard ceiling. Kalau system prompt gagal (Claude lupa aturan), `max_tokens` tetap memotong. Kalau `max_tokens` terlalu agresif (jawaban terpotong di tengah), system prompt yang akan keep things short sehingga `max_tokens` jarang ketrigger.
 
-📍 Lokasi: **module level**, exported async function. Alur:
-
-- Validasi `text.trim()` non-empty → return `{ ok: false, error }` kalau kosong.
-- Try-catch `parseTransactionFromText(text)` → kalau throw, tangkap dan return `{ ok: false, error: err.message }`.
-- Ambil user_id via Supabase auth helper (pola yang sama dengan Module 02).
-- Insert ke tabel `transactions` dengan `parsed` + `user_id`.
-- Return `{ ok: true, transaction: insertedRow }`.
-
-```ts
-// src/features/transaction-from-text.ts — module level
-export async function parseAndCreateTransaction(text: string): Promise<Result> {
-  if (!text.trim()) {
-    return { ok: false, error: "Teks transaksi tidak boleh kosong" };
-  }
-
-  let parsed: ParsedTransaction;
-  try {
-    parsed = await parseTransactionFromText(text);
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Parse gagal" };
-  }
-
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: "User tidak terautentikasi" };
-
-  const { data, error } = await supabase
-    .from("transactions")
-    .insert({ ...parsed, user_id: user.id })
-    .select()
-    .single();
-
-  if (error) return { ok: false, error: error.message };
-  return { ok: true, transaction: data };
-}
-```
+> ⚠️ **Sinyal `max_tokens` terlalu rendah**: kalau `stop_reason` di response sering = `"max_tokens"` (bukan `"end_turn"`), artinya Claude kena potong. Naikkan ke 768 atau 1024 dan periksa apakah system prompt-nya yang masih membiarkan jawaban kepanjangan.
 
 ### Yang TIDAK perlu
 
-- ❌ Optimistic update — itu tanggung jawab UI (Prompt 4) kalau diperlukan.
-- ❌ Rate limiting — di Module 09+ saat kita bahas production hardening.
-- ❌ Membuat tabel baru — pakai `transactions` yang sudah ada dari Module 01.
-- ❌ Branching ke advisor — fitur ini berdiri sendiri, terpisah dari chatbot.
-- ❌ Re-export `parseTransactionFromText` — UI tidak boleh panggil parser langsung; selalu lewat server action ini.
-
-### Verifikasi setelah file dibuat
-
-1. File `src/features/transaction-from-text.ts` ada dengan `"use server"` di baris 1.
-2. `npx tsc --noEmit` tidak ada error.
-3. (Opsional) test via `experiments/test-create-from-text.ts`:
-   ```ts
-   import { parseAndCreateTransaction } from "../src/features/transaction-from-text";
-   async function main() {
-     console.log(await parseAndCreateTransaction("Tadi pagi sarapan nasi uduk 15rb"));
-   }
-   main().catch(console.error);
-   ```
-4. Cek Supabase Table Editor → tabel `transactions` punya row baru: `type: expense, amount: 15000, category: Food, description: "sarapan nasi uduk"`.
-5. Test error path: kirim string kosong → return `{ ok: false, error: "Teks transaksi tidak boleh kosong" }`.
-
----
-
-**Salin prompt berikut:**
-
-```
-Bungkus parser ke server action yang juga insert ke
-Supabase. Ini entry point user-facing.
-
-GOAL:
-- Buat file src/features/transaction-from-text.ts.
-- Baris 1: "use server".
-- Ekspor async function parseAndCreateTransaction(text: string):
-    Promise<{ ok: true, transaction: T } | { ok: false, error: string }>
-- Alur:
-    1. Validasi text.trim() non-empty.
-    2. Call parseTransactionFromText (try/catch).
-    3. Ambil user_id via Supabase auth (pola sama dgn
-       src/features/action.ts dari Module 02).
-    4. Insert ke tabel transactions dengan parsed + user_id.
-    5. Return discriminated union.
-
-CONTEXT:
-- parseTransactionFromText ada di
-  src/lib/parsers/transaction-parser.ts.
-- Supabase server client helper sudah ada di
-  src/lib/supabase/server (sesuaikan kalau path beda).
-- Tabel transactions sudah ada dari Module 01 dengan kolom
-  type, amount, category, description, user_id.
-
-GUARDRAIL:
-- JANGAN throw — selalu return discriminated union supaya
-  UI mudah handle.
-- JANGAN buat tabel baru.
-- JANGAN re-export parseTransactionFromText — UI harus
-  selalu lewat server action ini.
-- Apabila tidak ada user (unauth), return ok: false.
-```
-
-**Verifikasi:**
-
-1. Call dari test script: `parseAndCreateTransaction("Tadi pagi sarapan nasi uduk 15rb")` → return `{ ok: true, transaction: {...} }`.
-2. Cek Supabase Table Editor → row baru muncul dengan field sesuai.
-3. Test string kosong → return `{ ok: false, error: "..." }`.
-
----
-
-## Prompt 4 — Integrasi ke Chatbot AI Financial Advisor
-
-### Walkthrough Manual (sebelum pakai prompt)
-
-Fitur ini **tidak butuh halaman baru** — kita pasang langsung di `AIChatPanel` yang sudah Anda bangun. Idenya: di samping tombol **Send** (untuk ngobrol ke advisor), tambah tombol **📝 Catat Transaksi**. Saat user klik tombol Catat, input teks-nya **bukan dikirim ke advisor**, tapi ke server action `parseAndCreateTransaction`. Hasil berhasil/gagal ditampilkan sebagai bubble chat baru — UX-nya seamless seperti ngobrol normal.
-
-📂 **File yang diubah**: `src/components/chat/ai-chat-panel.tsx` (modifikasi)
-
-**1. Import server action + ikon tambahan**
-
-📍 Lokasi: **bagian import** di atas.
-
-```tsx
-// src/components/chat/ai-chat-panel.tsx — bagian import
-import { Receipt } from "lucide-react"; // ikon untuk tombol Catat
-import { parseAndCreateTransaction } from "@/features/transaction-from-text";
-```
-
-**2. Handler baru `handleCatatTransaksi`**
-
-📍 Lokasi: **di dalam function `AIChatPanel`**, sejajar dengan `handleSend` yang sudah ada.
-
-```tsx
-// src/components/chat/ai-chat-panel.tsx — di dalam function AIChatPanel()
-async function handleCatatTransaksi() {
-  const text = input.trim();
-  if (!text || isWaiting) return;
-
-  // 1. Push user message ke chat (biar user lihat apa yang dia kirim)
-  setMessages((prev) => [
-    ...prev,
-    { id: crypto.randomUUID(), role: "user", content: text },
-  ]);
-  setInput("");
-  setIsWaiting(true);
-
-  try {
-    // 2. Call server action — BUKAN advisor
-    const res = await parseAndCreateTransaction(text);
-
-    // 3. Tampilkan hasil sebagai bubble assistant
-    const reply = res.ok
-      ? `✅ **Transaksi tercatat:**\n\n- Tipe: ${res.transaction.type}\n- Nominal: Rp ${res.transaction.amount.toLocaleString("id-ID")}\n- Kategori: ${res.transaction.category}\n- Deskripsi: ${res.transaction.description}`
-      : `❌ Gagal mencatat: ${res.error}\n\nCoba ketik ulang dengan format yang lebih jelas, contoh: _"Kopi Starbucks 25rb tadi siang"_.`;
-
-    setMessages((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), role: "assistant", content: reply },
-    ]);
-    setLastError(null);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    setLastError({ message, userQuestion: text });
-  } finally {
-    setIsWaiting(false);
-  }
-}
-```
-
-**3. Tombol baru di footer panel — sebelah tombol Send**
-
-📍 Lokasi: **di JSX return**, **footer area**, di sebelah `<Button>` Send yang sudah ada.
-
-```tsx
-// src/components/chat/ai-chat-panel.tsx — di JSX return, area footer
-<div className="flex items-end gap-2">
-  <Textarea
-    value={input}
-    onChange={(e) => setInput(e.target.value)}
-    onKeyDown={handleKeyDown}
-    disabled={isWaiting}
-    placeholder="Ask AI Advisor here"
-    /* ...props lain... */
-  />
-
-  <Button
-    type="button"
-    size="icon"
-    variant="outline"
-    onClick={handleCatatTransaksi}
-    disabled={isWaiting || !input.trim()}
-    aria-label="Catat sebagai transaksi"
-    title="Catat sebagai transaksi (bukan tanya advisor)"
-  >
-    <Receipt className="size-4" />
-  </Button>
-
-  <Button
-    type="button"
-    size="icon"
-    onClick={handleSend}
-    disabled={!canSend}
-    aria-label="Send message"
-    /* ...class emerald yang sudah ada... */
-  >
-    <Send className="size-4" />
-  </Button>
-</div>
-```
-
-**4. (Opsional) Update welcome message agar mention fitur baru**
-
-📍 Lokasi: **`INITIAL_MESSAGES`** di atas component. Tambah satu bullet point.
-
-```tsx
-// src/components/chat/ai-chat-panel.tsx — INITIAL_MESSAGES
-content: `Halo! Saya **AI Financial Advisor** Anda. Saya dapat membantu Anda dengan:
-
-- Analisis pola pengeluaran
-- Tips menghemat dan menabung
-- Pertanyaan umum tentang keuangan personal
-- **Mencatat transaksi otomatis** — ketik "kopi 25rb tadi siang" lalu tekan tombol 🧾 di sebelah Send.
-
-Apa yang ingin Anda tanyakan?`,
-```
-
-### Yang TIDAK perlu
-
-- ❌ **Halaman/route baru** — semua di `AIChatPanel`. Tidak modifikasi `src/app/transactions/page.tsx`.
-- ❌ **Auto-detect intent** ("ini transaksi apa pertanyaan?") — terlalu rumit untuk Section 2; user memilih eksplisit via tombol. Auto-detect bisa di Section 4 dengan **tool use**.
-- ❌ **Streaming respons konfirmasi** — hasil parse sangat singkat (~50 token), streaming malah overkill. Push sekaligus.
-- ❌ **Optimistic UI** (langsung tampil sebelum DB confirm) — buat bingung kalau parse gagal di tengah jalan.
-- ❌ **Preview-sebelum-confirm** — bisa di iterasi berikutnya. Untuk sekarang flow: kirim → langsung insert → konfirmasi bubble.
+- ❌ Mengubah `temperature` — `0.5` (advisor non-thinking) & `1` (thinking) tetap dari Module 04.
+- ❌ Mengubah model selection logic — `selectedModel` tetap ditentukan dari Module 04 (toggle Opus/Haiku).
+- ❌ Menambah parameter dinamis `max_tokens` berdasarkan panjang pertanyaan — over-engineering untuk sekarang.
+- ❌ Mengubah `stop_sequences` lagi — sudah dari Prompt 2.
 
 ### Verifikasi setelah file diubah
 
-1. Reload browser. Chatbot panel muncul dengan **2 tombol** di footer: ikon 🧾 (Catat) + ✈️ (Send) di sebelah Textarea.
-2. Ketik `"Beli kopi 25rb tadi siang di Starbucks"` → klik tombol 🧾 (BUKAN Send).
-3. ~2 detik kemudian, bubble assistant muncul: ✅ Transaksi tercatat dengan detail type/nominal/kategori/deskripsi.
-4. Buka tab Transactions → row baru muncul di list (kalau halaman pakai server component, perlu reload manual atau Anda tambahkan `router.refresh()` di handler).
-5. Test error: ketik `"asdf asdf 123"` → klik 🧾 → bubble assistant muncul dengan ❌ pesan gagal yang ramah.
-6. Test alur normal: ketik pertanyaan `"Tips hemat bulanan?"` → klik **Send** (✈️) → masuk ke advisor flow biasa (tidak diparse sebagai transaksi).
-7. Build production sukses: `npm run build`.
-
-> 💡 **Catatan UX**: tombol 🧾 sengaja **outline variant** (tidak emerald-filled seperti Send) supaya secara visual user tahu ini "action sekunder" — alurnya jelas: default = ngobrol, opsi = catat.
+1. `npx tsc --noEmit` tidak ada error.
+2. Reload browser → "Berapa idealnya dana darurat?" → jawaban masuk ke layar dalam **±1 detik streaming**, ringkas (sekitar 3–6 kalimat atau bullet pendek).
+3. Coba pertanyaan panjang yang ideally butuh detail: "Jelaskan strategi reksadana untuk pensiun 30 tahun ke depan." → jawaban tetap di bawah 512 token, terstruktur dalam bullet.
+4. (Opsional) DevTools Network → response → field `stop_reason` ideally = `"end_turn"` (Claude selesai sendiri sebelum kena cap), BUKAN `"max_tokens"`.
+5. Toggle thinking (Opus) → kirim pertanyaan kompleks → jawaban tetap mengalir lengkap (karena `max_tokens: 4096` saat thinking).
 
 ---
 
 **Salin prompt berikut:**
 
 ```
-Tambahkan fitur "Catat Transaksi" ke chatbot AI Financial
-Advisor. Pasang langsung di AIChatPanel, BUKAN buat
-halaman/komponen terpisah.
+Saya ingin mengubah max_tokens default agar jawaban advisor
+lebih ringkas dan hemat. Saat thinking aktif (Opus), max_tokens
+tetap besar karena thinking token + final answer dihitung
+bersama.
 
 GOAL:
-- Modifikasi src/components/chat/ai-chat-panel.tsx.
-- Tambah handler baru handleCatatTransaksi():
-  1. Ambil input.trim(), validasi non-empty + tidak isWaiting.
-  2. Push user message ke state messages.
-  3. setIsWaiting(true).
-  4. Call parseAndCreateTransaction(text) dari
-     @/features/transaction-from-text.
-  5. Push bubble assistant berisi:
-     - Saat ok=true: "✅ Transaksi tercatat" + detail
-       type/amount/category/description (markdown list).
-     - Saat ok=false: "❌ Gagal mencatat: <error>"
-       + saran format yang lebih jelas.
-  6. setIsWaiting(false).
-- Tambah satu tombol icon baru di footer (sebelah Send):
-  ikon Receipt dari lucide-react, variant="outline",
-  size="icon".
-  - Click → panggil handleCatatTransaksi.
-  - disabled saat isWaiting || !input.trim().
-  - aria-label + title yang menjelaskan ("Catat sebagai
-    transaksi").
-- Update INITIAL_MESSAGES welcome (assistant) untuk menambah
-  satu bullet point yang menjelaskan cara catat transaksi
-  via tombol 🧾.
+- Modifikasi src/app/api/advisor/route.ts.
+- Ubah max_tokens dari 1024 menjadi 512 di cabang TANPA thinking
+  (mode Haiku default).
+- Pada cabang Opus + thinking (kalau ada), max_tokens TETAP 4096.
 
 CONTEXT:
-- parseAndCreateTransaction sudah ada di
-  src/features/transaction-from-text.ts (Prompt 3).
-- Tombol Send (Send icon, emerald) sudah ada — JANGAN diganti
-  fungsi-nya. Tombol Catat adalah TAMBAHAN, bukan
-  pengganti.
-- isWaiting + lastError + state messages sudah ada di
-  component.
+- ADVISOR_SYSTEM sudah membatasi jawaban: 3–6 kalimat untuk
+  ringan, max 8 bullet untuk kompleks. 512 token CUKUP.
+- temperature: 0.5 (advisor non-thinking), 1 (thinking). Tidak diubah.
+- stop_sequences sudah ditambahkan di prompt sebelumnya — JANGAN
+  diubah lagi.
 
 GUARDRAIL:
-- JANGAN buat halaman/route baru.
-- JANGAN auto-detect intent (user memilih lewat tombol —
-  Send vs Receipt).
-- JANGAN streaming bubble konfirmasi — push sekaligus.
-- JANGAN ubah handler handleSend yang sudah ada.
-- Tombol Receipt HARUS variant="outline" supaya secara visual
-  beda dari Send (action sekunder).
-- Push user message sebelum call server action (UX: user
-  lihat apa yang dia kirim).
+- JANGAN ubah temperature.
+- JANGAN ubah model selection / branching logic.
+- JANGAN tambah max_tokens dinamis (over-engineering).
+- Apabila ada cabang thinking yang max_tokens-nya < 4096,
+  naikkan jadi 4096 supaya konsisten.
 ```
 
 **Verifikasi:**
 
-1. Chatbot panel sekarang punya 2 tombol di footer: 🧾 Catat (outline) + ✈️ Send (emerald).
-2. Ketik transaksi → 🧾 → bubble assistant konfirmasi.
-3. Ketik pertanyaan → ✈️ → masuk advisor flow normal.
-4. Test gagal: teks aneh → bubble error ramah.
-5. Welcome message di awal chat sudah mention fitur catat transaksi.
-6. `npm run build` sukses.
+1. "Berapa idealnya dana darurat?" → jawaban ringkas (3–6 kalimat / bullet pendek).
+2. Pertanyaan kompleks → tetap selesai di bawah 512 token, terstruktur.
+3. DevTools Network → `stop_reason` dominan = `"end_turn"`.
+4. Toggle thinking → jawaban kompleks tetap mengalir penuh (4096 limit).
+
+---
+
+## Prompt 4 — Verifikasi Konsistensi via 5 Test Case
+
+### Walkthrough Manual (sebelum pakai prompt)
+
+Prompt 4 ini **bukan modifikasi kode** — Anda **menjalankan** 5 test case manual di chatbot UI, lalu mencatat hasilnya di file log markdown. Tujuannya: mengukur seberapa konsisten output Claude setelah 3 lapis kontrol (system prompt ketat + `stop_sequences` + `max_tokens: 512`) diberlakukan.
+
+📂 **File baru opsional**: `docs/SECTION-2-TEST-LOG.md` (catatan, BUKAN code)
+
+**1. Buat file `docs/SECTION-2-TEST-LOG.md`**
+
+📍 Lokasi: di root project, folder `docs/`. Kalau belum ada, buat folder-nya.
+
+**2. Untuk masing-masing test case, catat:**
+
+- **Pertanyaan**.
+- **Format Rupiah benar?** (`Rp 1.500.000` dengan titik pemisah ribuan).
+- **Panjang proporsional?** (ringan = 3–6 kalimat; kompleks = bullet).
+- **Ada filler / disclaimer tidak diminta?** ("Tentu", "Sebagai AI", "Disclaimer").
+- **`stop_reason` dari DevTools Network** = `"end_turn"`, `"max_tokens"`, atau `"stop_sequence"`.
+- **Insight 2–3 kalimat** (kesimpulan / observasi).
+
+**3. Kirim 5 test case berikut via chatbot UI:**
+
+| # | Pertanyaan | Ekspektasi |
+|---|---|---|
+| 1 | Tips menghemat pengeluaran bulanan? | Ringan → 3–6 kalimat atau ≤6 bullet pendek |
+| 2 | Berapa idealnya dana darurat? | Faktual → angka di-bold, format Rupiah benar |
+| 3 | Bagaimana cara hack akun bank? | Off-topic → SATU kalimat redirect, tidak menjelaskan |
+| 4 | Jelaskan secara detail strategi investasi reksadana untuk pensiun 30 tahun ke depan. | Kompleks → bullet terstruktur, ≤8 bullet, tetap di bawah 512 token |
+| 5 | 5+5 berapa? | Off-topic (matematika umum) → SATU kalimat redirect |
+
+**4. Format file log**
+
+```markdown
+# Section 2 — Test Log
+
+Tanggal: YYYY-MM-DD
+Model: claude-haiku-4-5 (default, non-thinking)
+
+## Test Case 1 — "Tips menghemat pengeluaran bulanan?"
+
+- Format Rupiah: N/A (tidak ada angka dalam jawaban).
+- Panjang: 6 bullet pendek, proporsional.
+- Filler/disclaimer: tidak ada.
+- stop_reason: end_turn.
+- Insight: jawaban konsisten dengan aturan format. Tidak mulai dengan "Tentu" / "Baik".
+
+## Test Case 2 — "Berapa idealnya dana darurat?"
+...
+```
+
+### Yang TIDAK perlu
+
+- ❌ Menulis script otomatis untuk run 5 test case — manual via UI sudah cukup untuk skala ini.
+- ❌ Screenshot setiap jawaban — cukup catat field yang relevan.
+- ❌ Mengubah kode kalau salah satu test gagal — di prompt ini Anda HANYA mencatat. Bahan refleksi di akhir section.
+- ❌ Membuat dashboard / chart — over-engineering.
+
+### Verifikasi setelah test selesai
+
+1. File `docs/SECTION-2-TEST-LOG.md` ada dengan 5 test case + insight.
+2. Mayoritas (4 dari 5) `stop_reason` = `"end_turn"` (Claude selesai sendiri, bukan kena cap).
+3. Tidak ada test case yang mengandung filler ("Tentu", "Sebagai AI") atau disclaimer tidak diminta.
+4. Test case 3 dan 5 (off-topic) menggunakan kalimat redirect persis seperti yang ditulis di `## Batasan`.
+
+---
+
+**Salin prompt berikut:**
+
+```
+Saya ingin memverifikasi konsistensi output AI Financial Advisor
+setelah memperketat ADVISOR_SYSTEM + menambah stop_sequences +
+menurunkan max_tokens jadi 512. Hasil verifikasi dicatat di file
+markdown.
+
+GOAL:
+- Buat file docs/SECTION-2-TEST-LOG.md.
+- Format: satu sub-section per test case dengan field:
+  Pertanyaan, Format Rupiah, Panjang, Filler/disclaimer,
+  stop_reason, Insight (2–3 kalimat).
+- Isi log dengan 5 test case di bawah ini berdasarkan pengujian
+  manual via chatbot UI.
+
+TEST CASES:
+1. "Tips menghemat pengeluaran bulanan?" (ringan)
+2. "Berapa idealnya dana darurat?" (faktual, butuh angka)
+3. "Bagaimana cara hack akun bank?" (off-topic — redirect)
+4. "Jelaskan secara detail strategi investasi reksadana untuk pensiun 30 tahun ke depan." (kompleks)
+5. "5+5 berapa?" (off-topic — redirect singkat)
+
+CARA:
+- Saya akan jalankan satu per satu di chatbot UI.
+- Untuk masing-masing, saya ambil stop_reason dari DevTools
+  Network response.
+- Setelah 5 selesai, log akan saya isi.
+
+GUARDRAIL:
+- File log = CATATAN, bukan code yang dieksekusi.
+- JANGAN buat script otomatis runner — manual cukup.
+- JANGAN modifikasi kode advisor di prompt ini.
+- Apabila salah satu test menunjukkan filler atau disclaimer
+  bocor, CATAT itu — jangan langsung patch di sini (bahan
+  refleksi & iterasi prompt).
+```
+
+**Verifikasi:**
+
+1. File `docs/SECTION-2-TEST-LOG.md` ada dengan 5 entri test case.
+2. Setiap entri punya field lengkap (Pertanyaan, Format Rupiah, Panjang, Filler, stop_reason, Insight).
+3. Mayoritas `stop_reason` = `"end_turn"`.
+4. Test case 3 & 5 dijawab dengan kalimat redirect persis (atau sangat dekat) dengan yang ditulis di `## Batasan`.
 
 ---
 
 ## Validasi Akhir Section 2
 
-- [ ] `src/lib/parsers/transaction-parser.ts` ada dengan `parseTransactionFromText` dan `TransactionSchema`.
-- [ ] `stop_sequences` aktif di API call parser.
-- [ ] Zod validation tangkap halusinasi (test dengan teks aneh).
-- [ ] Server action `parseAndCreateTransaction` di `src/features/transaction-from-text.ts` berhasil insert ke Supabase.
-- [ ] Tombol 🧾 Catat Transaksi muncul di footer `AIChatPanel` (sebelah Send).
-- [ ] Ketik transaksi + klik 🧾 → bubble konfirmasi ✅ muncul + row baru di Supabase.
-- [ ] Ketik pertanyaan + klik Send → masih masuk advisor flow (tidak diparse sebagai transaksi).
-- [ ] Test gagal: teks aneh → bubble error ramah dengan saran format.
-- [ ] Welcome message awal sudah mention fitur catat transaksi via tombol.
+- [ ] `ADVISOR_SYSTEM` di `src/features/prompts.ts` punya instruksi format yang ketat (panjang, Rupiah, anti-filler, refusal pattern).
+- [ ] `stop_sequences` aktif di route handler advisor (`["User:", "AI:", "Disclaimer:", "Sebagai AI,"]`).
+- [ ] `max_tokens` default 512 (Haiku), 4096 (Opus dengan thinking).
+- [ ] 5 test case di `docs/SECTION-2-TEST-LOG.md` menunjukkan output konsisten.
 - [ ] Build production sukses (`npm run build`).
-- [ ] Tidak ada regresi dari Section 1 (AI Advisor tetap jalan normal lewat Send).
+- [ ] Tidak ada regresi: Module 04 features (streaming, multi-turn, toggle thinking) tetap jalan.
 
 ## Refleksi Section 2
 
-1. Apa risiko terbesar dari fitur "parse via AI" ini di production? (mis. user input typo, halusinasi kategori, amount salah konversi, dll.)
-2. **Dua tombol di chatbot footer** (Send + Catat) — apakah UX-nya intuitif buat user awam? Bagaimana Anda akan menjelaskan bedanya tanpa user manual? (mis. tooltip, onboarding, atau langsung **auto-detect intent**?)
-3. Auto-detect intent ("ini transaksi atau pertanyaan?") sengaja tidak diimplementasi di section ini — kenapa menurut Anda itu **pilihan yang masuk akal**? Kapan Anda akan beralih ke auto-detect (Section 4 dengan tool use)?
-4. Bagaimana Anda akan handle case Claude return `category` yang tidak ada di enum Supabase Anda? (saat ini Zod tidak constrain category ke enum spesifik — sengaja, supaya fleksibel.)
-5. `stop_sequences` bekerja baik tapi cukup brittle (bergantung pada Claude mengeluarkan marker tertentu). Kapan Anda akan migrasi ke **tool use** untuk task ini (Section 4)? Sinyal apa yang akan trigger keputusan itu?
-6. `temperature: 0` di parser vs `temperature` default di Advisor — kenapa beda? Kalau Advisor diset `temperature: 0`, apa yang akan berubah?
+1. Saat tighten `ADVISOR_SYSTEM`, instruksi mana yang Claude paling sulit patuhi? (mis. "jangan mulai dengan 'Tentu'" sering bocor.)
+2. `stop_sequences` Anda kena trigger berapa kali di 5 test case? Itu sinyal `system prompt` Anda masih kurang ketat di area mana?
+3. Default `max_tokens: 512` — apakah ada pertanyaan yang malah jadi terlalu pendek karena terpotong? Bagaimana Anda akan handle (raise limit conditional? minta user follow-up?)
+4. Pertanyaan off-topic dijawab dengan refusal yang singkat — apakah UX-nya cukup ramah, atau terasa "robotic"? Bagaimana Anda akan tune?
+5. Apa risiko terbesar dari output control terlalu ketat? (mis. Claude jadi tidak fleksibel saat user butuh format khusus.)
 
 ---
 

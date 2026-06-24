@@ -168,178 +168,143 @@ Lanjutkan ke `latihan.md` Section 1 untuk eksekusi.
 
 # Section 2 — Output Control
 
-**Tujuan section**: menguasai teknik **structured output** Claude API agar respons model dapat diandalkan oleh kode — bukan sekadar prosa untuk dibaca user. Anda mempelajari kombinasi `temperature: 0` + system prompt eksplisit + `stop_sequences` + validasi Zod sebagai pola standar untuk **mengubah natural language menjadi data terstruktur**.
+**Tujuan section**: mengontrol *bagaimana* AI Financial Advisor merespons di chatbot — panjang, format, gaya, dan apa yang tidak boleh dijawab. Anda akan tighten system prompt + tambah guardrail `stop_sequences` + tune `max_tokens`.
 
-**Aplikasi konkret di Fin-App**: Anda akan menambah fitur **Catat Transaksi via Chatbot** — user mengetik di `AIChatPanel` (mis. _"ngopi 25rb tadi siang"_), Claude ekstrak struktur transaksi sebagai JSON, parser validasi via Zod, lalu otomatis tersimpan di Supabase. Tidak ada halaman baru — semua terintegrasi ke chatbot yang sudah Anda bangun di Module 04. Detail flow dibahas di akhir section ini dan implementasinya di `latihan.md`.
+**Aplikasi konkret di Fin-App**: User bertanya ke chatbot dan respons-nya selalu konsisten — formatnya rapi (markdown bullet, angka tebal, format Rupiah benar), panjangnya proporsional dengan pertanyaan, gaya bicara konsisten (ramah-profesional), dan jelas menolak pertanyaan di luar lingkup keuangan.
 
-> 📌 **Sengaja tidak dibahas mendalam**: `top_p`, `top_k`, atau eksperimen sampling-parameter terisolasi. Parameter tersebut secara praktis jarang dipakai di chatbot production — `temperature` saja sudah cukup. Module 05 fokus pada keterampilan **output terkontrol** yang lebih sering Anda butuhkan saat membangun fitur AI nyata.
+> 📌 **Catatan**: parsing output ke struktur data (mis. mengonversi teks user menjadi entri transaksi terstruktur dengan validasi schema) tidak dibahas di module ini. Itu topik tersendiri di modul lanjutan (mis. function calling / tool use). Section 2 fokus 100% pada output teks markdown yang dibaca user di chatbot.
 
-## Structured Output — Mendapatkan JSON yang Konsisten
+## Mengapa Output Control Penting?
 
-Untuk fitur Fin-App yang membutuhkan **output terstruktur** (mis. parse _"Saya habis Rp 50.000 untuk makan siang"_ menjadi `{ amount: 50000, category: "Food", description: "makan siang" }`), Anda memerlukan teknik khusus karena Claude **default-nya menjawab dalam prosa**, bukan JSON.
+Tanpa kontrol eksplisit, Claude bisa:
 
-**Use case Fin-App**:
+- Jawab terlalu panjang untuk pertanyaan sederhana ("Berapa idealnya emergency fund?" → 4 paragraf).
+- Format inkonsisten (kadang pakai list, kadang prose mengalir).
+- Tone yang berubah-ubah (kadang formal, kadang santai).
+- Mengeluarkan disclaimer hukum/pajak yang user tidak butuhkan.
+- Role-play sebagai user (mengeluarkan "User: ...", "AI: ..." di tengah jawaban).
 
-| Skenario | Mengapa butuh structured output |
-|---|---|
-| Parse SMS bank → buat transaksi otomatis | Kode insert butuh field `amount`, `category`, `date` |
-| User ketik "tadi ngopi 25rb di Starbucks" | Convert ke entry transaksi sebelum simpan |
-| Klasifikasi expense ke kategori | Output harus salah satu enum yang sudah ada |
-| Generate budget recommendation | Frontend perlu array `{category, suggested_amount}[]` |
+Untuk chatbot production-grade, semua hal di atas harus diprediksi dan dikontrol.
 
-### Teknik 1: Instruksi Eksplisit
+## Tiga Lapis Kontrol Output
 
-```ts
-system: `Ekstrak data transaksi dari pesan user.
-Output WAJIB berupa JSON valid dengan format:
-{
-  "type": "income" | "expense",
-  "amount": number,
-  "category": string,
-  "description": string
-}
-Tidak ada teks lain di luar JSON.`
-```
-
-Tambah `temperature: 0.0` untuk deterministik.
-
-**Contoh konkret**:
-
-> **Input user**: _"Tadi siang ngopi di Starbucks habis 35rb"_
->
-> **Output Claude (dengan teknik 1)**:
-> ```json
-> {
->   "type": "expense",
->   "amount": 35000,
->   "category": "Food",
->   "description": "Kopi di Starbucks"
-> }
-> ```
-
-⚠️ **Tanpa teknik 1**, output bisa jadi:
-> _"Saya akan ekstrak transaksinya: ini adalah expense Rp 35.000 untuk kopi di Starbucks. Berikut JSON-nya: ..."_ — ada prosa yang harus Anda strip dulu.
-
-### Teknik 2: Stop Sequence
-
-Tambahkan stop sequence yang mencegah Claude menulis penjelasan setelah JSON:
-
-```ts
-stop_sequences: ["```", "\n\nPenjelasan"]
-```
-
-**Contoh konkret**: tanpa stop sequence, Claude kadang nambah penjelasan:
-
-> ```json
-> { "amount": 35000, "category": "Food" }
-> ```
->
-> Penjelasan: kopi di Starbucks termasuk kategori Food karena...
-
-Dengan `stop_sequences: ["\n\nPenjelasan"]`, generation berhenti tepat sebelum "Penjelasan" → Anda dapat **hanya JSON** tanpa noise.
-
-### Teknik 3: Wrap dalam Markdown Code Block
-
-Minta Claude memulai output dengan ` ```json ` — ini sering lebih reliable karena Claude terlatih mengenali pola tersebut. Lalu parse dengan regex sederhana.
-
-**Contoh konkret**:
-
-```ts
-system: `Ekstrak transaksi dari pesan user.
-Output wajib dimulai dengan tag berikut, tidak ada teks lain sebelumnya:
-
-\`\`\`json
-{ ... }
-\`\`\`
-`;
-
-// Cara parse di kode:
-const match = claudeResponse.match(/```json\n([\s\S]*?)\n```/);
-const json = match ? JSON.parse(match[1]) : null;
-```
-
-## Validasi Output di Sisi Kode
-
-Selalu **validasi** output JSON sebelum dipakai. Claude bisa **halusinasi struktur** — misal mengirim `amount` sebagai string `"35000"` alih-alih number, atau pakai field `category` dengan nama yang tidak ada di enum Anda.
-
-```ts
-import { z } from "zod";
-
-const TransactionSchema = z.object({
-  type: z.enum(["income", "expense"]),
-  amount: z.number().positive(),
-  category: z.string(),
-  description: z.string(),
-});
-
-const raw = JSON.parse(claudeResponse);
-const parsed = TransactionSchema.safeParse(raw);
-if (!parsed.success) {
-  // Claude bisa "halusinasi" struktur — handle gracefully
-  throw new Error("Output Claude tidak valid");
-}
-```
-
-**Contoh kasus halusinasi yang Zod tangkap**:
-
-| Input dari Claude | Masalah | Yang Zod katakan |
+| Lapis | Tool | Tujuan |
 |---|---|---|
-| `{ "type": "spending", "amount": 35000, ... }` | `type` bukan enum yang valid | `Invalid enum value. Expected 'income' \| 'expense'` |
-| `{ "type": "expense", "amount": "35000", ... }` | `amount` string, bukan number | `Expected number, received string` |
-| `{ "type": "expense", "amount": -35000, ... }` | `amount` negatif | `Number must be greater than 0` |
-| `{ "type": "expense", "amount": 35000 }` | `category` hilang | `Required at path "category"` |
+| 1 | **System prompt yang ketat** | Mendefinisikan format, panjang, dan tone secara eksplisit |
+| 2 | **`max_tokens`** | Hard limit berapa banyak token yang Claude boleh hasilkan |
+| 3 | **`stop_sequences`** | Hentikan generation begitu Claude mulai memasuki pattern terlarang |
 
-Tanpa Zod validation, halusinasi ini akan **lolos ke kode Anda** dan menyebabkan bug subtle (mis. `amount: "35000"` saat di-`+` di JavaScript → string concatenation `"3500035000"` bukan penjumlahan). Validate at the boundary, **jangan trust output AI mentah**.
+Ketiganya dipakai bersamaan — bukan alternatif. System prompt = arahan utama, `max_tokens` = safety net biaya, `stop_sequences` = brake darurat.
 
-## Integrasi ke AI Chatbot — Dua Tombol di Footer
+## 1. System Prompt yang Ketat untuk Format
 
-Pertanyaan desain: setelah parser jadi, **di mana user akan mengaksesnya**?
+Section 1 sudah membangun `ADVISOR_SYSTEM`. Di Section 2 kita **memperketat** bagian "Format Output" — bukan menambah persona atau lingkup baru.
 
-Pilihan yang **tidak** kita ambil: halaman/komponen UI terpisah. Itu menambah navigation overhead — user harus pindah dari chatbot ke halaman lain.
+Contoh subsection "Format Output" yang lebih ketat:
 
-Pilihan yang **kita ambil**: integrasi langsung ke `AIChatPanel`. User sudah biasa ngobrol di chatbot untuk advice; sekarang chatbot itu juga bisa **mencatat transaksi**.
+```
+## Format Output
+- Jawaban dibatasi **3–6 kalimat** untuk pertanyaan ringan, **maks 8 bullet point** untuk pertanyaan kompleks.
+- Tidak menulis prose mengalir panjang lebih dari 1 paragraf.
+- Format Rupiah: `Rp 1.500.000` (titik pemisah ribuan, TANPA "rupiah" atau "IDR").
+- Format persen: `15%` (tanpa spasi).
+- Angka penting selalu **bold**.
+- Tidak menulis disclaimer hukum/pajak kecuali user secara eksplisit menanyakan aspek tersebut.
+- Tidak memulai jawaban dengan "Tentu saja", "Baik", atau frasa filler lainnya — langsung ke jawaban.
+```
 
-Caranya: di footer chatbot, ada **dua tombol**:
+**Sebelum vs Sesudah** untuk pertanyaan "Berapa idealnya emergency fund?":
 
-| Tombol | Aksi | Tujuan |
+Sebelum (longgar):
+> Tentu saja! Pertanyaan yang sangat baik. Dana darurat atau emergency fund adalah salah satu fondasi penting dalam perencanaan keuangan personal. Sebelum saya jelaskan lebih lanjut, perlu saya tekankan bahwa angka yang akan saya sebutkan ini adalah rekomendasi umum yang bisa berbeda untuk setiap individu...
+>
+> Idealnya, jumlah dana darurat yang Anda siapkan adalah 3–6 kali...
+
+Sesudah (ketat):
+> Idealnya **3–6× pengeluaran bulanan**, disimpan di rekening terpisah yang mudah dicairkan (tabungan biasa / money market).
+>
+> - **Single tanpa tanggungan**: 3× cukup
+> - **Punya keluarga / pekerjaan fluktuatif**: 6×+
+> - **Aturan praktis**: kalau pengeluaran Rp 5.000.000/bulan → siapkan Rp 15.000.000–30.000.000.
+
+Hemat token, terstruktur, langsung actionable.
+
+## 2. `max_tokens` Strategy
+
+Module 04 sudah memperkenalkan `max_tokens`. Section ini menambah **konteks strategis**:
+
+| Konteks | Saran `max_tokens` | Alasan |
 |---|---|---|
-| **✈️ Send** (emerald, primary) | Kirim input ke AI Advisor | Tanya jawab / advice umum (dari Module 04) |
-| **🧾 Catat** (outline, secondary) | Kirim input ke parser → Supabase | Catat transaksi baru via natural language |
+| Chatbot Q&A pendek | 256–512 | Pertanyaan ringan butuh jawaban ringan. Mencegah Claude lari ke detail tidak diminta. |
+| Chatbot Q&A dengan thinking aktif | 4096+ | Thinking token + final answer dihitung bersama. |
+| Long-form (artikel, laporan) | 2048–4096 | Butuh ruang menulis paragraf yang lengkap. |
+| Output deterministik berformat ketat | 300–500 | Output pendek dan terprediksi. (Bukan scope Section 2.) |
 
-User memilih intent **secara eksplisit**. Tidak ada auto-detect — itu kompleks dan baru relevan saat **tool use** (Section 4 — Agentic Workflow).
+**Trik praktis**: pakai `max_tokens` rendah (512) sebagai default. User bisa ngomong "jelaskan lebih detail" untuk follow-up — turn berikutnya akan tetap dibatasi 512. Total biaya tetap rendah.
 
-### Alur Lengkap Ketika User Klik 🧾
+## 3. `stop_sequences` — Guardrail Brake Darurat
+
+`stop_sequences` adalah array string. Saat Claude generate token yang match salah satu string ini, generation **berhenti seketika** sebelum string itu masuk ke output.
+
+Use case di chatbot keuangan:
+
+```ts
+stop_sequences: [
+  "User:",          // cegah Claude lanjut role-play conversation
+  "Disclaimer:",    // cegah disclaimer hukum yang tidak diminta
+  "\n\nNote:",      // cegah catatan kaki yang user tidak butuhkan
+  "Sebagai AI,"     // cegah AI-talk yang mengganggu user
+]
+```
+
+**Contoh konkret**: tanpa `stop_sequences`, Claude kadang menambah:
+
+> Berikut tips menghemat:
+> - Catat semua pengeluaran
+> - Pakai aturan 50/30/20
+>
+> **Disclaimer**: Saya adalah AI assistant dan saran ini bukan nasihat finansial profesional. Untuk keputusan investasi penting, konsultasikan dengan...
+
+Dengan `stop_sequences: ["Disclaimer:"]`, generation berhenti tepat sebelum "Disclaimer:" — user dapat **jawaban bersih** tanpa noise.
+
+> ⚠️ **Catatan**: `stop_sequences` adalah brake darurat, **bukan** kontrol utama. Yang utama tetap system prompt yang menginstruksikan Claude tidak mengeluarkan pattern itu. `stop_sequences` adalah lapis kedua kalau system prompt gagal.
+
+## Mengelola Refusal & Off-Topic
+
+Pertanyaan _"Bagaimana cara hack akun bank?"_ atau _"Berikan tips cheating ujian"_ harus ditolak — tapi caranya bagaimana?
+
+**Buruk** (tidak dikontrol):
+> Saya tidak bisa menjawab pertanyaan tersebut karena melanggar kebijakan saya...
+
+(Robotic, breaks immersion.)
+
+**Baik** (via system prompt ketat):
+
+```
+## Batasan
+- Untuk pertanyaan di luar lingkup keuangan (programming, hacking, kesehatan, dll.), jawab dengan SATU kalimat redirect: "Saya khusus menjawab pertanyaan keuangan personal — coba tanyakan tentang tabungan, anggaran, atau investasi pemula." JANGAN menjelaskan kenapa Anda menolak.
+```
+
+Hasil:
+> Saya khusus menjawab pertanyaan keuangan personal — coba tanyakan tentang tabungan, anggaran, atau investasi pemula.
+
+Singkat, sopan, in-character, langsung redirect.
+
+## Alur Implementasi di Latihan
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    participant U as User
-    participant Chat as AIChatPanel
-    participant SA as parseAndCreate<br/>Transaction
-    participant Claude as Claude API<br/>(parser)
-    participant DB as Supabase
+flowchart LR
+    A["1. Tighten ADVISOR_SYSTEM<br/>(Format Output + Batasan)"]
+    B["2. Tambah stop_sequences<br/>di route handler"]
+    C["3. Tune max_tokens<br/>(default 512)"]
+    D["4. Test 5 pertanyaan<br/>+ evaluasi konsistensi"]
 
-    U->>Chat: ketik "ngopi 25rb tadi siang"
-    U->>Chat: klik tombol 🧾 Catat
-    Chat->>Chat: push user bubble ke state messages
-    Chat->>SA: parseAndCreateTransaction(text)
-    SA->>Claude: client.messages.create (temp=0, stop_sequences)
-    Claude-->>SA: JSON { type, amount, category, description }
-    SA->>SA: Zod safeParse
-    alt Valid
-        SA->>DB: INSERT INTO transactions
-        DB-->>SA: row { id, ... }
-        SA-->>Chat: { ok: true, transaction }
-        Chat->>Chat: push assistant bubble "✅ Tercatat..."
-    else Invalid
-        SA-->>Chat: { ok: false, error }
-        Chat->>Chat: push assistant bubble "❌ Gagal..."
-    end
+    A --> B --> C --> D
 ```
 
-Perhatikan: **chatbot panel tetap satu komponen** — tidak ada modal, tidak ada navigation. Hanya satu tombol tambahan + satu handler tambahan. Skill arsitektural di sini: **menambah kemampuan tanpa menggemukkan UI**.
-
 Lanjutkan ke `latihan.md` Section 2 untuk eksekusi.
+
+---
 
 # Section 3 — Role, Context, & Instruction
 
@@ -600,7 +565,7 @@ Untuk modul ini, agentic workflow dibatasi pada:
 - **Lokal scope**: hanya tool yang dipanggil dari route handler chatbot (bukan MCP atau server eksternal).
 - **Tanpa retry/error logic kompleks**: apabila tool gagal, kembalikan pesan error ke Claude dan biarkan ia merespons gracefully.
 
-> 💡 **Catatan untuk Section 2 yang sudah Anda buat**: di Section 2 Anda sudah membangun aksi write (parser → `parseAndCreateTransaction`), tetapi pemicunya adalah **klik eksplisit user** pada tombol 🧾 Catat — bukan keputusan otonom Claude. Ini perbedaan fundamental: **gesture-triggered write** (Section 2) aman karena user yang inisiatif; **autonomous-write tool use** butuh permission system + audit trail yang akan dibahas di modul lanjutan.
+> 💡 **Catatan**: aksi write otonom (Claude memutuskan sendiri kapan menulis ke DB, mis. `create_transaction` sebagai tool) sengaja ditahan untuk modul lanjutan. Pola ini butuh permission system + audit trail yang belum kita bangun. Untuk sekarang tool tetap **read-only**.
 
 Versi production-grade dari agentic workflow membutuhkan permission system, audit trail, dan safeguards yang lebih kuat. Itu modul tersendiri.
 
