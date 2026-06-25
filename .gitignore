@@ -36,3 +36,8 @@ posttest/
 
 # Resources belum siap untuk publik (akan dibuka setelah migrasi penuh ke stack JS)
 resources/
+
+# Module 05, 06, 07 — disembunyikan sementara dari repository
+Day 3 - System Prompt Engineering/Module-05-Prompt-Engineering/
+Day 3 - System Prompt Engineering/Module-06-Embedding/
+Day 3 - System Prompt Engineering/Module-07-RAG/
