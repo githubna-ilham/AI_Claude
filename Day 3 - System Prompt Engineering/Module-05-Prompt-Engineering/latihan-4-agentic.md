@@ -1,630 +1,446 @@
 # Section 4 — Agentic Workflow
 
-> Bagian dari **[Module 05 — Latihan](./latihan.md)**. Lanjutan dari **[Section 3 — Role, Context, & Instruction](./latihan-3-rci.md)**.
+> Bagian dari **[Module 05 — Latihan](./latihan.md)**. Lanjutan dari **[Section 3 — Role, Context, Instruction](./latihan-3-rci.md)**.
 
-> Latihan untuk memberi AI Advisor kemampuan **memanggil tool** — membaca data transaksi user dari Supabase saat dibutuhkan. Empat prompt siap copy-paste.
+> Latihan ini menerapkan **5-step reasoning workflow** (Information Extraction → Thought → Action Planning → Evaluation → Response Generation) ke `ADVISOR_SYSTEM` agar Claude memiliki struktur berpikir terstruktur saat menjawab pertanyaan kompleks. **TIDAK ada tool use / function calling** di section ini — semua dilakukan via prompting di system instruction.
 >
-> **Estimasi**: 60–75 menit (paling teknis di Module 05).
+> **Estimasi**: 50–70 menit.
 
 ## Prasyarat Section 4
 
-- [ ] Section 1–3 selesai.
-- [ ] Module 02 (Transactions CRUD) selesai — data transaksi ada di Supabase.
+- [ ] Section 1–3 selesai. `ADVISOR_SYSTEM` sudah pakai pola RCI.
+- [ ] Anda sudah membaca bagian Section 4 di `materi.md` (lima tahap workflow + contoh sebelum/sesudah).
+- [ ] AI Advisor saat ini bisa jawab pertanyaan sederhana dengan baik.
 
 ---
 
 ## 📚 Referensi Dokumentasi
 
-Sebelum mulai, akan sangat membantu kalau Anda buka tab dokumentasi resmi untuk referensi cepat saat ada kebingungan:
-
-- **[Tool use overview](https://docs.claude.com/en/docs/build-with-claude/tool-use)** — konsep tool use, kapan pakai, dan flow request/response.
-- **[Tool use parameter format](https://docs.claude.com/en/api/messages)** — struktur `tools` array, `input_schema` (JSON Schema), `tool_use` & `tool_result` blocks.
-- **[Tool use examples](https://docs.claude.com/en/docs/build-with-claude/tool-use/overview)** — pola request/response lengkap dengan multi-iteration.
-- **[Agentic patterns](https://docs.claude.com/en/docs/build-with-claude/tool-use)** — multi-step reasoning dengan loop tool call.
+- **[Prompt engineering — Chain of Thought](https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/chain-of-thought)** — pola "let's think step by step" dan variannya.
+- **[System prompts best practices](https://docs.claude.com/en/docs/build-with-claude/prompt-engineering/system-prompts)** — cara menambah workflow instructions tanpa over-engineering.
+- **[Extended thinking](https://docs.claude.com/en/docs/build-with-claude/extended-thinking)** — fitur Opus 4.7 yang berbeda dengan workflow di section ini (perbandingan ada di materi.md).
+- **[Evaluating LLM outputs](https://docs.claude.com/en/docs/build-with-claude/prompt-engineering)** — bagaimana mengukur kualitas jawaban setelah perubahan prompt.
 
 ---
 
-## Prompt 1 — Definisikan Tools untuk Claude
+## Prompt 1 — Tambah 5-Step Workflow ke `ADVISOR_SYSTEM`
 
 ### Walkthrough Manual (sebelum pakai prompt)
 
-Sebelum copy-paste prompt, pahami **anatomi tool definition** di Anthropic SDK. Setiap tool punya 3 bagian wajib: `name`, `description`, `input_schema` (JSON Schema).
+Sebelum copy-paste prompt, pahami persis instruksi yang akan disisipkan ke `ADVISOR_SYSTEM` (yang sudah dibangun di Section 1 + RCI di Section 3). Workflow ditambahkan sebagai **section baru** di system prompt — tidak mengganti bagian Persona / Format / Batasan yang sudah ada.
 
-📂 **File baru**: `src/features/tools.ts` (definisi + akan diisi eksekutor di Prompt 2)
+📂 **File yang diubah**: `src/features/prompts.ts` (modifikasi `ADVISOR_SYSTEM`)
 
-**1. Import type dari SDK**
+**1. Tambah subsection "Cara Berpikir Sebelum Menjawab"**
 
-📍 Lokasi: **paling atas file**.
-
-```ts
-// src/features/tools.ts — bagian import
-import type Anthropic from "@anthropic-ai/sdk";
-```
-
-**2. Konstanta `TOOLS_DEFINITION`**
-
-📍 Lokasi: **module level**, exported. Type: `Anthropic.Messages.Tool[]`.
+📍 Lokasi: **di dalam string `ADVISOR_SYSTEM`**, sebelum bagian "## Format Output" atau di akhir setelah "## Batasan" — pilih yang paling masuk akal di struktur Anda saat ini.
 
 ```ts
-// src/features/tools.ts — module level
-export const TOOLS_DEFINITION: Anthropic.Messages.Tool[] = [
-  {
-    name: "get_transactions",
-    description:
-      "Ambil daftar transaksi user dengan filter opsional. " +
-      "Gunakan saat user bertanya tentang transaksi spesifik atau analisis pola pengeluaran.",
-    input_schema: {
-      type: "object",
-      properties: {
-        category: { type: "string", description: "Filter by category name, e.g. 'Food', 'Transport'" },
-        start_date: { type: "string", description: "YYYY-MM-DD" },
-        end_date: { type: "string", description: "YYYY-MM-DD" },
-        type: { type: "string", enum: ["income", "expense"] },
-        limit: { type: "number", description: "Default 50, max 200" },
-      },
-    },
-  },
-  {
-    name: "get_balance_summary",
-    description:
-      "Ambil ringkasan saldo, total income, dan total expense user (all-time). " +
-      "Gunakan saat user bertanya tentang kondisi keuangan secara umum.",
-    input_schema: { type: "object", properties: {} },
-  },
-];
+// src/features/prompts.ts — di dalam ADVISOR_SYSTEM
+export const ADVISOR_SYSTEM = `
+[... bagian Persona, Lingkup, Format Output, Batasan dari Section 1+3 ...]
+
+## Cara Berpikir Sebelum Menjawab
+
+Untuk SETIAP pertanyaan user, ikuti workflow berikut secara internal (JANGAN tampilkan langkah 1-4 ke user, HANYA hasilnya di langkah 5):
+
+1. **Information Extraction** — identifikasi:
+   - Profil user (pemula? sudah berpengalaman? sedang merencanakan?)
+   - Niat sebenarnya (planning / informasi / validation?)
+   - Data eksplisit di pertanyaan (angka, jangka waktu, kondisi)
+   - Data implisit yang harus diasumsikan atau diminta
+
+2. **Thought** — analisis masalah inti:
+   - Apa constraint utama yang user hadapi?
+   - Asumsi apa yang harus dieksplisitkan?
+   - Trade-off relevan?
+
+3. **Action Planning** — susun kerangka jawaban:
+   - Berapa sub-topik yang perlu dibahas?
+   - Urutan paling masuk akal?
+   - Bagian mana rinci, bagian mana ringkas?
+
+4. **Evaluation** — review rencana sebelum menulis:
+   - Apakah semua bagian menjawab pertanyaan user?
+   - Adakah kontradiksi internal?
+   - Apakah actionable (user tahu apa yang harus dilakukan)?
+   - Apakah format sesuai aturan di section "Format Output"?
+
+5. **Response Generation** — tulis jawaban final yang user lihat.
+
+Apabila pertanyaan **sederhana** (faktual, satu kalimat jawabnya cukup), tahap 1-4 boleh Anda lakukan singkat — tetap eksis di pikiran Anda, tetapi tidak perlu mendetail.
+`.trim();
 ```
 
-**3. Type union untuk type safety**
+**2. Posisi yang disarankan di struktur prompt**
 
-📍 Lokasi: **module level**, di bawah `TOOLS_DEFINITION`.
+📍 Workflow ditempatkan **setelah Batasan** (paling akhir) supaya:
 
-```ts
-// src/features/tools.ts — module level
-export type ToolName = "get_transactions" | "get_balance_summary";
+- Persona / Lingkup / Format Output / Batasan tetap dibaca duluan sebagai "identity + rules".
+- Workflow menjadi "how to think" — diaplikasikan setelah Claude tahu siapa dirinya dan apa rules-nya.
+
+**3. Eksplisitkan "TIDAK tampilkan ke user"**
+
+💡 Tanpa instruksi eksplisit, Claude kadang bocorkan workflow sebagai bullet list "Step 1: Information Extraction..." di output. Tambahkan klausa tegas:
+
+```
+JANGAN tampilkan langkah 1-4 sebagai output ke user.
+HANYA hasil langkah 5 yang user lihat.
 ```
 
-> 💡 **Description = signal terkuat untuk Claude**. Description yang prescriptive ("Gunakan saat user bertanya tentang...") jauh lebih efektif daripada description deskriptif ("Function untuk ambil data").
+### Yang TIDAK perlu (Prompt 1)
 
-### Yang TIDAK perlu
+- ❌ Menampilkan chain-of-thought ke user — workflow ada di "pikiran" Claude, output user-facing hanya hasil step 5.
+- ❌ Mengubah Persona / Lingkup / Format Output yang sudah ada di Section 1+3.
+- ❌ Memodifikasi route handler atau component — perubahan hanya di prompts.ts.
+- ❌ Menambah parameter API baru (workflow murni via prompting).
+- ❌ Implementasi tool use / function calling — itu modul lanjutan, bukan section ini.
 
-- ❌ Tool yang **mengubah data** (create/update/delete) — Section 4 hanya read-only. Tool write butuh confirmation layer yang lebih kompleks.
-- ❌ Description deskriptif tanpa cue kapan pakai — Claude bingung memilih.
-- ❌ `input_schema` longgar tanpa `properties` jelas — Claude akan tebak format dan sering salah.
-- ❌ Implementasi eksekutor di file yang sama dulu — Prompt 2 menambah eksekutor.
+### Verifikasi setelah file diubah (Prompt 1)
 
-### Verifikasi setelah file dibuat
-
-1. File `src/features/tools.ts` ada dengan ekspor `TOOLS_DEFINITION`.
-2. `npx tsc --noEmit` — tidak ada error type.
-3. Inspect: `TOOLS_DEFINITION.length === 2`, nama persis `get_transactions` dan `get_balance_summary`.
-4. Tiap tool punya `description` yang mengandung kata "Gunakan saat..." (prescriptive cue).
+1. `npx tsc --noEmit` tanpa error.
+2. Buka `src/features/prompts.ts`, pastikan section "Cara Berpikir Sebelum Menjawab" ada di dalam `ADVISOR_SYSTEM`.
+3. Section lain (Persona, Lingkup, Format Output, Batasan) tetap utuh.
+4. Reload chatbot. Kirim pertanyaan kompleks: "Bagaimana saya nabung Rp 200jt dalam 3 tahun?"
+5. Output Claude sekarang **lebih terstruktur** — biasanya ada angka konkret + skenario kondisional + closing yang minta info follow-up. (TIDAK ada teks "Step 1:", "Step 2:" — itu indikator workflow bocor ke output.)
 
 ---
 
 **Salin prompt berikut:**
 
 ```
-Saya ingin mendefinisikan tools yang dapat dipanggil Claude
-untuk membaca data transaksi user.
+Tambahkan 5-step reasoning workflow ke ADVISOR_SYSTEM agar
+Claude lebih terstruktur saat menjawab pertanyaan kompleks.
 
 GOAL:
-- Buat file baru src/features/tools.ts.
-- Ekspor konstanta TOOLS_DEFINITION: array berisi 2 tool:
-
-  1. get_transactions
-     - description: "Ambil daftar transaksi user dengan
-       filter opsional. Gunakan saat user bertanya tentang
-       transaksi spesifik atau analisis pola pengeluaran."
-     - input_schema dengan properties:
-       - category: string (optional, "Filter by category
-         name, e.g. 'Food', 'Transport'")
-       - start_date: string (optional, "YYYY-MM-DD")
-       - end_date: string (optional, "YYYY-MM-DD")
-       - type: enum["income", "expense"] (optional)
-       - limit: number (optional, default 50)
-
-  2. get_balance_summary
-     - description: "Ambil ringkasan saldo, total income,
-       dan total expense user (all-time). Gunakan saat
-       user bertanya tentang kondisi keuangan secara umum."
-     - input_schema: object kosong (tidak ada parameter).
-
-- Ekspor TOOL_NAMES sebagai const enum/union untuk type
-  safety: "get_transactions" | "get_balance_summary".
+- Modifikasi src/features/prompts.ts.
+- Tambah subsection "## Cara Berpikir Sebelum Menjawab"
+  di dalam ADVISOR_SYSTEM, di posisi yang masuk akal
+  (umumnya setelah Batasan, sebelum/sesudah Format Output —
+  pilih yang paling natural).
+- Isi subsection 5 langkah workflow:
+  1. Information Extraction — identifikasi profil user,
+     niat, data eksplisit/implisit.
+  2. Thought — analisis masalah inti, constraint, trade-off.
+  3. Action Planning — susun kerangka jawaban.
+  4. Evaluation — review rencana untuk completeness,
+     consistency, actionability, format compliance.
+  5. Response Generation — tulis jawaban final.
 
 CONTEXT:
-- Struktur tool definition mengikuti Anthropic SDK:
-  { name, description, input_schema (JSON Schema) }.
-- File: src/features/tools.ts.
+- workflow ini ada di "pikiran" Claude — TIDAK ditampilkan
+  ke user. User hanya melihat hasil langkah 5.
+- Untuk pertanyaan sederhana, langkah 1-4 boleh dilakukan
+  singkat.
+- File: src/features/prompts.ts (modifikasi konstanta
+  ADVISOR_SYSTEM).
 
 GUARDRAIL:
-- Description harus PRESCRIPTIVE — beri tahu Claude KAPAN
-  pakai tool.
-- Property descriptions juga harus jelas.
-- JANGAN tambahkan tool yang bisa MENGUBAH data (create,
-  update, delete) — Section 4 hanya read-only.
+- JANGAN ubah bagian Persona, Lingkup, Format Output,
+  Batasan yang sudah ada di Section 1+3.
+- JANGAN tambah parameter API baru di route handler.
+- JANGAN implementasi tool use — workflow ini murni via
+  prompting.
+- Eksplisit instruksikan Claude: "JANGAN tampilkan langkah
+  1-4 ke user" — supaya output tidak bocor.
 ```
 
 **Verifikasi:**
 
-1. File `tools.ts` ada dengan ekspor `TOOLS_DEFINITION`.
-2. TypeScript tidak error.
+1. File terupdate dengan section workflow baru.
+2. Pertanyaan kompleks ("Bagaimana nabung 200jt dalam 3 tahun?") dijawab lebih terstruktur — ada angka, skenario, closing.
+3. Tidak ada teks "Step 1:", "Step 2:" di output (workflow tidak bocor).
 
 ---
 
-## Prompt 2 — Implementasi Eksekutor Tool
+## Prompt 2 — Test Konsistensi via 5 Pertanyaan Kompleks
 
 ### Walkthrough Manual (sebelum pakai prompt)
 
-Sebelum copy-paste prompt, pahami pola eksekutor: **switch by name → validate input → query Supabase → return JSON string**. Claude expect string output, bukan object.
+Untuk membuktikan workflow bekerja, kita perlu membandingkan kualitas jawaban **dengan** workflow vs **tanpa** workflow. Catat hasil ke file dokumentasi.
 
-📂 **File yang diubah**: `src/features/tools.ts` (tambah function di file yang sama dari Prompt 1)
+📂 **File baru**: `docs/SECTION-4-WORKFLOW-LOG.md` (markdown log, BUKAN kode)
 
-**1. Tambah directive `"use server"` di baris pertama**
+**1. Siapkan 5 pertanyaan test**
 
-📍 Lokasi: **baris 1**. Karena sekarang file ini punya function yang query Supabase.
+Pilihan yang mencakup berbagai kompleksitas:
 
-```ts
-// src/features/tools.ts — baris pertama (TAMBAH/PASTIKAN ADA)
-"use server";
+```markdown
+# Test Cases — Section 4 Workflow
+
+## Pertanyaan
+1. (Kompleks planning) "Bagaimana saya bisa nabung Rp 200jt dalam 3 tahun?"
+2. (Faktual sederhana) "Berapa idealnya emergency fund?"
+3. (Analisis trade-off) "Mendingan beli rumah cash atau KPR?"
+4. (Multi-aspek) "Saya pemula investasi, mulai dari mana?"
+5. (Off-topic edge) "Cara hack akun bank?"
 ```
 
-> ⚠️ `"use server"` di file yang juga mengekspor konstanta + type **boleh**. Type ter-erase saat build, konstanta diserialisasi.
+**2. Test setiap pertanyaan via chatbot 2x — sebelum & sesudah workflow**
 
-**2. Import Zod, Supabase client, dan helper Module 02**
+📍 Cara membandingkan:
 
-📍 Lokasi: **bagian import**.
+- **Sebelum**: revert `ADVISOR_SYSTEM` sementara (atau pakai test akun terpisah / git stash perubahan Prompt 1).
+- **Sesudah**: dengan workflow aktif.
 
-```ts
-// src/features/tools.ts — bagian import (tambahan)
-import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
-import { getBalanceSummary } from "@/features/action";
+Catat output **mentah** ke log untuk masing-masing.
+
+**3. Evaluasi per pertanyaan dengan rubrik**
+
+Untuk setiap pasangan jawaban, nilai:
+
+| Kriteria | Sebelum (1-5) | Sesudah (1-5) | Catatan |
+|---|---|---|---|
+| **Relevansi konteks** (jawaban adaptif ke user?) | | | |
+| **Kedalaman** (dangkal vs solid) | | | |
+| **Actionability** (user tahu next step?) | | | |
+| **Format compliance** (aturan Rupiah, panjang?) | | | |
+| **Structured** (terorganisir?) | | | |
+
+⚠️ Jangan terjebak skor angka — kolom "Catatan" lebih penting karena memuat observasi yang akan dipakai di Prompt 3 (tuning).
+
+### Yang TIDAK perlu (Prompt 2)
+
+- ❌ Eksperimen di `experiments/` folder — log ini adalah dokumentasi, simpan di `docs/`.
+- ❌ Test automation — manual review cukup untuk fase ini.
+- ❌ Statistik formal — observasi qualitative lebih relevan dari p-value.
+- ❌ Test puluhan pertanyaan — 5 yang berkualitas lebih informatif dari 50 yang random.
+
+### Verifikasi setelah dokumentasi dibuat (Prompt 2)
+
+1. `docs/SECTION-4-WORKFLOW-LOG.md` ada dengan 5 pertanyaan + 2 set jawaban + rubrik per pertanyaan.
+2. Total skor **sesudah > sebelum** di mayoritas kriteria untuk pertanyaan kompleks (1, 3, 4).
+3. Pertanyaan sederhana (2) menunjukkan **sedikit perbaikan** — workflow tidak overkill.
+4. Pertanyaan off-topic (5) tetap di-refuse dengan elegan (dari Section 2).
+
+---
+
+**Salin prompt berikut:**
+
+```
+Buat dokumentasi pembandingan kualitas jawaban sebelum vs
+sesudah menambah 5-step workflow ke ADVISOR_SYSTEM.
+
+GOAL:
+- Buat file docs/SECTION-4-WORKFLOW-LOG.md.
+- Daftar 5 pertanyaan test (mix kompleksitas):
+  1. Pertanyaan planning multi-step (mis. tabungan jangka
+     panjang)
+  2. Pertanyaan faktual sederhana (mis. ideal emergency fund)
+  3. Pertanyaan trade-off (mis. cash vs KPR)
+  4. Pertanyaan multi-aspek (mis. mulai investasi)
+  5. Pertanyaan off-topic (mis. cara hack)
+- Untuk setiap pertanyaan, sediakan template untuk catat:
+  - Output Claude SEBELUM workflow (versi pre-Section 4)
+  - Output Claude SESUDAH workflow (versi current)
+  - Rubrik evaluasi (5 kriteria, skor 1-5)
+  - Catatan kualitatif
+
+CONTEXT:
+- Workflow sudah aktif dari Prompt 1.
+- Manual review oleh developer/AI engineer.
+
+GUARDRAIL:
+- File ini di docs/, BUKAN src/.
+- JANGAN kode automation testing — manual review.
+- Format markdown rapi supaya bisa dilihat di GitHub render.
+- Sediakan template kosong supaya peserta latihan bisa isi.
 ```
 
-**3. Zod schema untuk validasi input tiap tool**
+**Verifikasi:**
 
-📍 Lokasi: **module level**, sebelum function `executeTool`.
+1. File log ada dengan template lengkap.
+2. Peserta dapat isi tabel rubrik untuk masing-masing pertanyaan.
+
+---
+
+## Prompt 3 — Tuning Workflow Berdasarkan Observasi
+
+### Walkthrough Manual (sebelum pakai prompt)
+
+Setelah test di Prompt 2, biasanya muncul **gap** di mana workflow bisa diperbaiki. Section ini melatih **iterative refinement** — bedakan dengan "rewrite ulang yang sudah benar".
+
+📂 **File yang diubah**: `src/features/prompts.ts` (refinement section workflow) + `docs/SECTION-4-WORKFLOW-LOG.md` (kolom iterasi)
+
+**1. Tipe observasi yang biasanya muncul**
+
+Dari hasil Prompt 2, kemungkinan Anda melihat pattern ini:
+
+| Observasi | Tuning |
+|---|---|
+| Claude masih kasih saran yang terlalu umum di pertanyaan kompleks | Eksplisitkan di step 1: "Catat data implisit yang harus diasumsikan — minta klarifikasi kalau krusial" |
+| Step 4 sering di-skip → kadang format Rupiah salah / panjang kelewatan | Eksplisitkan checklist di step 4: "Cek SEMUA aturan di section Format Output sebelum lanjut step 5" |
+| Pertanyaan trade-off jawabannya cenderung pilih satu sisi | Eksplisitkan di step 3: "Apabila pertanyaan trade-off, susun jawaban dengan presentasi BALANCED kedua opsi" |
+| Off-topic (Q5) kadang dijawab serius bukan di-refuse | Tambahkan di step 1: "Apabila topic di luar lingkup, langsung skip ke refusal pattern (dari Section 2 Batasan)" |
+
+**2. Apply 1-2 perbaikan, bukan semua sekaligus**
+
+📌 Iterasi yang baik: **satu perubahan kecil per iterasi**, ukur dampaknya. Jangan ubah 5 hal sekaligus — Anda tidak akan tahu mana yang berkontribusi.
+
+📍 Lokasi: **section "## Cara Berpikir Sebelum Menjawab"** yang sudah ada — modify atau tambah klausa, tidak ditulis ulang.
+
+**3. Update log dengan kolom "Iterasi 2"**
+
+Re-test pertanyaan yang dituning, catat output baru di kolom "Iterasi 2" pada `SECTION-4-WORKFLOW-LOG.md`. Bandingkan ke kolom "Sesudah" (Iterasi 1).
+
+### Yang TIDAK perlu (Prompt 3)
+
+- ❌ Rewrite workflow dari nol — refinement, bukan reset.
+- ❌ Tuning 5 hal sekaligus — pilih 1-2 yang paling impactful.
+- ❌ Bandingkan dengan SOTA paper — section ini learn-by-doing.
+- ❌ Tambah tool use untuk "menutupi" workflow weakness — itu beda topik.
+
+### Verifikasi setelah file diubah (Prompt 3)
+
+1. Workflow di `ADVISOR_SYSTEM` ada 1-2 klausa tambahan dibanding Prompt 1.
+2. Re-test pertanyaan yang sebelumnya "lemah" — sekarang lebih baik di kriteria yang dituning.
+3. Update `docs/SECTION-4-WORKFLOW-LOG.md` dengan kolom "Iterasi 2" untuk pertanyaan yang dituning.
+
+---
+
+**Salin prompt berikut:**
+
+```
+Lakukan iterative refinement pada workflow di ADVISOR_SYSTEM
+berdasarkan observasi dari log testing.
+
+GOAL:
+- Modifikasi src/features/prompts.ts.
+- Tambah 1-2 klausa eksplisit di section "Cara Berpikir
+  Sebelum Menjawab" berdasarkan observasi peserta dari
+  Prompt 2 log.
+- Update docs/SECTION-4-WORKFLOW-LOG.md kolom "Iterasi 2"
+  untuk pertanyaan yang dituning.
+
+CONTEXT:
+- Iterative refinement = perubahan kecil, terukur.
+- Workflow sebelumnya sudah ada dari Prompt 1.
+
+GUARDRAIL:
+- JANGAN rewrite workflow dari nol.
+- Pilih 1-2 perbaikan yang PALING impactful, bukan semua.
+- Apabila tidak ada gap yang kelihatan dari log, tulis catatan
+  "tidak butuh tuning" di log dan skip prompt ini.
+```
+
+**Verifikasi:**
+
+1. Workflow di ADVISOR_SYSTEM punya tambahan klausa spesifik.
+2. Re-test menunjukkan perbaikan di area yang dituning.
+3. Log Section 4 punya kolom "Iterasi 2".
+
+---
+
+## Prompt 4 — (Opsional) Workflow + Extended Thinking
+
+### Walkthrough Manual (sebelum pakai prompt)
+
+Dari Module 04 Section 3, Anda sudah punya **Extended Thinking** di Opus 4.7. Prompt 4 ini mencoba kombinasi: workflow di prompt + extended thinking di parameter API. Bandingkan dengan workflow saja.
+
+📂 **File yang diubah**: `src/app/api/advisor/route.ts` (toggle thinking eksperimental)
+
+**1. Aktifkan thinking di route handler untuk eksperimen**
+
+📍 Lokasi: **di dalam `client.messages.stream(...)` call** — kalau thinking sudah ada (dari Module 04), pastikan aktif. Kalau dimatikan, aktifkan sementara untuk test.
 
 ```ts
-// src/features/tools.ts — module level
-const GetTransactionsInput = z.object({
-  category: z.string().optional(),
-  start_date: z.string().optional(),
-  end_date: z.string().optional(),
-  type: z.enum(["income", "expense"]).optional(),
-  limit: z.number().min(1).max(200).default(50),
+// src/app/api/advisor/route.ts — di dalam stream call
+const stream = client.messages.stream({
+  model: "claude-opus-4-7",
+  max_tokens: 4096,
+  temperature: 1,                          // wajib saat thinking aktif (constraint Module 04)
+  thinking: { type: "adaptive" },
+  output_config: { effort: "medium" },     // atau "high" untuk test
+  system: ADVISOR_SYSTEM,                  // sudah berisi workflow
+  messages,
+  stream: true,
 });
 ```
 
-**4. Function `executeTool(name, input)`**
+**2. Test 2 pertanyaan kompleks**
 
-📍 Lokasi: **module level**, exported async function. Switch berdasarkan `name`. **JANGAN throw** saat Supabase error — return JSON dengan field `error` supaya Claude bisa respons gracefully.
+- Pertanyaan #1 dari Prompt 2 (planning multi-step)
+- Pertanyaan #3 (trade-off)
 
-```ts
-// src/features/tools.ts — module level
-export async function executeTool(name: string, input: any): Promise<string> {
-  switch (name) {
-    case "get_transactions": {
-      const args = GetTransactionsInput.parse(input);
-      const supabase = await createClient();
-      let q = supabase.from("transactions").select("*").limit(args.limit);
-      if (args.category) q = q.eq("category", args.category);
-      if (args.type) q = q.eq("type", args.type);
-      if (args.start_date) q = q.gte("date", args.start_date);
-      if (args.end_date) q = q.lte("date", args.end_date);
-      const { data, error } = await q;
-      if (error) return JSON.stringify({ error: "Tidak dapat ambil data transaksi" });
-      return JSON.stringify(data);
-    }
-    case "get_balance_summary": {
-      try {
-        const summary = await getBalanceSummary();
-        return JSON.stringify(summary);
-      } catch {
-        return JSON.stringify({ error: "Tidak dapat ambil ringkasan saldo" });
-      }
-    }
-    default:
-      throw new Error(`Unknown tool: ${name}`);
-  }
-}
-```
+Catat di `docs/SECTION-4-WORKFLOW-LOG.md` kolom baru "Sesudah + Thinking" — bandingkan dengan "Sesudah" (workflow saja).
 
-### Yang TIDAK perlu
+**3. Observasi**
 
-- ❌ **Throw saat Supabase error** — Claude butuh string response untuk reasoning. Throw akan crash route handler.
-- ❌ **Limit > 200** — cegah Claude minta ribuan baris yang boros token.
-- ❌ **Return object** dari `executeTool` — Anthropic SDK expect string di `tool_result.content`. `JSON.stringify` selalu.
-- ❌ **Logger** — biarkan output stdout cukup untuk debugging.
+⚠️ Biasanya: thinking + workflow = sinergi (thinking jadi terfokus ke 5 langkah). Tapi:
 
-### Verifikasi setelah file diubah
+- Latensi naik signifikan (~5-15 detik).
+- Cost naik (thinking tokens + workflow di prompt).
+- Untuk pertanyaan sederhana, kombinasi ini overkill.
 
-1. Cek `"use server"` di baris 1.
-2. Buat `experiments/test-tool.ts`:
-   ```ts
-   import { executeTool } from "../src/features/tools";
-   async function main() {
-     console.log(await executeTool("get_transactions", { category: "Food", limit: 5 }));
-     console.log(await executeTool("get_balance_summary", {}));
-   }
-   main().catch(console.error);
-   ```
-3. Jalankan: `npx tsx --env-file=.env.local experiments/test-tool.ts`.
-4. Output keduanya adalah **JSON string** yang dapat di-`JSON.parse(...)`.
-5. Test error case: `executeTool("unknown_tool", {})` → throw error "Unknown tool".
+### Yang TIDAK perlu (Prompt 4)
+
+- ❌ Streaming thinking block ke UI — itu di Module 04 Section 3, bukan baru.
+- ❌ Persistent toggle UI — eksperimen sementara, cukup hardcode di route handler.
+- ❌ Cost analysis detail — observasi kualitatif cukup; biaya thinking sudah dibahas di Module 04.
+- ❌ Apply ke production — opsional eksperimen saja; production decision = case-by-case.
+
+### Verifikasi setelah file diubah (Prompt 4)
+
+1. Reload chatbot. Kirim pertanyaan kompleks #1.
+2. Latensi naik (~2-3x dibanding workflow saja). UI menampilkan indikator thinking (dari Module 04).
+3. Output kualitatif lebih dalam vs workflow saja — terutama untuk pertanyaan trade-off.
+4. Log Section 4 punya kolom baru "Sesudah + Thinking".
 
 ---
 
 **Salin prompt berikut:**
 
 ```
-Sekarang buat function yang mengeksekusi tool ketika Claude
-memutuskan memanggilnya.
+Eksperimen: kombinasi workflow + extended thinking.
 
 GOAL:
-- Di src/features/tools.ts, tambah function:
-  executeTool(name: string, input: any): Promise<string>
-
-- Logic switch berdasarkan name:
-  case "get_transactions":
-    - Validasi input dengan Zod (category, start_date,
-      end_date, type, limit semua optional).
-    - Query Supabase: select * from transactions dengan
-      filter yang sesuai.
-    - Format hasil sebagai JSON string (Claude expects
-      string, bukan object).
-    - Return JSON string.
-  
-  case "get_balance_summary":
-    - Reuse getBalanceSummary dari Module 02.
-    - Format hasil sebagai JSON string.
-    - Return JSON string.
-  
-  default:
-    - Throw error "Unknown tool: ${name}"
+- Modifikasi src/app/api/advisor/route.ts secara sementara.
+- Aktifkan thinking: { type: "adaptive" } + output_config:
+  { effort: "medium" } untuk eksperimen.
+- Test 2 pertanyaan kompleks dari log Section 4.
+- Update log dengan kolom baru "Sesudah + Thinking".
 
 CONTEXT:
-- Import createClient dari "@/lib/supabase/server".
-- Import getBalanceSummary dari "@/features/action".
-- Pakai zod untuk validasi input.
+- Thinking adalah fitur Opus 4.7 (Module 04 Section 3).
+- Constraint: temperature WAJIB 1 saat thinking aktif.
+- Workflow sudah aktif di ADVISOR_SYSTEM dari Prompt 1.
 
 GUARDRAIL:
-- Apabila Supabase error, return JSON string dengan field
-  error: { error: "Tidak dapat ambil data transaksi" }.
-  JANGAN throw — biarkan Claude tahu tool gagal dan dia
-  bisa merespons gracefully.
-- Limit default 50, max 200 (cegah Claude minta semua data
-  yang bisa boros token).
-- File ini "use server".
+- Eksperimen sementara — jangan apply ke production tanpa
+  cost analysis.
+- JANGAN streaming thinking block ke UI (sudah ada di
+  Module 04).
+- Observasi qualitative, bukan benchmark formal.
 ```
 
 **Verifikasi:**
 
-1. Test cepat dari `experiments/test-tool.ts`:
-   ```ts
-   const r1 = await executeTool("get_transactions", { category: "Food", limit: 5 });
-   console.log(r1);
-   const r2 = await executeTool("get_balance_summary", {});
-   console.log(r2);
-   ```
-2. Output adalah JSON string yang dapat di-parse.
+1. Route handler punya thinking enabled (sementara).
+2. Output untuk pertanyaan kompleks lebih dalam vs workflow saja.
+3. Log update dengan kolom thinking.
 
 ---
 
-## Prompt 3 — Integrasikan Tool Use ke Route Handler
-
-### Walkthrough Manual (sebelum pakai prompt)
-
-Sebelum copy-paste prompt, pahami **flow tool use loop** di Anthropic SDK: call Claude → cek `stop_reason === "tool_use"` → eksekusi tool → append `tool_result` → call Claude ulang → ulang sampai `stop_reason === "end_turn"` atau max iterasi.
-
-📂 **File yang diubah**: `src/app/api/advisor/route.ts` (modifikasi handler `POST`)
-
-**1. Import `TOOLS_DEFINITION` + `executeTool`**
-
-📍 Lokasi: **paling atas file**, bagian import.
-
-```ts
-// src/app/api/advisor/route.ts — bagian import
-import { TOOLS_DEFINITION, executeTool } from "@/features/tools";
-```
-
-**2. Pakai `client.messages.create()` untuk fase tool loop (bukan streaming)**
-
-📍 Lokasi: **di dalam POST handler**. Streaming **tidak cocok** untuk fase tool calling karena perlu inspect content blocks lengkap. Streaming hanya dipakai di iterasi **terakhir** (saat Claude menjawab user).
-
-```ts
-// src/app/api/advisor/route.ts — di dalam POST handler
-let workingMessages = [...history, { role: "user", content: lastMessage }];
-let finalResponse: Anthropic.Messages.Message | null = null;
-
-for (let iter = 0; iter < 5; iter++) {
-  const resp = await client.messages.create({
-    model: selectedModel,
-    max_tokens: 1024,
-    system: ADVISOR_SYSTEM,
-    tools: TOOLS_DEFINITION,           /* ← BARU */
-    messages: workingMessages,
-  });
-
-  if (resp.stop_reason !== "tool_use") {
-    finalResponse = resp;
-    break;
-  }
-
-  // Eksekusi semua tool_use blocks di iterasi ini
-  const toolResults = [];
-  for (const block of resp.content) {
-    if (block.type === "tool_use") {
-      const result = await executeTool(block.name, block.input);
-      toolResults.push({
-        type: "tool_result" as const,
-        tool_use_id: block.id,
-        content: result,
-      });
-    }
-  }
-
-  // Append assistant response + user tool_results
-  workingMessages.push({ role: "assistant", content: resp.content });
-  workingMessages.push({ role: "user", content: toolResults });
-}
-
-if (!finalResponse) {
-  return new Response("Maaf, terlalu banyak step. Coba pertanyaan yang lebih spesifik.");
-}
-```
-
-**3. Stream text content dari `finalResponse` ke client**
-
-📍 Lokasi: **setelah loop**. Ambil text block dari `finalResponse.content` dan kirim sebagai stream response (atau plain text — sesuaikan dengan implementasi Module 04).
-
-**4. Pertahankan thinking + RCI**
-
-📍 Lokasi: **dalam parameter `client.messages.create`**. Parameter `thinking: { type: "adaptive" }` (Opus 4.7) atau `output_config: { effort: "..." }` boleh ditambah seperti Module 04 Section 5.
-
-### Yang TIDAK perlu
-
-- ❌ **Streaming saat fase tool loop** — perlu content blocks lengkap untuk parse `tool_use`. Stream hanya di iterasi final.
-- ❌ **Crash route** saat `executeTool` throw — `executeTool` sudah return JSON `{error}` untuk Supabase error. Kalau throw lain, wrap try/catch dan inject error message ke `tool_result`.
-- ❌ **Iterasi unlimited** — wajib hard cap 5 untuk safety (Claude bisa loop forever kalau tool description ambigu).
-- ❌ **Modifikasi behavior tanpa tool_use** — pertahankan streaming Module 04 Section 6 saat `stop_reason !== "tool_use"` di iterasi pertama.
-
-### Verifikasi setelah file diubah
-
-1. Reload browser.
-2. Kirim: "Berapa total expense food saya?".
-3. Di terminal `npm run dev`, log menunjukkan Claude memanggil `get_transactions` dengan `{ category: "Food" }`.
-4. Respons di chatbot menampilkan **angka aktual** dari Supabase (bukan placeholder).
-5. Kirim pertanyaan **tanpa tool**: "Halo, siapa kamu?" → respons cepat, tidak ada log tool call.
-6. Stress test: kirim "analisis lengkap keuangan saya semua waktu" — kalau loop > 5 iterasi, muncul pesan "Maaf, terlalu banyak step...".
-
----
-
-**Salin prompt berikut:**
-
-```
-Sekarang sambungkan tool use ke route handler chatbot agar
-Claude bisa memanggil tool saat dibutuhkan.
-
-GOAL:
-- Modifikasi src/app/api/advisor/route.ts.
-- Tambahkan parameter tools: TOOLS_DEFINITION ke
-  client.messages.stream() / create().
-- Implementasi loop tool use:
-  1. Panggil Claude.
-  2. Iterasi response content blocks:
-     - Apabila ada block type "tool_use", eksekusi tool
-       via executeTool(name, input).
-     - Push hasil ke array tool_results.
-  3. Apabila ada tool_use, recurse: panggil ulang Claude
-     dengan messages baru:
-     ```
-     messages = [
-       ...originalMessages,
-       { role: "assistant", content: response.content },
-       { role: "user", content: tool_results }
-     ]
-     ```
-  4. Loop maksimum 5 iterasi (safety).
-  5. Apabila tidak ada tool_use, stream text content ke
-     client seperti biasa.
-
-- Pertahankan: streaming, thinking, system prompt RCI.
-
-CONTEXT:
-- Pakai client.messages.create() untuk loop tool use
-  (lebih sederhana dari streaming saat tool calls).
-- HANYA stream text content ke client di iterasi terakhir.
-
-GUARDRAIL:
-- Apabila iterasi mencapai 5, hentikan dan kirim pesan
-  "Maaf, terlalu banyak step. Coba pertanyaan yang lebih
-  spesifik."
-- Apabila executeTool throw, lanjut dengan error message
-  ke Claude — JANGAN crash.
-- JANGAN ubah behaviour saat tidak ada tool_use (pertahankan
-  streaming Module 04 Section 6).
-```
-
-**Verifikasi:**
-
-1. Reload browser.
-2. Kirim: "Berapa total expense food saya?"
-3. Di console server (terminal `npm run dev`), seharusnya terlihat log Claude memanggil `get_transactions` dengan category="Food".
-4. Respons di chatbot menampilkan **angka aktual** dari Supabase.
-
----
-
-## Prompt 4 — Indikator UI Saat Tool Dipanggil
-
-### Walkthrough Manual (sebelum pakai prompt)
-
-Sebelum copy-paste prompt, pahami pola: route handler kirim **marker khusus** di stream (mis. `[[TOOL_CALL:get_transactions]]`), UI parse marker dan tampilkan indikator visual.
-
-📂 **File yang diubah**:
-- `src/app/api/advisor/route.ts` — tambah emit marker saat `tool_use`.
-- `src/components/chat/ai-chat-panel.tsx` — parse marker, render indikator.
-
-**1. Di route.ts: emit marker sebelum eksekusi tool**
-
-📍 Lokasi: **di dalam POST handler**, **di dalam loop tool use** (Prompt 3), **sebelum dan sesudah `executeTool(...)`**. Marker dikirim via stream channel yang sama.
-
-```ts
-// src/app/api/advisor/route.ts — dalam loop tool use
-for (const block of resp.content) {
-  if (block.type === "tool_use") {
-    controller.enqueue(encoder.encode(`[[TOOL_CALL:${block.name}]]`));
-    const result = await executeTool(block.name, block.input);
-    controller.enqueue(encoder.encode(`[[TOOL_DONE]]`));
-    toolResults.push({ /* ... */ });
-  }
-}
-```
-
-> 💡 Marker `[[TOOL_CALL:name]]` dan `[[TOOL_DONE]]` adalah **convention internal** kita, BUKAN format SDK Anthropic. Bisa string apapun asal konsisten di kedua sisi.
-
-**2. Di `ai-chat-panel.tsx`: state `toolStatus`**
-
-📍 Lokasi: **di dalam function component**, bersama state lain (`isWaiting`, `messages`, dst.).
-
-```tsx
-// src/components/chat/ai-chat-panel.tsx — di dalam function AIChatPanel()
-const [toolStatus, setToolStatus] = useState<{
-  name: string;
-  status: "pending" | "done";
-} | null>(null);
-```
-
-**3. Parse marker saat streaming chunk diterima**
-
-📍 Lokasi: **di handler stream reader** (sudah ada sejak Module 04 Section 6 untuk thinking_delta). Tambah cek marker.
-
-```tsx
-// src/components/chat/ai-chat-panel.tsx — di stream reader loop
-const TOOL_CALL_RE = /\[\[TOOL_CALL:(\w+)\]\]/;
-const TOOL_DONE = "[[TOOL_DONE]]";
-
-if (chunk.includes(TOOL_DONE)) {
-  setToolStatus(null);                 // fade out
-} else {
-  const m = chunk.match(TOOL_CALL_RE);
-  if (m) {
-    setToolStatus({ name: m[1], status: "pending" });
-  } else {
-    // chunk biasa — append ke message buffer seperti Module 04
-  }
-}
-```
-
-**4. Render indikator di JSX body**
-
-📍 Lokasi: **di JSX return**, **body messages area**, **setelah `messages.map(...)`** dan **setelah indikator `isWaiting`**. Hanya tampil saat `toolStatus !== null`.
-
-```tsx
-// src/components/chat/ai-chat-panel.tsx — JSX body
-{toolStatus && (
-  <div className="flex items-center gap-2 rounded bg-muted px-3 py-2 text-sm italic text-muted-foreground">
-    <Loader2 className="h-3 w-3 animate-spin" />
-    {toolStatus.name === "get_transactions" && "🔍 Membaca data transaksi Anda..."}
-    {toolStatus.name === "get_balance_summary" && "💰 Menghitung ringkasan saldo..."}
-  </div>
-)}
-```
-
-### Yang TIDAK perlu
-
-- ❌ **Push tool indicator ke `messages` state** — pakai state terpisah supaya tidak polute riwayat chat.
-- ❌ **Marker yang mungkin nabrak konten asli** (mis. pakai single bracket `[name]`) — pilih marker yang **tidak mungkin** muncul di teks chat (double bracket `[[...]]`).
-- ❌ **Bubble user/assistant biasa untuk indicator** — visual harus berbeda (italic, bg-muted, text-sm).
-- ❌ **Animasi/transisi rumit** — fade-out sederhana sudah cukup; fokus pada clarity, bukan polish.
-
-### Verifikasi setelah file diubah
-
-1. Reload browser.
-2. Kirim: "Bagaimana keuangan saya?" → indikator "💰 Menghitung ringkasan saldo..." muncul, hilang setelah tool selesai.
-3. Kirim: "Berapa expense food bulan ini?" → indikator "🔍 Membaca data transaksi Anda..." muncul.
-4. Kirim: "Halo, siapa kamu?" → **tidak ada** indikator (tidak ada tool call).
-5. `isWaiting` (loading utama) tetap aktif sepanjang flow — indikator tool adalah **tambahan**, bukan pengganti.
-
----
-
-**Salin prompt berikut:**
-
-```
-Tambahkan UX feedback saat Claude memanggil tool, agar user
-paham kenapa respons lebih lama.
-
-GOAL:
-- Modifikasi route.ts: kirim event khusus ke client saat
-  tool_use terjadi. Pakai prefix marker:
-  [[TOOL_CALL:get_transactions]]
-  
-  Setelah tool selesai, kirim:
-  [[TOOL_DONE]]
-
-- Modifikasi ai-chat-panel.tsx: parse marker dan tampilkan
-  indikator di UI:
-  - Saat tool_use detected, tampilkan bubble system kecil:
-    "🔍 Membaca data transaksi Anda..."
-  - Saat tool_done, ganti dengan ikon ✓ dan teks fade out.
-- Bubble tool indicator: berbeda visual dari user/assistant
-  (bg-muted, text-sm, italic).
-
-CONTEXT:
-- Pertahankan parsing thinking_delta dari Module 04 Section 6.
-
-GUARDRAIL:
-- Tool indicator hanya tampil saat ada tool call — tidak
-  ganggu percakapan normal.
-- Apabila ada multiple tool calls dalam satu turn, tampilkan
-  semua indicator.
-- JANGAN ubah message state untuk indicator — pakai state
-  terpisah toolStatus: { name: string; status: "pending" |
-  "done" } | null.
-```
-
-**Verifikasi:**
-
-1. Kirim pertanyaan yang trigger tool: "Bagaimana keuangan saya?"
-2. Indikator muncul: "🔍 Membaca data transaksi Anda...".
-3. Setelah selesai, indikator hilang dan jawaban muncul.
-4. Pertanyaan tanpa tool ("Halo, siapa kamu?") tidak menampilkan indikator.
-
----
-
-## Validasi Akhir Section 4 (Akhir Module 05)
-
-- [ ] File `tools.ts` dengan `TOOLS_DEFINITION` dan `executeTool`.
-- [ ] Route handler memanggil tool dengan loop maks 5 iterasi.
-- [ ] Indikator UI muncul saat tool dipanggil.
-- [ ] Pertanyaan "Berapa total expense food saya?" dijawab dengan angka aktual.
-- [ ] Pertanyaan tanpa tool tetap respons cepat tanpa indicator.
-- [ ] Tidak ada regresi: thinking, streaming, multi-turn semua bekerja.
+## Validasi Akhir Section 4
+
+- [ ] `ADVISOR_SYSTEM` di `src/features/prompts.ts` punya section "Cara Berpikir Sebelum Menjawab" dengan 5 langkah.
+- [ ] Workflow ada di "pikiran" Claude — TIDAK bocor sebagai "Step 1:", "Step 2:" di output user.
+- [ ] `docs/SECTION-4-WORKFLOW-LOG.md` berisi 5 pertanyaan test + rubrik evaluasi sebelum vs sesudah.
+- [ ] Pertanyaan kompleks menunjukkan output lebih terstruktur dan actionable.
+- [ ] Pertanyaan sederhana tetap proporsional (tidak overengineered).
+- [ ] Off-topic tetap di-refuse dengan elegan (dari Section 2 Batasan).
+- [ ] (Opsional) Workflow + thinking dieksplorasi di Prompt 4.
+- [ ] Build production sukses (`npm run build`).
+- [ ] Tidak ada regresi dari Section 1, 2, 3.
 
 ## Refleksi Section 4
 
-1. Bagaimana akurasi Claude memilih tool yang tepat?
-2. Pernah Claude memanggil tool yang tidak perlu? (Mis. pakai `get_transactions` untuk pertanyaan persona)
-3. Apa pengalaman UX dari tool indicator?
-4. Apabila menambah tool create/update/delete, apa safeguard yang Anda butuhkan?
+1. Manakah dari 5 langkah workflow yang paling sering Claude "skip" atau lakukan dengan dangkal? Mengapa menurut Anda?
+2. Untuk pertanyaan sederhana (faktual, satu-kalimat), apakah workflow membuat output jadi terlalu panjang/overthinking? Bagaimana Anda akan handle (toggle workflow, conditional, atau biarkan?)
+3. Apa beda kualitatif paling jelas antara **Extended Thinking** (Module 04) dan **Workflow di prompt** (Section 4 ini)? Kapan Anda akan pakai mana?
+4. Andai workflow ini di-bocorkan ke user (misal step 1-4 terlihat sebagai output), apa risiko UX-nya? Bagaimana Anda mencegahnya?
+5. Bagaimana cara monitor di production apakah workflow konsisten dipatuhi Claude? (mis. sampling output, eval set bulanan, user feedback)
 
 ---
 
-## 🎉 Validasi Akhir Module 05
-
-Setelah seluruh 4 section selesai, AI Financial Advisor Anda sudah:
-
-- [ ] **System instruction** yang terstruktur dengan pola RCI.
-- [ ] **Parameter generation** terkontrol (temperature, top_p, stop_sequences).
-- [ ] **Komposisi modular** prompt yang reusable.
-- [ ] **Tool use** untuk akses data transaksi nyata.
-- [ ] **Parser transaksi** dari teks natural di halaman Transactions.
-- [ ] **Fitur Insight Mingguan** sebagai server action siap dipanggil.
-- [ ] **Tidak ada regresi** pada Dashboard / Transactions / Chatbot dari Module 04.
-
-Apabila seluruh checklist tercapai, AI Financial Advisor Anda sudah jauh dari sekadar chatbot — ia adalah **asisten cerdas** yang memahami data Anda, merespons dengan format konsisten, dan dapat di-extend untuk fitur baru dengan mudah.
-
----
-
-⬅️ Kembali: **[Section 3](./latihan-3-rci.md)** · 🏠 Index: **[Module 05 — Latihan](./latihan.md)**
+⬅️ Kembali: **[Section 3 — Role, Context, Instruction](./latihan-3-rci.md)** · 🏠 Index: **[Module 05 — Latihan](./latihan.md)**

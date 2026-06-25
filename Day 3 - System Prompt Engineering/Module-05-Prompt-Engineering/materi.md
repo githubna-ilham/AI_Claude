@@ -451,141 +451,185 @@ flowchart TD
     SP --> Ins
 ```
 
+
 # Section 4 — Agentic Workflow
 
-**Tujuan section**: melampaui chatbot pasif — biarkan Claude **memanggil tool** untuk membaca data transaksi nyata user dari Supabase, lalu menjawab pertanyaan dengan **angka aktual**.
+**Tujuan section**: melampaui chatbot reaktif yang langsung jawab. Anda menerapkan pola **5-step reasoning workflow** ke `ADVISOR_SYSTEM` agar Claude **terstruktur** saat menjawab pertanyaan kompleks — ekstrak konteks, analisis, rencanakan, evaluasi, baru jawab.
+
+> 📌 **Catatan penting**: Section ini **bukan** tentang tool use / function calling (Claude memanggil API eksternal). Itu topik tersendiri di modul lanjutan. Section 4 fokus pada **pola berpikir** yang AI ikuti secara internal — semua dilakukan dalam satu API call lewat prompting yang tepat.
 
 ## Apa itu Agentic Workflow?
 
-Pada section sebelumnya, Claude **hanya bisa menjawab** berdasarkan pengetahuannya. Apabila user bertanya:
+Tanpa workflow yang jelas, Claude akan **langsung lompat ke jawaban**. Untuk pertanyaan ringan ("Berapa tabungan ideal?") itu cukup. Tapi untuk pertanyaan kompleks ("Bagaimana saya nabung Rp 200jt dalam 3 tahun?") jawaban langsung sering:
 
-> "Berapa total expense food saya bulan ini?"
+- **Dangkal** — kasih saran umum tanpa mempertimbangkan konteks user
+- **Salah arah** — tidak menjawab yang sebenarnya user tanyakan
+- **Tidak actionable** — saran teoretis tanpa langkah konkret
+- **Tidak konsisten** — jawaban berbeda untuk pertanyaan serupa
 
-Claude akan **menebak** atau bilang "saya tidak punya akses ke data Anda".
+**Agentic workflow** adalah **pola reasoning terstruktur** yang AI ikuti — seperti checklist mental — sebelum menyusun jawaban final. Membuat Claude "berpikir dulu, baru bicara".
 
-**Agentic workflow** memberi Claude kemampuan untuk:
+## Lima Tahap Workflow
 
-1. **Memutuskan** ia perlu data tambahan.
-2. **Memanggil tool** (function) untuk dapat data.
-3. **Memproses hasil** dan menyusun jawaban final.
+```mermaid
+flowchart LR
+    A["1. Information<br/>Extraction"] --> B["2. Thought"]
+    B --> C["3. Action<br/>Planning"]
+    C --> D["4. Evaluation"]
+    D --> E["5. Response<br/>Generation"]
 
-```
-User: "Berapa total expense food saya bulan ini?"
-   │
-Claude (analisa): "Saya perlu data transaksi.
-                   Panggil tool get_transactions
-                   dengan filter category='Food'."
-   │
-Tool dipanggil   → Supabase query → return rows
-   │
-Claude (analisa hasil): "Total Rp 1.250.000 dari 12
-                         transaksi food bulan ini."
-   │
-User melihat respons dengan angka aktual.
+    style A fill:#dbeafe
+    style B fill:#e0e7ff
+    style C fill:#ede9fe
+    style D fill:#fce7f3
+    style E fill:#dcfce7
 ```
 
-## Konsep "Tool Use" di Claude API
+### 1. Information Extraction — Identifikasi User & Konteks
 
-Anthropic SDK mendukung tool use lewat parameter `tools`:
+Sebelum menjawab, AI **mengekstrak** dari pertanyaan user:
 
-```ts
-client.messages.create({
-  model: "claude-haiku-4-5",
-  max_tokens: 1024,
-  system: SYSTEM_RCI,
-  tools: [
-    {
-      name: "get_transactions",
-      description: "Ambil daftar transaksi user dengan filter opsional.",
-      input_schema: {
-        type: "object",
-        properties: {
-          category: { type: "string", description: "Filter by category" },
-          start_date: { type: "string", description: "YYYY-MM-DD" },
-          end_date: { type: "string", description: "YYYY-MM-DD" },
-          type: { type: "string", enum: ["income", "expense"] },
-        },
-      },
-    },
-  ],
-  messages: [{ role: "user", content: userMessage }],
-});
-```
+- **Siapa** user-nya (profil yang implisit dari pertanyaan: pemula? sudah punya investasi?)
+- **Apa** niat sebenarnya (planning vs informasi vs validation?)
+- **Data points** yang sudah ada di pertanyaan (angka, jangka waktu, kondisi)
+- **Apa yang TIDAK disebut** tapi penting (asumsi yang harus dibuat)
 
-Saat Claude memutuskan perlu memanggil tool, respons-nya berisi block dengan `type: "tool_use"`:
+**Contoh** untuk _"Bagaimana saya nabung 200jt dalam 3 tahun?"_:
 
-```ts
-response.content = [
-  { type: "tool_use", id: "toolu_01...", name: "get_transactions", input: { category: "Food" } }
-]
-```
+| Ekstraksi | Hasil |
+|---|---|
+| User profile | Sedang merencanakan tabungan jangka menengah |
+| Niat | Butuh rencana konkret (bukan teori) |
+| Data eksplisit | Target: Rp 200jt, Waktu: 3 tahun (36 bulan) |
+| Data implisit | Pendapatan, pengeluaran saat ini, kewajiban lain |
 
-Anda kemudian:
+### 2. Thought — Analisis Masalah Utama
 
-1. Eksekusi tool tersebut di kode Anda (query Supabase).
-2. Kirim hasil tool **kembali** ke Claude sebagai message baru.
-3. Claude memproses hasil dan menghasilkan jawaban final.
+AI menganalisis **masalah inti** di balik pertanyaan permukaan:
 
-## Loop Multi-Step
+- Apa **constraint utama** yang akan dihadapi user?
+- Asumsi apa yang **harus dieksplisitkan** untuk jawaban berguna?
+- Trade-off apa yang **relevan** di sini?
 
-Karena Claude bisa memanggil **beberapa tool secara berurutan**, alurnya menjadi *loop*:
+**Contoh** lanjutan:
+
+> _"Target Rp 200jt / 36 bulan = ~Rp 5,56jt/bulan tabungan murni. Ini constraint utama — apakah realistis? Tergantung pendapatan. Tanpa info pendapatan, jawaban harus conditional: 'kalau pendapatan ≥ X, doable dengan strategi Y; kalau di bawah, perlu trade-off Z'."_
+
+### 3. Action Planning — Tentukan Rencana Langkah
+
+AI menyusun **kerangka jawaban** sebelum menulis:
+
+- Berapa **sub-topik** yang harus dibahas?
+- **Urutan** yang paling masuk akal untuk user?
+- Bagian mana yang **rinci**, bagian mana yang **ringkas**?
+
+**Contoh** rencana untuk pertanyaan tabungan:
 
 ```
-1. Kirim user message + tools
-2. Cek response:
-   - Apabila content berisi tool_use → eksekusi tool → kirim hasil → ulang ke step 2
-   - Apabila content berisi text → tampilkan ke user → selesai
-3. Loop maksimum (mis. 5 iterasi) untuk safety.
+Plan:
+  1. Hitung target bulanan (kasih angka konkret)
+  2. Skenario A: jika cash flow cukup → strategi instrumen
+  3. Skenario B: jika cash flow kurang → cara naikkan tabungan
+  4. Penutup: cek kelayakan + minta info untuk fine-tune
 ```
 
-## Tools yang Akan Dibangun di Fin-App
+### 4. Evaluation — Verifikasi Hasil Rencana
 
-Pada Section 4 latihan, Anda akan membangun **dua tool sederhana**:
+Sebelum menulis jawaban final, AI **review rencananya sendiri**:
 
-| Tool | Input | Output | Use Case |
-|---|---|---|---|
-| `get_transactions` | Filter (category, date range, type) | Array transaksi | "Berapa total food bulan ini?" |
-| `get_balance_summary` | (tidak ada) | { totalIncome, totalExpense, savings } | "Bagaimana keuangan saya secara umum?" |
+- Apakah **semua bagian** menjawab pertanyaan user?
+- Adakah **kontradiksi internal** (mis. saran A bertentangan dengan saran B)?
+- Apakah jawaban **actionable** (user tahu apa yang harus dilakukan)?
+- Apakah format sesuai aturan di system prompt (panjang, Rupiah, dll.)?
 
-Tool ini reuse query Supabase yang sudah Anda bangun di **Module 02 (CRUD)**. Tidak ada query baru — hanya wrapper agar Claude bisa memanggilnya.
+**Contoh** evaluasi:
+> _"Rencana mencakup hitungan + 2 skenario + closing. Tidak ada kontradiksi. Setiap saran punya angka konkret. Format sesuai aturan (≤8 bullet). LANJUT."_
 
-## Implications untuk UX Chatbot
+### 5. Response Generation — Susun Jawaban Final
 
-Saat Claude memanggil tool, ada **delay tambahan** sebelum respons final. UX yang baik:
+Baru di sini AI **menulis jawaban yang user lihat**. Karena 4 langkah sebelumnya sudah dikerjakan, jawabannya:
 
-- Tampilkan indikator "Membaca data transaksi Anda..." saat tool dipanggil.
-- Apabila tool memanggil beberapa kali (loop), tampilkan setiap langkah secara bertahap.
-- Pada streaming (Module 04 Section 6), tool calls muncul sebagai event terpisah dalam stream.
+- **Langsung relevan** dengan konteks user
+- **Terstruktur** (rencana yang sudah disusun di step 3)
+- **Konsisten** (sudah dievaluasi)
+- **Actionable** (sudah dipastikan di step 4)
+
+## Cara Mengaktifkan Workflow di System Prompt
+
+Anda **tidak** mengubah arsitektur kode — cukup tambah instruksi workflow di `ADVISOR_SYSTEM`. Contoh:
+
+```
+## Cara Berpikir Sebelum Menjawab
+
+Untuk SETIAP pertanyaan user, ikuti workflow berikut secara internal (JANGAN tampilkan langkah 1-4 ke user, hanya hasilnya):
+
+1. **Information Extraction** — identifikasi profil user, niat, data eksplisit, dan data yang harus diasumsikan.
+2. **Thought** — analisis masalah inti dan constraint utama.
+3. **Action Planning** — susun kerangka jawaban (sub-topik, urutan, kedalaman).
+4. **Evaluation** — review rencana: lengkap? konsisten? actionable? sesuai format?
+5. **Response Generation** — tulis jawaban final yang user lihat.
+
+Apabila pertanyaan **sederhana** (faktual, satu kalimat jawabnya cukup), tahap 1-4 bisa Anda lakukan singkat — tetap eksis di pikiran Anda, tetapi tidak perlu mendetail.
+```
+
+> 💡 **Kunci**: workflow ada di "pikiran" Claude (terjadi saat generate respons), **tidak tampil di output**. User hanya melihat hasil akhir yang sudah matang. Inilah bedanya dengan menampilkan chain-of-thought eksplisit ke user.
+
+## Contoh Konkret: Sebelum vs Sesudah Workflow
+
+**Pertanyaan**: _"Bagaimana saya nabung Rp 200jt dalam 3 tahun?"_
+
+### Tanpa Workflow (langsung jawab)
+
+> Untuk menabung Rp 200jt dalam 3 tahun, Anda bisa coba aturan 50/30/20. Sisihkan 20% pendapatan untuk tabungan, kurangi pengeluaran tidak perlu, dan pertimbangkan investasi reksadana untuk return lebih tinggi.
+
+**Masalah**: generic, tidak menjawab "bagaimana", tidak ada angka konkret, tidak adaptif ke kondisi user.
+
+### Dengan Workflow
+
+> Target Anda **Rp 5,56 juta/bulan** (Rp 200jt ÷ 36 bulan). Ini titik kunci untuk evaluasi kelayakan.
+>
+> **Skenario A — pendapatan ≥ Rp 12 jt/bulan:**
+> - Sisihkan **otomatis** Rp 5,56jt ke rekening terpisah di awal bulan
+> - Tempatkan 70% di reksadana pasar uang (likuid, return ~4%/tahun), 30% di deposito bertahap
+>
+> **Skenario B — pendapatan Rp 8-12 jt/bulan:**
+> - Target murni nabung mungkin terlalu agresif — tambah sumber income (freelance, sidehustle) atau panjangkan ke 4 tahun (~Rp 4,17jt/bulan)
+> - Audit langganan rutin yang bisa dipotong
+>
+> Untuk saran lebih presisi, share **pendapatan bulanan** Anda dan **pengeluaran tetap** (kos, cicilan, dll.).
+
+**Hasilnya**: actionable, terstruktur, adaptif ke kondisi user, mengundang follow-up untuk fine-tune.
+
+## Trade-off & Kapan Workflow Dipakai
+
+| Aspek | Tanpa Workflow | Dengan Workflow |
+|---|---|---|
+| **Latensi** | Lebih cepat (langsung generate) | Lebih lambat (~1.5-2x karena "berpikir") |
+| **Token usage** | Lebih hemat | Lebih boros (workflow di prompt + thinking internal) |
+| **Kualitas jawaban kompleks** | Dangkal, sering tidak adaptif | Lebih dalam, terstruktur, actionable |
+| **Konsistensi format** | Bervariasi | Sangat konsisten (sudah dievaluasi di step 4) |
+| **Cocok untuk** | Q&A faktual sederhana | Perencanaan, analisis, advice multi-faktor |
+
+**Rule of thumb**: aktifkan workflow di **chatbot advisor** yang sering ditanya pertanyaan kompleks. Kalau chatbot Anda hanya untuk FAQ pendek, workflow overkill.
+
+## Hubungan dengan Extended Thinking (Module 04)
+
+Anda mungkin ingat **Extended Thinking** dari Module 04 Section 3 — fitur Opus 4.7 yang membuat Claude "berpikir" sebelum menjawab. Apa bedanya dengan workflow di section ini?
+
+| Aspek | Extended Thinking (M04) | Agentic Workflow (M05) |
+|---|---|---|
+| **Diaktifkan via** | Parameter API (`thinking: { type: "adaptive" }`) | System prompt instruction |
+| **Struktur** | Bebas (Claude tentukan sendiri) | Terstruktur 5-step yang **Anda** definisikan |
+| **Model** | Opus saja (4.7+) | Semua model (Haiku, Sonnet, Opus) |
+| **Visibility** | Bisa di-display di UI (block `thinking`) | Tidak terlihat user — di "pikiran" Claude saat generate |
+| **Kontrol developer** | Rendah (budget effort) | Tinggi (Anda susun langkahnya) |
+
+**Kombinasi**: workflow + extended thinking = thinking yang **diarahkan** ke 5 tahap spesifik. Reasoning Claude jadi lebih fokus.
 
 ## Batasan Section 4
 
-Untuk modul ini, agentic workflow dibatasi pada:
+- **Bukan deterministik**: workflow di prompt = arahan, bukan paksaan. Claude bisa skip langkah kalau pertanyaan trivial — itu wajar.
+- **Bukan visible chain-of-thought**: user **tidak melihat** langkah 1-4. Kalau Anda ingin tampilkan reasoning ke user untuk transparansi, pakai Extended Thinking dari Module 04.
+- **Tidak menggantikan tool use**: workflow ini mengatur **cara berpikir**, bukan akses ke data eksternal. Untuk akses data live (database, API), itu topik tool use di modul lanjutan.
 
-- **Read-only tool**: Claude bisa baca data via `get_transactions` / `get_balance_summary`, **tidak bisa modify** secara mandiri. Tidak ada `create_transaction` atau `delete_transaction` sebagai tool — terlalu berisiko untuk eksperimen awal kalau Claude bisa autonomously memutuskan kapan menulis ke DB.
-- **Lokal scope**: hanya tool yang dipanggil dari route handler chatbot (bukan MCP atau server eksternal).
-- **Tanpa retry/error logic kompleks**: apabila tool gagal, kembalikan pesan error ke Claude dan biarkan ia merespons gracefully.
-
-> 💡 **Catatan**: aksi write otonom (Claude memutuskan sendiri kapan menulis ke DB, mis. `create_transaction` sebagai tool) sengaja ditahan untuk modul lanjutan. Pola ini butuh permission system + audit trail yang belum kita bangun. Untuk sekarang tool tetap **read-only**.
-
-Versi production-grade dari agentic workflow membutuhkan permission system, audit trail, dan safeguards yang lebih kuat. Itu modul tersendiri.
-
-Lanjutkan ke `latihan.md` Section 4 untuk eksekusi.
-
-Alur tool use loop satu-step (kasus paling umum):
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant C as Claude
-    participant T as Tool Runtime<br/>(server)
-    participant DB as Supabase
-
-    U->>C: "Berapa expense kategori makanan bulan ini?"
-    C-->>T: tool_use: get_transactions({ category: "food", month: "..." })
-    T->>DB: SELECT * WHERE category = 'food'
-    DB-->>T: rows[]
-    T-->>C: tool_result: [{...}, {...}]
-    C->>C: komposisi jawaban final
-    C-->>U: "Total expense makanan bulan ini Rp 850.000..."
-    Note over C,DB: Claude dapat memanggil tool<br/>berkali-kali sebelum jawaban final
-```
+Lanjutkan ke `latihan.md` Section 4 untuk eksekusi — Anda akan tambah workflow ini ke `ADVISOR_SYSTEM` dan bandingkan kualitas jawaban sebelum/sesudah.
