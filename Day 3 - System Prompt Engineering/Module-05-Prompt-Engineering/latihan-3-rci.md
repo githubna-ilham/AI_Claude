@@ -163,6 +163,57 @@ GUARDRAIL:
 3. Aplikasi pakai V3 (alias).
 4. Chatbot tetap berfungsi seperti di Section 1–2.
 
+### Efek Perubahan — Contoh Konkret
+
+Refactor ini **tidak mengubah jawaban Claude secara dramatis** (konten prompt sama), tapi mengubah dua hal: (a) cara Claude "membaca" struktur, dan (b) cara Anda mengembangkan fitur selanjutnya.
+
+**Sebelum (V2 — monolitik):**
+
+```ts
+export const ADVISOR_SYSTEM_V2 = `
+Anda adalah AI Financial Advisor untuk Fin-App. Gaya ramah,
+to-the-point, profesional. Bahasa Indonesia. User adalah pengguna
+aplikasi pencatat keuangan personal... Format markdown rapi,
+mata uang Rp 1.500.000... Jawab pertanyaan user. JANGAN beri
+nasihat hukum...
+`.trim();
+```
+
+**Sesudah (V3 — RCI terstruktur):**
+
+```
+# ROLE
+Anda adalah AI Financial Advisor untuk Fin-App. Gaya: ramah...
+
+# CONTEXT
+User adalah pengguna aplikasi pencatat keuangan personal...
+
+# OUTPUT FORMAT
+- Markdown rapi (list bertanda, bold untuk angka penting).
+- Format mata uang: Rp 1.500.000.
+...
+
+# INSTRUCTION
+Jawab pertanyaan user tentang keuangan personal mereka.
+Batasan: JANGAN beri nasihat hukum/pajak spesifik...
+```
+
+**Efek yang terukur:**
+
+| Aspek | Sebelum (V2) | Sesudah (V3) |
+|---|---|---|
+| **Konsistensi format** | Kadang Claude lupa bold angka pada jawaban panjang | Lebih konsisten — heading `# OUTPUT FORMAT` membuat aturan format "menonjol" |
+| **Tambah aturan baru** | Edit string panjang, takut nabrak instruksi lain | Edit 1 konstanta (mis. `ADVISOR_FORMAT`) tanpa sentuh blok lain |
+| **Reuse untuk fitur lain** | Harus copy-paste seluruh prompt, lalu edit | Tinggal ganti 1 blok (lihat Prompt 2) |
+| **Debug prompt** | Sulit lokalisir bagian mana yang "bocor" | Bisa toggle 1 blok at-a-time untuk isolasi |
+
+**Contoh jawaban yang sama dari user prompt "Berapa idealnya dana darurat?":**
+
+- **V2**: kadang muncul tanpa bold di angka (`Rp 30.000.000` plain text), kadang dengan bold.
+- **V3**: lebih sering konsisten — angka di-bold (`**Rp 30.000.000**`), bullet rapi, tidak ada paragraf panjang.
+
+> 💡 **Catatan**: Perubahan ini lebih "developer experience" daripada "user experience". User hampir tidak melihat bedanya untuk 1 fitur — payoff sesungguhnya muncul di Prompt 2 saat kita reuse blok untuk fitur kedua.
+
 ---
 
 ## Prompt 2 — Buat Varian Prompt: Insight Mingguan
@@ -285,6 +336,81 @@ GUARDRAIL:
 
 1. File prompts.ts memiliki INSIGHT_SYSTEM yang reuse 3 konstanta dari ADVISOR.
 2. File mengekspor: ADVISOR_SYSTEM, INSIGHT_SYSTEM, dan konstanta-konstanta penyusun.
+
+### Efek Perubahan — Contoh Konkret
+
+Inilah momen **payoff RCI** terlihat jelas. Anda menambah fitur baru (Insight) dengan **menulis 1 blok** (instruction) — bukan 1 prompt utuh dari nol.
+
+**Tanpa RCI (jalur duplikasi):**
+
+```ts
+// ❌ Anda akan copy-paste ~20 baris, lalu edit instruction.
+export const INSIGHT_SYSTEM_LAMA = `
+Anda adalah AI Financial Advisor untuk Fin-App. Gaya ramah...
+User adalah pengguna aplikasi pencatat keuangan...
+Format markdown rapi, mata uang Rp 1.500.000...
+Berdasarkan data transaksi minggu ini, berikan 3 insight...
+`.trim();
+// Kalau ADVISOR_ROLE berubah → harus update di 2 tempat. Mudah lupa.
+```
+
+**Dengan RCI (jalur reuse):**
+
+```ts
+// ✅ Anda menulis HANYA blok instruction baru.
+export const INSIGHT_INSTRUCTION = `
+Berdasarkan data transaksi minggu ini, berikan 3 insight...
+`.trim();
+
+export const INSIGHT_SYSTEM = `
+# ROLE
+${ADVISOR_ROLE}        ← reuse, single source of truth
+# CONTEXT
+${ADVISOR_CONTEXT}     ← reuse
+# OUTPUT FORMAT
+${ADVISOR_FORMAT}      ← reuse
+# INSTRUCTION
+${INSIGHT_INSTRUCTION} ← khusus
+`.trim();
+```
+
+**Efek yang terukur:**
+
+| Aspek | Tanpa RCI | Dengan RCI |
+|---|---|---|
+| **Baris kode untuk fitur baru** | ~25 baris (full prompt) | ~8 baris (instruction + composition) |
+| **Persona drift** | Insight bisa terdengar "beda orang" dari Advisor | Insight & Advisor terdengar **persona yang sama** (ramah, profesional, Bahasa Indonesia) |
+| **Update format** | Edit 2 tempat (ADVISOR + INSIGHT) | Edit 1 tempat (`ADVISOR_FORMAT`), fitur baru ikut |
+| **Penambahan fitur ke-3** | Copy-paste lagi ~25 baris | Cukup tulis instruction baru |
+
+**Contoh output `INSIGHT_SYSTEM` saat Anda `console.log`:**
+
+```
+# ROLE
+Anda adalah AI Financial Advisor untuk Fin-App.
+Gaya: ramah, to-the-point, profesional. Bahasa Indonesia.
+
+# CONTEXT
+User adalah pengguna aplikasi pencatat keuangan personal.
+Domain: pengeluaran, tabungan, budget, investasi pemula.
+
+# OUTPUT FORMAT
+- Markdown rapi (list bertanda, bold untuk angka penting).
+- Format mata uang: Rp 1.500.000.
+...
+
+# INSTRUCTION
+Berdasarkan data transaksi minggu ini yang akan diberikan user,
+berikan 3 insight penting tentang pola pengeluaran mereka.
+...
+```
+
+**Bandingkan jawaban Claude (dengan data dummy transaksi):**
+
+- **Advisor** (`ADVISOR_SYSTEM`) untuk "Tips menghemat?" → tips umum, bullet, tidak menyebut angka spesifik user.
+- **Insight** (`INSIGHT_SYSTEM`) untuk data transaksi minggu ini → 3 insight numbered yang **konkret menyebut angka & kategori** dari data user, ditutup 1 saran actionable.
+
+Persona, tone, dan format Rupiah **identik** — karena blok ROLE/CONTEXT/FORMAT sama. Hanya **fokus tugasnya** yang berbeda.
 
 ---
 
@@ -428,6 +554,60 @@ GUARDRAIL:
    ```
 2. Output berupa string markdown dengan 3 insight + 1 saran.
 3. (Opsional) Tambahkan tombol di dashboard untuk trigger insight ini — biarkan saya yang minta di section terpisah.
+
+### Efek Perubahan — Contoh Konkret
+
+Server action ini adalah **integrasi end-to-end** dari prompt engineering ke produk: data nyata dari DB → di-format → dikirim ke Claude dengan `INSIGHT_SYSTEM` → hasil insight yang relevan dengan kondisi user.
+
+**Contoh data transaksi user (yang ter-format sebelum dikirim ke Claude):**
+
+```
+- 2026-06-18 | Makanan | expense | Rp 85.000
+- 2026-06-19 | Transport | expense | Rp 45.000
+- 2026-06-20 | Makanan | expense | Rp 120.000
+- 2026-06-21 | Hiburan | expense | Rp 250.000
+- 2026-06-22 | Makanan | expense | Rp 95.000
+- 2026-06-23 | Tabungan | income | Rp 500.000
+- 2026-06-24 | Makanan | expense | Rp 110.000
+```
+
+**Contoh output `getWeeklyInsight()` (saat ada data):**
+
+```markdown
+### Insight Minggu Ini
+
+1. **Pengeluaran Makanan dominan**: Total **Rp 410.000** untuk
+   makanan dalam 7 hari (4 transaksi). Ini ~62% dari total
+   pengeluaran mingguan Anda.
+2. **Spike di kategori Hiburan**: Pengeluaran **Rp 250.000**
+   dalam satu transaksi — angka tertinggi minggu ini.
+3. **Surplus mingguan tipis**: Income **Rp 500.000** vs
+   total expense **Rp 705.000** → defisit **Rp 205.000**.
+
+**Saran**: Coba batasi makan di luar maksimal 3x minggu depan
+dan alokasikan selisihnya ke tabungan.
+```
+
+**Contoh output saat data kosong (early return, TANPA panggil API):**
+
+```
+Belum ada transaksi minggu ini. Mulai catat untuk dapat insight.
+```
+
+**Efek yang terukur:**
+
+| Aspek | Implementasi naif | Dengan early return + RCI |
+|---|---|---|
+| **API call saat data kosong** | 1 call (boros ~$0.001) | 0 call (string statis) |
+| **Konsistensi persona** | Bisa beda dari chatbot advisor | Identik (reuse ROLE/CONTEXT/FORMAT) |
+| **Format angka Rupiah** | Tergantung Claude "ingat" | Konsisten via `ADVISOR_FORMAT` |
+| **Maintenance** | Update prompt = edit di sini | Update `ADVISOR_FORMAT` → otomatis ikut |
+
+**Yang Anda rasakan saat menjalankan:**
+
+- **Run pertama (ada data)**: ~2-3 detik, output structured persis seperti template di `INSIGHT_INSTRUCTION`.
+- **Run kedua (kosongkan tabel)**: instant (<100ms), tidak ada billing API.
+- **Ubah `ADVISOR_FORMAT`** (mis. tambah aturan "selalu sertakan emoji 💰 di depan angka") → re-run → **chatbot DAN insight** sama-sama ikut aturan baru. Inilah bukti reuse bekerja.
 
 ---
 
