@@ -20,10 +20,10 @@ Setelah menyelesaikan materi ini, peserta diharapkan mampu:
 |---|---|---|
 | **04** | Content Generation — 6 section: Integrasi API → Text Generation → Thinking → Switching Mode → Streaming → Multi-Turn | 4–5 jam |
 | **05** | Prompt Engineering — 4 section: System Instruction → Parameter & Output Control → Role-Context-Instruction → Agentic Workflow | 3–4 jam |
-| **06** | Embedding — 4 section: Konsep → Implementasi Voyage AI → Database Vector (pgvector) → Save Embedding To DB | 4–5 jam |
-| **07** | RAG (konseptual) — 1 section: halusinasi → closed/open book → alur kerja RAG → kapan dipakai | 30–45 menit (baca) |
 
-Total estimasi: **±12–15 jam efektif** untuk Module 04–07 (di luar break & diskusi).
+Total estimasi: **±7–9 jam efektif** untuk Module 04–05 (di luar break & diskusi).
+
+> ℹ️ Module 06 (Embedding) dan Module 07 (RAG) telah dipindahkan ke **[Day 4 — AI Agent & Tools](../Day%204%20-%20AI%20Agent%20%26%20Tools/)** karena alurnya menyatu dengan AI Agent (Module 08).
 
 ## Prasyarat
 
@@ -46,24 +46,17 @@ Day 3 - System Prompt Engineering/
 │   ├── latihan-4-switching-thinking.md     (Section 4 — Switching Thinking Mode)
 │   ├── latihan-5-streaming.md              (Section 5 — Streaming Process)
 │   └── latihan-6-multi-turn.md             (Section 6 — Multi-Turn Conversation)
-├── Module-05-Prompt-Engineering/         ✅ siap (4 section)
-│   ├── materi.md                         (outline + Section 1–4 detail + diagram Mermaid)
-│   ├── latihan.md                        (index 4 section)
-│   ├── latihan-1-system-instruction.md     (Section 1 — System Instruction)
-│   ├── latihan-2-output-control.md         (Section 2 — Output Control)
-│   ├── latihan-3-rci.md                    (Section 3 — Role, Context, Instruction)
-│   └── latihan-4-agentic.md                (Section 4 — Agentic Workflow)
-├── Module-06-Embedding/                  ✅ siap (4 section)
-│   ├── materi.md                         (konsep + implementasi + DB vector + save embedding)
-│   ├── latihan.md                        (index 4 section)
-│   ├── latihan-konsep-embedding.md       (Section 1 — Konsep Embedding)
-│   ├── latihan-implementasi-embedding.md (Section 2 — Implementasi Voyage AI)
-│   ├── latihan-database-vector.md        (Section 3 — Database Vector pgvector)
-│   └── latihan-save-embedding-db.md      (Section 4 — Save Embedding To DB Vector)
-└── Module-07-RAG/                        ✅ siap (konseptual saja)
-    ├── materi.md                         (Konsep RAG: halusinasi, open/closed book, alur kerja, variasi)
-    └── latihan.md                        (refleksi konseptual, tidak ada coding)
+└── Module-05-Prompt-Engineering/         ✅ siap (4 section + 1 bonus)
+    ├── materi.md                         (outline + Section 1–4 detail + diagram Mermaid)
+    ├── latihan.md                        (index 5 section)
+    ├── latihan-1-system-instruction.md     (Section 1 — System Instruction)
+    ├── latihan-2-output-control.md         (Section 2 — Output Control)
+    ├── latihan-3-rci.md                    (Section 3 — Role, Context, Instruction)
+    ├── latihan-4-agentic.md                (Section 4 — Agentic Workflow)
+    └── latihan-5-structured-output.md      (Section 5 — Structured Output via Tool Use)
 ```
+
+> ℹ️ Module 06 (Embedding) dan Module 07 (RAG) sudah dipindahkan ke **[Day 4 — AI Agent & Tools](../Day%204%20-%20AI%20Agent%20%26%20Tools/)**.
 
 ## Alur Belajar
 
@@ -83,7 +76,9 @@ Day 3 Module 04 Section 5 — Streaming
 Day 3 Module 04 Section 6 — Multi-Turn
         ↓  +messages[] + windowing
 Day 3 Module 05 — Prompt Engineering
-        → system instruction, RCI, tool use (agentic)
+        → system instruction, RCI, tool use (agentic) + structured output
+        ↓
+Day 4 (Embedding → RAG → AI Agent)
 ```
 
-🚀 **Mulai**: [Module 04 — Content Generation](./Module-04-Content-Generation/materi.md)
+🚀 **Mulai**: [Module 04 — Content Generation](./Module-04-Content-Generation/materi.md) · **Lanjut ke Day 4**: [Day 4 — AI Agent & Tools](../Day%204%20-%20AI%20Agent%20%26%20Tools/)
