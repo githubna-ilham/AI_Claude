@@ -1,60 +1,8 @@
 # Module 08 — AI Agent
 
-> **Tujuan modul**: Anda memahami **paradigma AI Agent** — sistem AI yang otonom menjalankan tugas multi-langkah dengan kemampuan reasoning dan akses tools — dan menguasai pola **ReAct (Reasoning + Acting)** sebagai fondasi pemikiran agent modern.
+> **Tujuan modul**: Anda memahami **paradigma AI Agent** — sistem AI otonom menjalankan tugas multi-langkah dengan reasoning + tools — menguasai pola **ReAct (Reasoning + Acting)**, lalu mengintegrasikan **function calling** ke chatbot AI Advisor di Fin-App agar Claude dapat **mencatat transaksi user lewat percakapan natural** ("Catat kopi 25rb tadi siang").
 >
-> **Output akhir modul** (setelah seluruh section selesai): agent perencana sederhana di Fin-App yang dapat menjalankan task multi-step seperti "Buatkan rencana budget bulanan saya" dengan akses tools (DB transaksi, kalkulator, dll.).
-
----
-
-## Outline Section
-
-Module ini terdiri dari **2 section** (lebih banyak akan ditambah di iterasi berikutnya — ReAct loop, memory, error recovery, multi-agent):
-
-| # | Section | Fokus | Status |
-|---|---|---|---|
-| **1** | **Konsep AI Agent** | AI sebagai sistem otonom + 3 kemampuan inti + pola ReAct + contoh konkret | ✅ Siap |
-| **2** | **Tools & Function Calling** | Jenis tools Claude API + function calling custom + flow 4-step + studi kasus | ✅ Siap |
-
-**Total estimasi durasi**: ±2–3 jam (Section 1 konseptual + Section 2 implementasi function calling).
-
-> 💡 **Cara kerja modul ini**: sama dengan modul-modul sebelumnya — gabungan materi konseptual + latihan eksekusi via Claude Code. Section 1 ini fokus pada **intuisi & pola pikir** sebelum coding intens di section-section berikutnya.
-
-## Peta Visual Module 08
-
-Berikut gambaran arsitektur agent yang akan Anda bangun bertahap:
-
-```mermaid
-flowchart TD
-    M7["Module 07 (selesai)<br/>AI Advisor dengan RAG"]
-
-    subgraph M8["Module 08 — AI Agent"]
-        S1["Section 1<br/>Konsep AI Agent + ReAct<br/>(pendahuluan)"]
-        S2["Section 2<br/>Tools & Function Calling<br/>(implementasi)"]
-        Future["Section 3+ menyusul<br/>ReAct loop runtime,<br/>memory, error recovery"]
-    end
-
-    Final["AI Agent Perencana<br/>(production-ready)"]
-
-    M7 --> S1 --> S2 --> Future --> Final
-```
-
-## Prinsip Kontinuitas Antar Section
-
-Sama dengan modul sebelumnya, kode dari section sebelumnya **terus berlanjut**:
-
-```mermaid
-flowchart TD
-    M7["Module 07 (selesai)<br/>AI Advisor + RAG"]
-    A1["Section 1 → Pahami konsep agent + ReAct<br/>(mostly conceptual)"]
-    A2["Section 2 → Function calling untuk create_transaction<br/>(Claude eksekusi action di Fin-App)"]
-    A3["Section 3+ (menyusul) → ReAct loop runtime<br/>+ memory + error recovery"]
-
-    M7 --> A1 --> A2 --> A3
-```
-
-Pada akhir Section 1, Anda **belum membangun agent operasional** — tetapi memiliki **mental model yang solid** untuk merancang agent di section berikutnya. Tanpa fondasi konseptual yang baik, Anda akan terjebak debugging tanpa memahami akar masalahnya.
-
----
+> **Output akhir modul**: chatbot Fin-App tidak hanya menjawab pertanyaan keuangan (RAG dari Module 07), tetapi juga **mengeksekusi action** ke database lewat tool `create_transaction`. Pipeline lengkap: user message → Claude decide tool → app execute insert → Claude konfirmasi natural.
 
 # Section 1 — Konsep AI Agent
 
@@ -330,43 +278,6 @@ Inilah pola yang akan Anda pakai di Fin-App. Anda mendefinisikan tools sendiri y
 
 Module 05 Section 4 sebenarnya sudah memperkenalkan function calling dasar (tool use). Section 2 ini memperdalam: anatomi tool declaration, flow lengkap, dan studi kasus konkret.
 
-## Studi Kasus Function Calling
-
-Tiga kategori use case besar yang menjustifikasi penggunaan function calling:
-
-### Kategori 1: Menambahkan Pengetahuan AI
-
-Claude punya cut-off date training. Function calling memungkinkan akses **pengetahuan yang lebih baru** atau **proprietary**.
-
-Contoh:
-- `get_user_transactions(month)` → ambil transaksi user terbaru dari Supabase (data proprietary, tidak ada di training)
-- `get_latest_news(topic)` → fetch berita keuangan terkini
-- `lookup_company_info(ticker)` → query info perusahaan dari API saham
-
-> 💡 **Beda dengan RAG (Module 07)**: RAG cocok untuk pengetahuan **semi-statis** yang sudah di-embed di vector DB. Function calling cocok untuk pengetahuan **dinamis** (mis. saldo terkini, harga real-time) atau **query terstruktur** (mis. filter transaksi by category).
-
-### Kategori 2: Memperluas Kemampuan AI
-
-Claude bagus di reasoning, tapi lemah di komputasi presisi tinggi dan task spesifik.
-
-Contoh:
-- `calculate_compound_interest(p, r, n)` → kalkulasi finansial akurat (lebih reliable dibanding minta Claude hitung sendiri)
-- `convert_currency(amount, from, to)` → currency conversion real-time
-- `parse_receipt_ocr(image_url)` → ekstraksi data dari foto struk
-- `categorize_transaction(description)` → ML classifier khusus
-
-### Kategori 3: Melakukan Action (Side Effects)
-
-Ini yang paling powerful — Claude bisa **mengubah state dunia** lewat aplikasi Anda.
-
-Contoh:
-- `create_transaction(type, amount, category, description)` → catat pengeluaran ke DB Fin-App
-- `update_budget(category, new_limit)` → ubah budget user
-- `send_reminder(user_id, message)` → kirim push notification
-- `transfer_funds(from, to, amount)` → transfer antar rekening
-
-> ⚠️ **Action = ada konsekuensi.** Action yang destruktif (transfer uang, hapus data) **wajib** punya konfirmasi user atau guardrail. Section ini akan implement `create_transaction` yang **idempoten dan reversible** (user bisa hapus kalau salah).
-
 ## Flow Function Calling (4 Langkah)
 
 Flow ini adalah **kontrak inti** antara aplikasi Anda dan Claude API. Pahami sampai mendetail karena setiap implementasi function calling mengikuti pola ini.
@@ -492,10 +403,64 @@ flowchart TD
 
     Start --> Send --> Claude1 --> Detect
     Detect -->|Ya| Execute --> Append --> Claude2 --> Detect
-    Detect -->|Tidak (text)| Final --> Reply
+    Detect -->|"Tidak (text)"| Final --> Reply
 ```
 
 **Loop point**: kalau Claude mengembalikan `tool_use` lagi setelah `tool_result`, ulangi langkah 3–4. Ini cara model bisa chain beberapa tool calls. Pasang **max iterations** (mis. 5) untuk safety.
+
+## Mendaftarkan Multiple Tools + Mengontrol `tool_choice`
+
+Saat aplikasi punya lebih dari satu tool (mis. di Fin-App: simpan, hapus, ubah transaksi), Anda mendaftarkannya dalam **array `tools`** dan mengatur **`tool_choice`** untuk mengarahkan perilaku Claude.
+
+```ts
+const resp = await client.messages.create({
+  model: "claude-haiku-4-5",
+  max_tokens: 1024,
+  system: QUICK_ADD_SYSTEM,
+  tools: [
+    SAVE_TRANSACTION_TOOL,
+    DELETE_TRANSACTION_TOOL,
+    UPDATE_TRANSACTION_TOOL,
+  ],
+  tool_choice: { type: "any" },
+  messages: [{ role: "user", content: text }],
+});
+```
+
+### Anatomi Parameter `tools`
+
+`tools` adalah **array `Anthropic.Messages.Tool[]`** yang Anda kirim **setiap request**. Tiap entry punya 3 field wajib:
+
+| Field | Fungsi |
+|---|---|
+| `name` | Identifier unik (snake_case). Yang Claude pakai untuk memanggil + yang dispatcher Anda baca untuk routing handler. |
+| `description` | Penjelasan natural language yang **dibaca Claude** untuk memutuskan kapan tool ini cocok dipakai. **Ini bagian terpenting** — semakin jelas KAPAN dan JANGAN PAKAI, semakin akurat keputusan Claude. |
+| `input_schema` | JSON Schema yang mendefinisikan field input + tipe + validasi. Claude wajib mematuhi schema ini saat menghasilkan `tool_use.input`. |
+
+Order entry di array tidak menentukan prioritas — Claude pilih berdasarkan **kesesuaian description dengan intent user**, bukan urutan. Tapi keep order yang konsisten (mis. CRUD: Create → Read → Update → Delete) supaya developer mudah membaca.
+
+> 💡 **Berapa banyak tools yang ideal?** Untuk model Claude 4.x, hingga ~10 tools masih konsisten. Lewat itu Claude mulai bingung memilih — pertimbangkan grouping/hierarchical tools atau routing tier (tier 1: "kategorisasi intent → choose subset tools").
+
+### Tiga Mode `tool_choice`
+
+Parameter `tool_choice` mengontrol **apakah Claude harus, boleh, atau wajib** memanggil tool tertentu. Tiga mode utama:
+
+| `tool_choice` | Arti | Kapan dipakai |
+|---|---|---|
+| `{ type: "auto" }` (default kalau tidak disertakan) | Claude **bebas memilih**: jawab tekstual atau panggil 1+ tool. | Chatbot umum di mana sebagian pertanyaan tidak butuh tool (mis. _"apa itu inflasi?"_ vs _"berapa saldo saya?"_). |
+| `{ type: "any" }` | Claude **wajib panggil tool minimal 1×** (apa saja dari array `tools`). Tidak boleh jawab tekstual murni. | Endpoint khusus action seperti `quickAddTransaction` — kita selalu ingin ada eksekusi DB, bukan respons "saya tidak yakin". |
+| `{ type: "tool", name: "X" }` | Claude **wajib panggil tool spesifik** `X`. Tool lain di array di-abaikan untuk request ini. | Parser dengan output ter-struktur ketat (mis. Module 09 receipt extraction) — kita sudah tahu pasti tool mana yang harus dipanggil. |
+
+> 💡 **Mengapa Module 08 latihan pakai `any`, bukan `auto`?** Quick-add adalah pipeline yang **selalu** menghasilkan action (save/delete/update). Kalau `auto`, ada risiko Claude menjawab _"saya tidak yakin apa yang Anda maksud"_ tanpa memanggil tool — user tidak dapat hasil apa pun. `any` mencegah ini dengan memastikan minimal satu tool ter-trigger. Kalau salah, tinggal diperbaiki oleh user lewat input berikutnya.
+
+### Single vs Multiple Tool Call per Response
+
+Walaupun `tool_choice: "any"` mewajibkan **minimal** satu panggilan tool, Claude bisa mengembalikan **beberapa** `tool_use` block dalam satu response — tergantung apa yang dimaksud user di input. Aplikasi Anda yang memutuskan bagaimana memprosesnya:
+
+| Strategi extract | Cocok untuk |
+|---|---|
+| `.find((b) => b.type === "tool_use")` — ambil pertama, abaikan sisa | Tahap belajar single-tool, atau ketika Anda benar-benar hanya butuh satu action per request. |
+| `.filter((b) => b.type === "tool_use")` + `Promise.all` | Multi-action atau mixed action dalam satu kalimat user (mis. _"ngopi 25rb dan hapus parkir kemarin"_) — dibahas di Parallel Function Calling section berikutnya. |
 
 ## Parallel Function Calling
 
@@ -568,193 +533,7 @@ flowchart TB
 
 > 📌 Parallel function calling **aktif by default** di model Claude 4.x. Tidak perlu setting khusus — Claude akan memutuskan sendiri kapan paralel masuk akal.
 
-## Menangani Multiple Function (Multi-Tool Dispatcher)
-
-Saat aplikasi Anda punya **banyak tool** terdaftar (3, 5, 10+ tools), Anda butuh pola **dispatcher** yang clean untuk routing tool_use ke handler yang tepat.
-
-### Anti-Pattern: Switch Raksasa
-
-Hindari switch panjang di route handler:
-
-```ts
-// ❌ Tidak skalabel
-if (toolUse.name === "create_transaction") return executeCreateTransaction(...);
-else if (toolUse.name === "get_balance_summary") return executeGetBalance(...);
-else if (toolUse.name === "search_transactions") return executeSearchTx(...);
-// ... 20 baris lagi
-```
-
-### Pattern: Tool Registry
-
-Definisikan registry yang mapping `name` → `(declaration, handler)`:
-
-```ts
-// src/lib/tool-registry.ts
-import { z } from "zod";
-
-type ToolDef<TInput> = {
-  name: string;
-  description: string;
-  input_schema: object;
-  inputSchema: z.ZodType<TInput>;  // Zod untuk validasi runtime
-  handler: (input: TInput) => Promise<unknown>;
-};
-
-export const toolRegistry: Record<string, ToolDef<any>> = {
-  create_transaction: {
-    name: "create_transaction",
-    description: "Catat transaksi baru ...",
-    input_schema: { /* JSON Schema untuk Claude */ },
-    inputSchema: CreateTransactionSchema,  // Zod schema
-    handler: executeCreateTransaction,
-  },
-  get_balance_summary: { /* ... */ },
-  search_transactions: { /* ... */ },
-};
-```
-
-Lalu dispatcher generik:
-
-```ts
-export async function executeToolByName(name: string, input: unknown) {
-  const tool = toolRegistry[name];
-  if (!tool) {
-    return { success: false, error: `Unknown tool: ${name}` };
-  }
-
-  // Validasi input dengan Zod
-  const parsed = tool.inputSchema.safeParse(input);
-  if (!parsed.success) {
-    return { success: false, error: `Invalid input: ${parsed.error.message}` };
-  }
-
-  try {
-    const result = await tool.handler(parsed.data);
-    return { success: true, data: result };
-  } catch (err) {
-    return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
-  }
-}
-```
-
-Untuk passing tools ke Claude API:
-
-```ts
-const tools = Object.values(toolRegistry).map(({ name, description, input_schema }) => ({
-  name,
-  description,
-  input_schema,
-}));
-```
-
-### Keuntungan Pattern Registry
-
-| Aspek | Switch | Registry |
-|---|---|---|
-| **Tambah tool baru** | Edit 2+ tempat (declaration + handler dispatch) | Edit 1 entry registry |
-| **Validasi input** | Manual per tool | Otomatis via Zod |
-| **Error handling** | Per case | Terpusat |
-| **Type safety** | Manual cast | Bisa di-infer dari Zod |
-| **Testing** | Test seluruh route | Test per handler isolated |
-
-> 💡 **Best practice**: kalau Anda punya >5 tool, refactor ke registry **wajib**. Maintenance kode jadi jauh lebih murah.
-
-## Multi-Modal Tool Use (Image, PDF)
-
-Claude API mendukung **multi-modal input** — selain teks, message bisa berisi **gambar** atau **PDF**. Saat dikombinasikan dengan tool use, ini membuka use case yang sangat powerful.
-
-### Use Case Fin-App: Catat Struk Belanja dari Foto
-
-User mengirim foto struk + pesan _"Catat semua belanjaan ini"_. Alur:
-
-1. User upload foto struk ke chatbot.
-2. Aplikasi kirim ke Claude API dengan content block tipe `image`.
-3. Claude **membaca struk** (vision) → ekstrak items → **panggil tool `create_transaction`** untuk masing-masing item.
-4. Aplikasi eksekusi insert ke DB → return tool_result.
-5. Claude konfirmasi: _"3 transaksi sudah dicatat: kopi Rp 25.000, kue Rp 15.000, ..."_
-
-### Anatomi Message dengan Image
-
-Format Anthropic SDK:
-
-```ts
-client.messages.create({
-  model: "claude-sonnet-4-6",
-  max_tokens: 1024,
-  tools,
-  messages: [
-    {
-      role: "user",
-      content: [
-        {
-          type: "image",
-          source: {
-            type: "base64",
-            media_type: "image/jpeg",
-            data: base64ImageString,
-          },
-        },
-        {
-          type: "text",
-          text: "Catat semua transaksi di struk ini.",
-        },
-      ],
-    },
-  ],
-});
-```
-
-Format alternatif: `source.type: "url"` apabila gambar di-host publicly.
-
-### Pipeline Vision + Tool Use
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant U as User
-    participant App as App (Server)
-    participant Claude as Claude API
-    participant DB as Supabase
-
-    U->>App: Upload foto struk + "Catat ini"
-    App->>App: Convert ke base64
-    App->>Claude: messages: [image + text] + tools
-    Note over Claude: Vision: baca struk<br/>Reasoning: ekstrak items
-    Claude-->>App: multiple tool_use:<br/>create_transaction × 3
-    par eksekusi paralel
-        App->>DB: insert kopi 25rb
-        App->>DB: insert kue 15rb
-        App->>DB: insert teh 10rb
-    end
-    DB-->>App: 3 row created
-    App->>Claude: tool_result × 3
-    Claude-->>App: "3 transaksi dicatat: ..."
-    App-->>U: konfirmasi natural
-```
-
-Perhatikan ini gabungan **3 fitur**: vision, parallel function calling, dan dispatcher multi-tool. Pattern arsitektur Anda yang sudah baik akan menampung semua tanpa refactor besar.
-
-### Use Case Multi-Modal Lain di Fin-App
-
-| Use case | Input | Tool yang dipanggil |
-|---|---|---|
-| Catat dari foto struk | Image (struk) | `create_transaction` (multiple) |
-| Analisis pengeluaran dari screenshot mobile banking | Image (notifikasi mutasi) | `create_transaction`, `categorize` |
-| Audit dokumen PDF kontrak/invoice | PDF (kontrak) | `extract_payment_terms`, `create_reminder` |
-| Klasifikasi receipt vs invoice vs lainnya | Image | `classify_document`, branch ke handler beda |
-| Convert handwritten ledger ke digital | Image (catatan tangan) | `create_transaction` (batch) |
-
-### Trade-off Multi-Modal
-
-| Aspek | Catatan |
-|---|---|
-| **Biaya** | Image dihitung tokens (Sonnet/Opus: ~1500 token per gambar resolusi standar). Lebih mahal dari pure text. |
-| **Latensi** | Tambah ~1–2 detik vs pure text. |
-| **Akurasi vision** | Sangat baik untuk struk cetak. Untuk handwriting/blur, hasilnya tidak konsisten — selalu validasi via tool_result yang menampilkan hasil parsing ke user untuk konfirmasi. |
-| **Privasi** | Gambar dikirim ke Anthropic. Untuk data sensitif (mis. dokumen finansial perusahaan), pertimbangkan policy yang sesuai. |
-| **Model support** | Vision butuh **Claude Sonnet/Opus**, tidak tersedia di Haiku versi lama. Pakai `claude-sonnet-4-6` atau yang lebih baru. |
-
-> ⚠️ **Untuk action destruktif via vision** (mis. auto-insert 10 transaksi dari foto struk), **wajib** ada layer konfirmasi user di UI sebelum eksekusi. Vision bisa salah parse — user harus punya kesempatan review.
+> 💡 **Multi-modal (image + PDF) tool use** dibahas terpisah di **[Module 09 — Multimodal & Document Understanding](../Module-09-Multimodal/materi.md)** — termasuk pipeline lengkap "upload foto kwitansi → vision baca struk → tool `save_receipt_transactions` (array items) → insert paralel ke `transactions`". Modul ini fokus pada text-only tool use.
 
 ## Best Practices
 
@@ -780,7 +559,10 @@ Kapan pakai yang mana?
 
 Sering ketiganya **dikombinasikan** dalam satu agent: RAG untuk FAQ, function calling untuk DB query + action, dan direct prompt untuk reasoning bridge antar-step.
 
-Lanjutkan ke `latihan.md` Section 2 untuk implementasi konkret `create_transaction` di Fin-App — chatbot Anda akan bisa mencatat pengeluaran user lewat pesan natural seperti "Catat kopi 25rb tadi siang".
+Lanjutkan ke `latihan.md` untuk implementasi konkret **multi-tool + parallel function calling** di pipeline quick-add yang sudah ada — dibangun **bertahap** dalam 3 prompt:
+- **Prompt 1**: definisi 2 tool baru (`delete_transactions` + `update_transaction`) + handler-nya, tanpa menyentuh `quickAddTransaction`.
+- **Prompt 2**: wire ketiga tool (save + delete + update) ke `quickAddTransaction` lewat dispatcher — **single tool per request** (`.find`).
+- **Prompt 3**: upgrade ke **parallel** — `.filter` + `Promise.all` supaya bisa _"ngopi 25rb dan hapus parkir kemarin"_ (mixed save+delete dalam satu kalimat).
 
 ---
 
@@ -802,6 +584,7 @@ Lanjutkan ke `latihan.md` Section 2 untuk implementasi konkret `create_transacti
 - **Dua kategori tools di Claude API**: built-in (web search, code exec, computer use) dan custom (Anda implementasi).
 - **Tiga kategori use case**: menambah pengetahuan (data dinamis), memperluas kemampuan (komputasi presisi), melakukan action (side effects).
 - **Flow 4-langkah**: Declaration → AI Decide → App Execute → AI Generate Response. Bisa loop kalau multi-tool.
+- **Parallel function calling**: Claude bisa kembalikan beberapa `tool_use` block dalam satu response — aplikasi eksekusi paralel via `Promise.all`. Pattern ini yang kita pakai di latihan untuk multi-transaksi quick-add.
 - **Best practices**: description jelas, schema strict, idempotency untuk action, guardrail untuk destructive ops.
 
 **Section 3+ menyusul**: ReAct loop runtime (multi-iteration agent), memory antar percakapan, error recovery & fallback, multi-agent coordination.
