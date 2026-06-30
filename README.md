@@ -1,6 +1,6 @@
 # Pelatihan Prompt Engineering, AI Agent & AI App Development with Claude
 
-> Pelatihan 4 hari (40 jam) dari **Multimatics** untuk membangun solusi AI modern berbasis Claude — mulai dari desain prompt, AI automation, AI Agent, hingga AI App + RAG untuk kebutuhan enterprise.
+> Pelatihan 4 hari (40 jam) dari **Multimatics** untuk membangun solusi AI modern berbasis Claude — mulai dari **fondasi LLM & prompt engineering** (Day 1), **setup project Next.js + Supabase dan koneksi Claude API** (Day 2), **system prompt engineering untuk produk** (Day 3), hingga **fitur AI lanjutan: Embedding, RAG, AI Agent, & Multimodal** di atas project `fin-app` (Day 4).
 
 ---
 
@@ -38,18 +38,21 @@ Setelah mengikuti pelatihan ini, peserta mampu:
 - Laptop minimal 8 GB RAM, koneksi internet stabil
 - Anthropic API key (disediakan fasilitator atau peserta mendaftar di console.anthropic.com)
 - Akun Supabase (free tier) untuk Day 2–4
+- Akun Voyage AI (free tier) untuk Day 4 (Embedding & RAG)
 - Sudah mengisi **[Pretest](pretest/PRETEST-AI-Claude.md)** sebelum hari pertama
 
 ---
 
 ## Struktur Pelatihan (4 Hari)
 
-| Hari      | Fokus                                                                       | Module       |
-| --------- | --------------------------------------------------------------------------- | ------------ |
-| **Day 1** | Prompt Engineering Fundamentals + Advanced                                  | 1–3          |
-| **Day 2** | Structured Output + AI Workflow + AI Agent (Concept → Orchestration → Claude API) | 4–9    |
-| **Day 3** | AI App Development + RAG (Retrieval Augmented Generation)                   | 10–12        |
-| **Day 4** | AI Product Design + Governance + **Capstone Project**                       | 13–14 + Capstone |
+| Hari      | Fokus                                                                  | Module per Hari                                                                 |
+| --------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| **Day 1 — Introduction LLM**         | Fondasi LLM, dasar prompt engineering, dan teknik prompting           | M01 Introduction LLM Claude · M02 Prompt Engineering Basics · M03 Prompting Techniques |
+| **Day 2 — Road To AI Apps**          | Setup project Next.js + Supabase, AI-assisted coding, koneksi pertama ke Claude API | M01 Setup Project (Next.js + Supabase + pgvector) · M02 AI-Assisted Coding · M03 Claude API |
+| **Day 3 — System Prompt Engineering**| System prompt untuk produk: content generation & advanced prompt engineering pada aplikasi nyata | M04 Content Generation · M05 Prompt Engineering                                 |
+| **Day 4 — AI Agent & Tools**         | Bangun fitur AI di Fin-App: Embedding, RAG, AI Agent (tool use), Multimodal | M06 Embedding · M07 RAG · M08 AI Agent · M09 Multimodal                          |
+
+> Catatan penomoran: Day 1 dan Day 2 masing-masing memiliki modul **M01–M03** dengan topik berbeda. Day 3 melanjutkan penomoran dari **M04**, dan Day 4 dari **M06** — karena Day 3–4 bekerja di atas project `fin-app` yang sama yang sudah dibangun di Day 2.
 
 Metodologi: **30% concept — 60% hands-on — 5% case study — 5% discussion**.
 
@@ -76,10 +79,10 @@ AI_Claude/
 ├── README.md                                  # file ini
 ├── pretest/                                   # profiling peserta
 ├── posttest/                                  # evaluasi akhir
-├── Day 1 - Introduction LLM/                  # Module 1–3
-├── Day-2-AI-Workflow-Agent/                   # Module 4–9 (M4 dipindahkan dari Day 1)
-├── Day-3-AI-App-RAG/                          # Module 10–12
-├── Day-4-Product-Governance-Capstone/         # Module 13–14 + Capstone
+├── Day 1 - Introduction LLM/                  # M01 Intro LLM · M02 Prompt Eng Basics · M03 Prompting Techniques
+├── Day 2 - Road To AI Apps/                   # M01 Setup Project · M02 AI-Assisted Coding · M03 Claude API
+├── Day 3 - System Prompt Engineering/         # M04 Content Generation · M05 Prompt Engineering
+├── Day 4 - AI Agent & Tools/                  # M06 Embedding · M07 RAG · M08 AI Agent · M09 Multimodal
 └── resources/                                 # templates, starter code, cheatsheet
     ├── claude-api-cheatsheet.md
     ├── prompt-templates/
@@ -95,11 +98,10 @@ AI_Claude/
 2. **Claude API** — JavaScript/TypeScript SDK (`@anthropic-ai/sdk`) sebagai default tunggal
 3. **Node.js 20 LTS+** (idealnya 22 LTS) — runtime utama untuk seluruh hands-on
 4. **Next.js 16 (App Router) + TypeScript + Tailwind CSS + Shadcn UI** — stack project hands-on `fin-app`
-5. **Supabase (Postgres)** — database utama + extension **`pgvector`** untuk RAG di Day 3
-6. **Voyage AI** — embedding provider default (cloud, free tier cukup)
+5. **Supabase (Postgres)** — database utama + extension **`pgvector`** untuk Embedding & RAG di Day 4
+6. **Voyage AI** — embedding provider default (`voyage-3`, 1024 dim — cloud, free tier cukup)
 7. **REST API integration tools** — Postman / Insomnia (opsional)
-8. **AI Workflow tools** — overview konseptual (n8n, Make, Zapier untuk konteks low-code)
-9. **Vercel** (opsional) — untuk deploy capstone Day 4
+8. **Vercel** (opsional) — untuk deploy hasil akhir Day 4
 
 ---
 
@@ -110,7 +112,7 @@ AI_Claude/
 - [ ] Buat akun Anthropic Console: https://console.anthropic.com
 - [ ] Dapatkan API key dari fasilitator (atau generate sendiri, top-up minimal $5)
 - [ ] Buat akun Supabase: https://supabase.com (free tier; buat project baru region Singapore)
-- [ ] Buat akun Voyage AI: https://www.voyageai.com (untuk embedding di Day 3)
+- [ ] Buat akun Voyage AI: https://www.voyageai.com (untuk embedding di Day 4)
 - [ ] Clone repo materi: `git clone https://github.com/githubna-ilham/AI_Claude.git`
 - [ ] Clone repo `fin-app` starter (link dari fasilitator) → `npm install`
 - [ ] Jalankan smoke test JS untuk verifikasi API key (instruksi di `PENDAHULUAN.md`)
@@ -133,11 +135,11 @@ AI_Claude/
 1. Training materials (folder lengkap ini)
 2. Prompt Engineering templates (di `resources/prompt-templates/`)
 3. AI Agent templates (di `resources/agent-templates/`)
-4. AI App starter code (di `resources/starter-code/`)
+4. AI App starter code — `fin-app` (di `resources/starter-code/`)
 5. Claude API Integration Guide (di `resources/claude-api-cheatsheet.md`)
 6. Use case examples & business scenarios
 7. Hands-on lab files (per module)
-8. Capstone project files (working prototype + slide)
+8. Working `fin-app` dengan fitur AI: chatbot, embedding, RAG, agent, multimodal
 9. Certificate of Completion (dari Multimatics)
 
 ---
