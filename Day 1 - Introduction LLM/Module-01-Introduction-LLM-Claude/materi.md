@@ -83,7 +83,7 @@ NLP klasik (sebelum 2017) bergantung pada aturan linguistik dan model statistik 
 
 Yang membuat LLM "besar" *(large)* adalah skalanya: dilatih dari triliunan kata, dengan miliaran parameter, menggunakan arsitektur khusus bernama **Transformer** (yang akan dibahas di Section 2).
 
-Inilah teknologi yang ada di balik Claude, ChatGPT, Gemini, dan kawan-kawan. Mari kita bahas lebih dalam.
+Inilah teknologi yang berada di balik Claude, ChatGPT, Gemini, dan model sejenis. Pembahasan dilanjutkan lebih dalam pada bagian berikutnya.
 
 ---
 
@@ -93,7 +93,7 @@ Inilah teknologi yang ada di balik Claude, ChatGPT, Gemini, dan kawan-kawan. Mar
 
 Bayangkan fitur *autocomplete* pada keyboard ponsel Anda. Ketika Anda mengetik "selamat", ponsel menebak kata berikutnya: "pagi", "siang", "malam", atau "datang". LLM bekerja dengan prinsip yang sama, hanya saja **jauh lebih besar dan jauh lebih memahami konteks**. LLM tidak hanya menebak satu kata, melainkan terus-menerus menebak kata demi kata hingga membentuk paragraf, esai, bahkan kode program.
 
-Namun jika LLM hanya "autocomplete raksasa", mengapa ia mampu menulis esai dan menjawab pertanyaan rumit? Karena terdapat **tiga ciri khas** yang membuatnya jauh lebih unggul dari autocomplete biasa.
+Namun jika LLM hanya "autocomplete raksasa", mengapa ia mampu menulis esai dan menjawab pertanyaan rumit? Hal tersebut dapat dijelaskan melalui **tiga ciri khas** yang membuatnya jauh lebih unggul dibanding autocomplete biasa.
 
 ### Ciri Khas #1 — Skala Pengetahuan yang Sangat Luas
 
@@ -238,7 +238,7 @@ Coba bandingkan dengan pertanyaan lain:
 | `"Apa makanan khas Padang?"` | `"Rendang"` (sekitar 65%), `"Sate"` (15%), `"Gulai"` (10%) |
 | `"Selamat pagi, apa kabar"` | `"?"` (40%), `"hari"` (20%), `"Anda"` (15%), `"semua"` (10%) |
 
-Lihat — semakin spesifik pertanyaannya, semakin terkonsentrasi probabilitas pada satu jawaban. Semakin terbuka pertanyaannya, semakin tersebar probabilitas ke banyak kandidat.
+Perhatikan bahwa semakin spesifik pertanyaannya, semakin terkonsentrasi probabilitas pada satu jawaban. Semakin terbuka pertanyaannya, semakin tersebar probabilitas ke banyak kandidat.
 
 #### c. Probabilitas tinggi bukan jaminan jawaban benar
 
@@ -250,13 +250,13 @@ Itulah mengapa **memberi sumber asli** (grounding, yang dibahas di Section 5) me
 
 Dari daftar probabilitas tersebut, model memilih satu kata. Pemilihan ini diatur oleh parameter **temperature**. Pada contoh kita, kata `"Jakarta"` terpilih.
 
-Mari pahami parameter ini lebih dalam, karena Anda akan sering menemukannya di seluruh modul berikutnya.
+Parameter ini penting untuk dipahami lebih dalam karena akan sering muncul pada seluruh modul berikutnya.
 
 #### Memahami Parameter Temperature
 
 Bayangkan **temperature** sebagai **tombol pengatur antara "patuh aturan" dan "berani bereksperimen"** ketika model memilih kata.
 
-Temperature **bukan** mengubah konten jawaban secara langsung. Yang diubah adalah **bentuk distribusi probabilitas** sebelum sampling. Mari kita lihat dampaknya pada contoh kita:
+Temperature **bukan** mengubah konten jawaban secara langsung. Yang diubah adalah **bentuk distribusi probabilitas** sebelum sampling. Berikut dampaknya pada contoh sebelumnya:
 
 ```
 Distribusi asli untuk "Apa ibu kota Indonesia? ___"
@@ -335,7 +335,7 @@ Kopi: cairan hitam pekat yang menyatukan kerinduan, percakapan, dan inspirasi.
 
 1. **`Temperature = 0` ≠ model jadi pintar.** Keterbatasan model tetap sama; tetap bisa berhalusinasi. Perbedaannya: halusinasi yang sama akan diulang secara konsisten.
 
-2. **Temperature tinggi ≠ model jadi kreatif/cerdas.** Yang terjadi: model jadi lebih berani mengambil pilihan tidak biasa. Kadang berhasil terdengar kreatif, kadang justru ngawur.
+2. **Temperature tinggi ≠ model menjadi kreatif/cerdas.** Yang terjadi adalah model menjadi lebih berani mengambil pilihan yang tidak biasa. Adakalanya hasilnya terdengar kreatif, namun adakalanya tidak relevan.
 
 3. **Untuk JSON / klasifikasi / ekstraksi data → selalu gunakan `temperature = 0`.** Anda membutuhkan output yang persis sama setiap kali, terutama saat hasilnya diproses oleh sistem otomatis.
 
@@ -345,7 +345,7 @@ Kopi: cairan hitam pekat yang menyatukan kerinduan, percakapan, dan inspirasi.
 
 Kata yang baru terpilih (`"Jakarta"`) ditambahkan ke konteks, kemudian seluruh proses **diulang** untuk memprediksi kata berikutnya. Begitu seterusnya, hingga model menghasilkan token khusus penanda akhir kalimat *(stop token)* atau mencapai batas panjang output yang Anda tentukan.
 
-Itulah sebabnya jawaban panjang dari Claude muncul "kata demi kata" — secara teknis memang demikianlah cara kerjanya.
+Itulah sebabnya jawaban panjang dari Claude muncul secara bertahap "kata demi kata" — secara teknis memang demikianlah cara kerjanya.
 
 ---
 
@@ -430,7 +430,7 @@ Sebelum membahas kemampuan dan keterbatasannya, mari pahami terlebih dahulu **ap
 Karakter pembeda Claude dari LLM lain (seperti ChatGPT dan Gemini):
 - **Fokus pada keamanan dan etika AI** *(safety-first)* — Claude dilatih dengan pendekatan khusus bernama **Constitutional AI**, yang akan dijelaskan di bawah.
 - **Context window yang sangat panjang** — hingga 200.000 token (sekitar 500 halaman buku) pada model standar, dan hingga 1 juta token pada tier khusus.
-- **Kuat di reasoning dan coding** — sering menjadi pilihan favorit di kalangan developer profesional.
+- **Kuat di reasoning dan coding** — kerap menjadi pilihan favorit di kalangan developer profesional.
 - **Output natural dan bernuansa** — gaya bahasa Claude cenderung lebih reflektif dan jujur mengakui keterbatasannya, dibanding kompetitor.
 
 #### Siapa yang Menciptakan?
@@ -469,7 +469,7 @@ timeline
 3. **Maret 2023** — **Claude 1** dirilis sebagai produk komersial, awalnya hanya melalui Slack dan API terbatas.
 4. **Juli 2023** — **Claude 2** diluncurkan dengan context window **100.000 token** — saat itu jauh lebih besar dari kompetitor. Akses publik mulai dibuka melalui claude.ai.
 5. **Maret 2024** — **Claude 3** memperkenalkan keluarga tiga varian: **Opus** (paling cerdas), **Sonnet** (seimbang), **Haiku** (cepat & murah). Konsep ini bertahan hingga sekarang.
-6. **Juni 2024** — **Claude 3.5 Sonnet** menjadi favorit komunitas developer karena performa coding yang sangat kuat — sering disebut "GitHub Copilot killer".
+6. **Juni 2024** — **Claude 3.5 Sonnet** menjadi favorit komunitas developer karena performa coding yang sangat kuat — kerap disebut sebagai "GitHub Copilot killer".
 7. **Oktober 2024** — Fitur **Computer Use** diperkenalkan — Claude mampu mengendalikan komputer (klik, ketik, scroll) untuk mengotomasi tugas-tugas visual.
 8. **2025** — Claude 4.x dengan **extended thinking** (mode berpikir mendalam) dan kemampuan **agent** yang lebih matang.
 
@@ -555,7 +555,7 @@ Karena tugas dasar LLM adalah **"melanjutkan kalimat dengan probabilitas terting
 
 ## Praktik Mandiri (15 menit)
 
-Daripada hanya membaca teori, **buka claude.ai sekarang** dan jalankan empat eksperimen berikut. Tujuannya adalah agar Anda merasakan sendiri perbedaan antara prompt biasa dan prompt yang ditulis dengan benar.
+Selain membaca teori, **buka claude.ai** dan jalankan empat eksperimen berikut. Tujuannya adalah agar Anda merasakan sendiri perbedaan antara prompt biasa dan prompt yang ditulis dengan benar.
 
 ### Eksperimen A — Bertanya Tanpa Sumber
 
@@ -686,7 +686,7 @@ Tiket: "Aplikasi crash setiap saya buka menu profil"
 
 ## Latihan & Refleksi
 
-Modul 1 ini bersifat **konseptual** — belum disertai lab coding. Namun sebelum melanjutkan ke Module 2, pastikan Anda mampu menjawab lima pertanyaan refleksi berikut. Anda dapat menuliskan jawaban di buku catatan, atau mendiskusikannya dengan rekan:
+Modul 1 ini bersifat **konseptual** — belum disertai lab coding. Sebelum melanjutkan ke Module 2, pastikan Anda mampu menjawab lima pertanyaan refleksi berikut. Jawaban dapat dituliskan di buku catatan atau didiskusikan dengan rekan:
 
 1. Jika Claude pada dasarnya adalah "mesin penebak kata berbasis probabilitas", **apa konsekuensinya** terhadap cara Anda menulis instruksi?
 2. **Kapan** Anda akan memilih Haiku (lebih ekonomis dan cepat) dibanding Sonnet untuk pekerjaan Anda?
@@ -694,7 +694,7 @@ Modul 1 ini bersifat **konseptual** — belum disertai lab coding. Namun sebelum
 4. **Mengapa** context window yang besar tidak otomatis menghasilkan jawaban yang lebih baik?
 5. Apa perbedaan **"reasoning" pada LLM dan reasoning pada manusia** menurut pemahaman Anda saat ini?
 
-Untuk latihan hands-on terstruktur (5 eksperimen di claude.ai — semua bisa dijalankan gratis), lihat [`latihan.md`](./latihan.md).
+Untuk latihan hands-on terstruktur (eksperimen di claude.ai — seluruhnya dapat dijalankan gratis), silakan merujuk ke [`latihan.md`](./latihan.md).
 
 ---
 

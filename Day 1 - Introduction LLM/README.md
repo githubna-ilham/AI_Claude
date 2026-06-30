@@ -10,17 +10,17 @@
 
 ## Ringkasan Day 1
 
-Day 1 membangun fondasi mental model peserta tentang Large Language Model (LLM), cara Claude bekerja, dan bagaimana berkomunikasi efektif dengannya melalui prompt. Hari ini sengaja **tidak menyentuh kode API** — fokus pada *prompt craft* menggunakan Claude web (claude.ai, free tier sudah cukup). Tujuannya: setiap peserta, terlepas dari latar belakang teknis, mampu menulis prompt yang reliable, terukur, dan siap diintegrasikan ke sistem.
+Day 1 membangun fondasi mental model tentang Large Language Model (LLM), cara Claude bekerja, dan bagaimana berkomunikasi efektif dengannya melalui prompt. Hari ini secara sengaja **tidak menyentuh kode API** — fokus pada *prompt craft* menggunakan Claude web (claude.ai, free tier sudah memadai). Tujuannya: Anda, terlepas dari latar belakang teknis, mampu menulis prompt yang reliable, terukur, dan siap diintegrasikan ke sistem.
 
-Filosofi Day 1: **"Prompt adalah spesifikasi, bukan obrolan."** Peserta diajak berpikir seperti seorang technical writer + product analyst yang menulis instruksi untuk junior cerdas tapi tanpa konteks.
+Filosofi Day 1: **"Prompt adalah spesifikasi, bukan obrolan."** Anda akan diajak berpikir seperti seorang technical writer dan product analyst yang menulis instruksi untuk junior yang cerdas namun tidak memiliki konteks.
 
-> 📌 **Catatan struktur**: Mulai cohort ini, **Module 4 (Structured Output & Optimization)** dipindahkan ke Day 2 sebagai pembuka hari kedua. Alasan: M4 dirancang sebagai jembatan langsung ke integrasi API (Day 2+), sehingga lebih natural disampaikan tepat sebelum peserta mulai coding di `fin-app`.
+> 📌 **Catatan struktur**: Mulai cohort ini, **Module 4 (Structured Output & Optimization)** dipindahkan ke Day 2 sebagai pembuka hari kedua. Alasannya: M4 dirancang sebagai jembatan langsung ke integrasi API (Day 2 dan seterusnya) sehingga lebih natural disampaikan tepat sebelum sesi coding di `fin-app`.
 
 ---
 
 ## Learning Outcomes Day 1
 
-Setelah menyelesaikan Day 1, peserta diharapkan mampu:
+Setelah menyelesaikan Day 1, Anda diharapkan mampu:
 
 1. **Menjelaskan** cara kerja LLM (tokenization, transformer, context window) dan keterbatasannya (hallucination, knowledge cutoff, bias) dalam bahasa yang dapat dimengerti stakeholder non-teknis.
 2. **Mengidentifikasi** kapabilitas dan batas Claude (Opus, Sonnet, Haiku) serta memilih model yang tepat untuk use case tertentu.
@@ -44,7 +44,7 @@ flowchart LR
 
 ---
 
-## Jadwal Harian (indikatif, dapat disesuaikan fasilitator)
+## Jadwal Harian (indikatif)
 
 | Waktu         | Aktivitas                                               | Durasi |
 |---------------|---------------------------------------------------------|--------|
@@ -83,19 +83,12 @@ Modul **Structured Output & Optimization (M4)** sekarang berada di [`../Day-2-AI
 
 ---
 
-## Prasyarat Peserta
+## Prasyarat
 
 - Laptop dengan browser modern (Chrome/Edge/Firefox).
-- Akun **claude.ai** (free tier sudah cukup untuk seluruh latihan Day 1).
-- Akun **console.anthropic.com** (opsional untuk Day 1; akan menjadi wajib mulai Day 2 untuk API).
-- Pemahaman dasar penggunaan komputer dan editor teks. Tidak perlu pengalaman coding di Day 1.
-
-## Prasyarat Fasilitator
-
-- Akun Anthropic Console dengan kredit API (untuk demo opsional Workbench).
-- Proyektor + koneksi internet stabil.
-- Salinan slide, dataset contoh (sentimen tweet Indonesia, sampel transaksi, paragraf needle-in-haystack).
-- Stopwatch / timer untuk lab.
+- Akun **claude.ai** (free tier sudah memadai untuk seluruh latihan Day 1).
+- Akun **console.anthropic.com** (opsional untuk Day 1; menjadi wajib mulai Day 2 untuk API).
+- Pemahaman dasar penggunaan komputer dan editor teks. Tidak diperlukan pengalaman coding di Day 1.
 
 ---
 
@@ -109,4 +102,4 @@ Modul **Structured Output & Optimization (M4)** sekarang berada di [`../Day-2-AI
 
 ## Catatan
 
-Day 1 sengaja membatasi cakupan ke *prompt craft*. Topik **structured output (JSON) + framework evaluasi, API integration, tool use, dan agent loop** akan dibahas pada Day 2–4. Peserta diminta menahan godaan untuk "loncat ke kode" — disiplin prompt yang dibangun hari ini akan menjadi tulang punggung kualitas agent yang dibangun di hari berikutnya.
+Day 1 secara sengaja membatasi cakupan ke *prompt craft*. Topik **structured output (JSON) + framework evaluasi, API integration, tool use, dan agent loop** akan dibahas pada Day 2–4. Anda dianjurkan menahan keinginan untuk langsung beralih ke kode — disiplin prompt yang dibangun hari ini akan menjadi tulang punggung kualitas agent yang dibangun pada hari-hari berikutnya.

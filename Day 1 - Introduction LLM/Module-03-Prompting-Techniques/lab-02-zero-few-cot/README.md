@@ -10,10 +10,10 @@
 
 ## Tujuan
 
-Peserta mampu:
-1. Membandingkan akurasi, latency persepsi, dan token usage dari 3 teknik prompting pada task identik.
+Setelah lab ini Anda mampu:
+1. Membandingkan akurasi, persepsi latency, dan token usage dari 3 teknik prompting pada task yang identik.
 2. Memilih teknik yang tepat untuk masing-masing task berdasarkan data, bukan opini.
-3. Mengidentifikasi kapan CoT membantu, dan kapan menjadi overhead yang tidak perlu.
+3. Mengidentifikasi kapan CoT membantu dan kapan justru menjadi overhead yang tidak perlu.
 
 ---
 
@@ -21,19 +21,19 @@ Peserta mampu:
 
 - Telah menyelesaikan Module 3 (materi & demo).
 - Akun **Anthropic Console** pribadi aktif (https://console.anthropic.com).
-- Anda sudah menerima dan menerima **undangan email** untuk bergabung ke **Workspace pelatihan Jalin** yang dibuat fasilitator. Setelah accept undangan, Anda dapat memilih workspace tersebut dari dropdown kanan atas Console.
-- Semua usage di Workbench selama lab ini akan **otomatis ditagih ke billing fasilitator** — Anda tidak perlu top-up pribadi.
+- Anda telah menerima **undangan email** untuk bergabung ke **Workspace pelatihan Jalin** yang disiapkan oleh fasilitator. Setelah menerima undangan, Anda dapat memilih workspace tersebut dari dropdown kanan atas Console.
+- Seluruh usage di Workbench selama lab ini akan **otomatis ditagihkan ke billing pelatihan** — Anda tidak perlu melakukan top-up pribadi.
 - Spreadsheet atau tabel kosong untuk mencatat hasil.
 
-> ℹ️ **Belum menerima undangan?** Hubungi fasilitator. Pastikan email yang Anda berikan saat registrasi pelatihan sama dengan email yang Anda gunakan di Anthropic Console.
+> ℹ️ **Belum menerima undangan?** Hubungi fasilitator. Pastikan email yang Anda berikan saat registrasi pelatihan sama dengan email yang digunakan pada Anthropic Console.
 
-> ℹ️ **Mengapa Workbench, bukan claude.ai?** Untuk Lab 02 ini Anda perlu menetapkan **`temperature=0`** agar hasil eksperimen reproducible — yaitu output yang sama setiap kali prompt dijalankan ulang. claude.ai tidak mengekspos parameter `temperature`, sedangkan Workbench memberikan kontrol penuh. Ini krusial saat Anda ingin membandingkan kualitas zero-shot vs few-shot vs CoT secara objektif.
+> ℹ️ **Mengapa Workbench, bukan claude.ai?** Untuk Lab 02 ini Anda perlu menetapkan **`temperature=0`** agar hasil eksperimen reproducible — yaitu output yang sama setiap kali prompt dijalankan ulang. claude.ai tidak mengekspos parameter `temperature`, sedangkan Workbench memberikan kontrol penuh. Hal ini krusial saat Anda ingin membandingkan kualitas zero-shot vs few-shot vs CoT secara objektif.
 
 ---
 
 ## Mengenal Workbench (Tur Singkat 3 Menit)
 
-Sebelum mulai eksperimen, kenali dulu UI Workbench. Buka https://console.anthropic.com/workbench (pastikan dropdown workspace kanan atas menunjuk ke **"Pelatihan Jalin 2026-06"**).
+Sebelum memulai eksperimen, kenali terlebih dahulu UI Workbench. Buka https://console.anthropic.com/workbench (pastikan dropdown workspace di kanan atas menunjuk ke **"Pelatihan Jalin 2026-06"**).
 
 ### Layout UI
 
@@ -60,19 +60,19 @@ Workbench dibagi menjadi 3 area utama:
 
 | Elemen | Fungsi | Yang Anda lakukan |
 |--------|--------|-------------------|
-| **System Prompt** (atas) | Instruksi tetap untuk role/context — opsional | Kosongkan dulu untuk lab ini |
+| **System Prompt** (atas) | Instruksi tetap untuk role/context — opsional | Kosongkan terlebih dahulu untuk lab ini |
 | **User message** (tengah) | Tempat menulis prompt Anda | Tempel prompt zero-shot / few-shot / CoT di sini |
-| **Assistant prefill** (opsional) | Awalan jawaban yang dipaksakan ke model | Tidak dipakai di lab ini (dibahas di Module 4) |
+| **Assistant prefill** (opsional) | Awalan jawaban yang dipaksakan ke model | Tidak digunakan pada lab ini (dibahas di Module 4) |
 | **Model dropdown** (kanan) | Pilih `claude-sonnet-4-5`, `haiku`, atau `opus` | Set ke `claude-sonnet-4-5` |
 | **Temperature** | 0 = deterministik (paling konsisten), 1 = paling kreatif | Set ke **`0`** |
-| **Max tokens** | Batas panjang output | `1024` sudah cukup |
-| **Run button** (▶) | Eksekusi prompt → panggil API | Klik untuk dapat output |
-| **Output area** (bawah) | Tampilkan response + jumlah token input/output | Salin output ke spreadsheet evaluasi Anda |
+| **Max tokens** | Batas panjang output | `1024` sudah memadai |
+| **Run button** (▶) | Eksekusi prompt → memanggil API | Klik untuk memperoleh output |
+| **Output area** (bawah) | Menampilkan response + jumlah token input/output | Salin output ke spreadsheet evaluasi Anda |
 
 ### 6 Langkah Menjalankan Prompt Pertama
 
-1. **Klik area "User"** di tengah → kursor masuk ke text box besar.
-2. **Tempel atau ketik prompt** Anda. Contoh test cepat:
+1. **Klik area "User"** di tengah → kursor akan masuk ke text box besar.
+2. **Tempel atau ketik prompt** Anda. Contoh uji cepat:
 
    ```
    Klasifikasikan sentimen kalimat berikut sebagai POSITIF, NEGATIF, atau NETRAL.
@@ -81,27 +81,27 @@ Workbench dibagi menjadi 3 area utama:
    Sentimen:
    ```
 
-3. **Cek panel kanan**: pastikan Model = `claude-sonnet-4-5`, Temperature = `0`, Max tokens = `1024`.
+3. **Periksa panel kanan**: pastikan Model = `claude-sonnet-4-5`, Temperature = `0`, Max tokens = `1024`.
 4. **Klik tombol "Run"** (▶) di panel kanan.
-5. **Tunggu 2–5 detik**. Output muncul di bawah area prompt. Akan terlihat:
+5. **Tunggu 2–5 detik**. Output akan muncul di bawah area prompt. Akan tampak:
    - **Response text** (jawaban model).
    - **Usage** (di footer area output): jumlah token input + output → berguna untuk estimasi biaya nanti.
    - **Latency** (durasi eksekusi).
-6. **Catat hasil** ke spreadsheet evaluasi Anda.
+6. **Catat hasil** pada spreadsheet evaluasi Anda.
 
-### Trick yang Berguna
+### Teknik yang Berguna
 
-- **Edit ulang prompt**: cukup ubah teks di area User, klik Run lagi → output baru muncul (tidak menimpa, ada history).
+- **Edit ulang prompt**: cukup ubah teks di area User, klik Run kembali → output baru akan muncul (tidak menimpa, terdapat history).
 - **Reset percakapan**: tombol **"Clear"** atau ikon trash di area prompt.
-- **Save prompt**: tombol **"Save"** di kanan atas → beri nama (mis. `M3-Lab02-ZeroShot-Sentimen`) → Anda dapat memuatnya kembali nanti tanpa menulis ulang.
-- **Bandingkan side-by-side**: gunakan tombol **"+"** atau **"Compare"** (kalau tersedia di UI Anda) untuk membuka 2 panel prompt sekaligus → eksperimen A/B menjadi lebih cepat.
-- **Cek API code**: tombol **"Get code"** atau **"View code"** menampilkan snippet TypeScript/Python yang setara dengan prompt Anda di Workbench — berguna untuk Day 2 saat Anda mulai integrasi via SDK.
+- **Save prompt**: tombol **"Save"** di kanan atas → beri nama (misalnya `M3-Lab02-ZeroShot-Sentimen`) → Anda dapat memuatnya kembali nanti tanpa menulis ulang.
+- **Bandingkan side-by-side**: gunakan tombol **"+"** atau **"Compare"** (jika tersedia pada UI Anda) untuk membuka 2 panel prompt sekaligus → eksperimen A/B menjadi lebih cepat.
+- **Periksa API code**: tombol **"Get code"** atau **"View code"** menampilkan snippet TypeScript/Python yang setara dengan prompt Anda di Workbench — berguna untuk Day 2 saat memulai integrasi via SDK.
 
-### Yang Harus Diingat
+### Hal yang Perlu Diingat
 
-- Setiap klik **"Run"** = 1 API call = **memotong saldo Workspace pelatihan**. Hemat run dengan: (1) draft prompt dulu di editor teks, (2) baru tempel ke Workbench saat siap dieksekusi.
-- Jika output salah/tidak sesuai → **fix prompt-nya** dulu sebelum naik ke model yang lebih mahal. Jangan langsung loncat dari Sonnet ke Opus hanya karena Sonnet sekali "salah".
-- Jika UI Anda berbeda dengan deskripsi di atas (Anthropic memperbarui UI secara berkala) → konsep utama (System / User / Run / parameter di kanan) tetap sama. Tanyakan fasilitator jika menemukan elemen yang berbeda.
+- Setiap klik **"Run"** = 1 API call = **memotong saldo Workspace pelatihan**. Hemat run dengan cara: (1) menyusun draft prompt terlebih dahulu pada editor teks, (2) baru menempelkannya ke Workbench saat siap dieksekusi.
+- Jika output salah atau tidak sesuai → **perbaiki prompt-nya** terlebih dahulu sebelum berpindah ke model yang lebih mahal. Hindari berpindah langsung dari Sonnet ke Opus hanya karena Sonnet pernah satu kali menghasilkan output yang keliru.
+- Jika UI Anda berbeda dengan deskripsi di atas (Anthropic memperbarui UI secara berkala) → konsep utama (System / User / Run / parameter di kanan) tetap sama. Konsultasikan kepada fasilitator jika menemukan elemen yang berbeda.
 
 ---
 
@@ -148,7 +148,7 @@ Berapa total waktu minimum project?
 
 ### Task 3 — Klasifikasi Sentimen Konteks Jalin (5 sampel)
 
-Sama dengan Task 1 (label: `POSITIF`, `NEGATIF`, `NETRAL`), tapi domain berbeda — kalimat berikut adalah komentar nasabah tentang layanan pembayaran. Tujuannya: melihat apakah teknik yang menang di Task 1 (komentar aplikasi umum) tetap menang di domain finansial dengan istilah teknis (BI-FAST, ATM Link, dispute, dll).
+Sama dengan Task 1 (label: `POSITIF`, `NEGATIF`, `NETRAL`), namun dengan domain yang berbeda — kalimat berikut adalah komentar nasabah mengenai layanan pembayaran. Tujuannya untuk menilai apakah teknik yang unggul pada Task 1 (komentar aplikasi umum) tetap unggul pada domain finansial dengan istilah teknis (BI-FAST, ATM Link, dispute, dan sejenisnya).
 
 ```
 J1: "Transfer via BI-FAST cepat banget, sampai dalam 2 detik, mantap!"
@@ -168,13 +168,13 @@ J1: POSITIF, J2: NEGATIF, J3: NETRAL, J4: NEGATIF (mixed sentiment dengan letdow
 ### Langkah 1 — Setup (5 menit)
 
 1. Login ke **Anthropic Console** di https://console.anthropic.com menggunakan akun pribadi Anda.
-2. Di dropdown **workspace** (pojok kanan atas), pilih **"Pelatihan Jalin"** (atau nama workspace yang diberitahukan fasilitator). Pastikan Anda **berpindah ke workspace pelatihan** — bukan workspace pribadi default.
+2. Pada dropdown **workspace** (pojok kanan atas), pilih **"Pelatihan Jalin"** (atau nama workspace yang diinformasikan oleh fasilitator). Pastikan Anda **berpindah ke workspace pelatihan** — bukan workspace pribadi default.
 3. Buka tab **Workbench** dari sidebar kiri.
 4. Pilih model **`claude-sonnet-4-5`** di panel kanan.
-5. Set parameter di panel kanan:
+5. Set parameter pada panel kanan:
    - **`temperature`** = `0` (paling penting — agar output deterministik).
-   - **`max_tokens`** = `1024` (cukup untuk semua task lab ini).
-6. Siapkan dokumen / spreadsheet dengan tabel evaluasi (template di bawah).
+   - **`max_tokens`** = `1024` (memadai untuk seluruh task lab ini).
+6. Siapkan dokumen atau spreadsheet dengan tabel evaluasi (template di bawah).
 
 ### Langkah 2 — Run 3 Teknik untuk Task 1 (10 menit)
 
@@ -236,7 +236,7 @@ Sentimen: {LABEL}
 Kalimat: "{kalimat}"
 ```
 
-Jalankan ketiga template untuk S1–S5. Catat output di tabel.
+Jalankan ketiga template untuk S1–S5. Catat output pada tabel.
 
 ### Langkah 3 — Run 3 Teknik untuk Task 2 — Reasoning Matematika (10 menit)
 
@@ -289,23 +289,23 @@ Soal: "{soal}"
 ```
 
 **Ekspektasi tiap teknik**:
-- **Zero-shot**: jawaban langsung tanpa eksplisit menyebut langkah → risiko error tinggi pada soal multi-step.
-- **Few-shot**: contoh soal + solusi memandu pola pikir model.
-- **CoT**: model menulis langkah 1 → 2 → 3 → … sebelum jawaban akhir. Untuk M3 (project scheduling dengan dependensi paralel), ini hampir wajib.
+- **Zero-shot**: jawaban langsung tanpa menyebutkan langkah secara eksplisit → risiko error tinggi pada soal multi-step.
+- **Few-shot**: contoh soal beserta solusi memandu pola pikir model.
+- **CoT**: model menulis langkah 1 → 2 → 3 → … sebelum jawaban akhir. Untuk M3 (project scheduling dengan dependensi paralel), pendekatan ini hampir wajib.
 
-Jalankan ketiga template untuk M1, M2, M3. Catat output di tabel.
+Jalankan ketiga template untuk M1, M2, M3. Catat output pada tabel.
 
 ### Langkah 4 — Run 3 Teknik untuk Task 3 — Sentimen Konteks Jalin (5 menit)
 
-**Gunakan kembali 3 template Task 1** tanpa modifikasi — peserta hanya mengganti `{kalimat}` dengan J1–J5. Tujuannya: lihat apakah pemenang teknik di Task 1 (domain umum) **tetap konsisten** ketika domain berubah ke konteks finansial (BI-FAST, ATM Link, dispute).
+**Gunakan kembali 3 template Task 1** tanpa modifikasi — Anda hanya perlu mengganti `{kalimat}` dengan J1–J5. Tujuannya untuk melihat apakah teknik yang unggul pada Task 1 (domain umum) **tetap konsisten** ketika domain berubah ke konteks finansial (BI-FAST, ATM Link, dispute).
 
-Jalankan ketiga template untuk J1–J5. Catat output di tabel.
+Jalankan ketiga template untuk J1–J5. Catat output pada tabel.
 
-> 💡 **Observasi yang diharapkan**: Sarkasme di J5 (mirip pola S5 di Task 1) seharusnya tetap sulit untuk zero-shot. Mixed sentiment J4 (mirip S4) akan menguji apakah CoT konsisten lintas domain.
+> 💡 **Observasi yang diharapkan**: Sarkasme pada J5 (mirip pola S5 pada Task 1) seharusnya tetap sulit ditangani zero-shot. Mixed sentiment J4 (mirip S4) akan menguji apakah CoT konsisten lintas domain.
 
 ### Langkah 5 — Tabulasi & Peer Compare (5 menit)
 
-Isi tabel evaluasi (template di bawah), kemudian bandingkan dengan 1 rekan.
+Isi tabel evaluasi (template di bawah), kemudian bandingkan hasil dengan 1 rekan.
 
 ---
 
@@ -341,12 +341,12 @@ Hitung **akurasi per teknik per task** (%):
 
 Tulis 3–5 bullet menjawab:
 
-- Teknik mana yang menang di setiap task? Mengapa?
-- Apakah ada task di mana zero-shot sudah cukup? Mengapa few-shot tidak memberi gain?
-- Apakah ada task di mana CoT **memperburuk** output? (over-reasoning, hallucinated step)
-- Estimasi token cost: kira-kira berapa kali lipat few-shot vs zero-shot?
-- Rekomendasi praktis: untuk masing-masing dari 3 task, teknik mana yang Anda pilih ke produksi?
-- **Konsistensi domain**: apakah teknik pemenang di Task 1 (sentimen umum) sama dengan pemenang di Task 3 (sentimen Jalin)? Jika berbeda, kenapa?
+- Teknik mana yang unggul pada setiap task? Mengapa?
+- Apakah terdapat task di mana zero-shot sudah memadai? Mengapa few-shot tidak memberi gain?
+- Apakah terdapat task di mana CoT justru **memperburuk** output? (over-reasoning, hallucinated step)
+- Estimasi token cost: kira-kira berapa kali lipat few-shot dibanding zero-shot?
+- Rekomendasi praktis: untuk masing-masing dari 3 task, teknik mana yang akan Anda pilih untuk produksi?
+- **Konsistensi domain**: apakah teknik unggulan pada Task 1 (sentimen umum) sama dengan teknik unggulan pada Task 3 (sentimen Jalin)? Jika berbeda, mengapa?
 
 ---
 
@@ -375,11 +375,11 @@ Tulis 3–5 bullet menjawab:
 
 ## Tips
 
-- Dengan `temperature=0`, output yang sama akan keluar setiap Anda klik "Run" — manfaatkan ini untuk eksperimen yang reproducible.
-- Untuk sarkasme (S5), CoT sangat membantu jika Anda menyebut "periksa sarkasme" eksplisit.
-- Pada Task 2 M3 (project scheduling), CoT hampir wajib. Zero-shot sering salah.
-- Jangan lupa **save prompt** Anda di Workbench (tombol "Save" di kanan atas) — Anda dapat membandingkan versi-versi prompt nanti tanpa harus menulis ulang.
-- Jika prompt menghasilkan output yang inkonsisten meski `temperature=0`, kemungkinan besar **prompt-nya yang ambigu** — bukan modelnya. Itu sinyal untuk memperketat instruksi.
+- Dengan `temperature=0`, output yang sama akan keluar setiap kali Anda klik "Run" — manfaatkan hal ini untuk eksperimen yang reproducible.
+- Untuk sarkasme (S5), CoT sangat membantu apabila Anda menyebutkan "periksa sarkasme" secara eksplisit.
+- Pada Task 2 M3 (project scheduling), CoT hampir wajib. Zero-shot kerap menghasilkan jawaban yang salah.
+- Pastikan untuk **menyimpan prompt** Anda di Workbench (tombol "Save" di kanan atas) — Anda dapat membandingkan versi-versi prompt nanti tanpa harus menulis ulang.
+- Jika prompt menghasilkan output yang inkonsisten meskipun `temperature=0`, kemungkinan besar **prompt-nya yang ambigu** — bukan modelnya. Hal tersebut merupakan sinyal untuk memperketat instruksi.
 
 ---
 

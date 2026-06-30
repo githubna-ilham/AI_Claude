@@ -2,13 +2,13 @@
 
 **Durasi**: 90 menit
 **Posisi**: Modul kedua Day 1, fondasi untuk seluruh program.
-**Mode**: Lecture + workshop pendek + handoff ke Lab 01.
+**Format**: Baca konsep → telaah contoh → kerjakan Lab 01.
 
 ---
 
 ## Learning Outcomes
 
-Setelah modul ini, peserta mampu:
+Setelah modul ini, Anda mampu:
 
 1. **Menguraikan** anatomi prompt yang efektif menjadi 5 komponen: Role, Context, Task, Constraint, Output Format.
 2. **Menulis ulang** prompt buruk menjadi prompt yang reliable dengan instruksi eksplisit, tanpa ambiguitas.
@@ -20,15 +20,15 @@ Setelah modul ini, peserta mampu:
 
 ## 1. Mengapa Anatomi Penting
 
-Prompt yang buruk biasanya kabur di salah satu (atau beberapa) dari 5 dimensi:
+Prompt yang buruk umumnya kabur pada salah satu (atau beberapa) dari 5 dimensi:
 
 - Siapa model harus berperan? (Role)
-- Apa latar belakang & batasan domain? (Context)
-- Apa yang spesifik harus dilakukan? (Task)
-- Aturan main: dilarang/wajib apa? (Constraint)
+- Apa latar belakang dan batasan domain? (Context)
+- Apa yang secara spesifik harus dilakukan? (Task)
+- Aturan main: apa yang dilarang dan diwajibkan? (Constraint)
 - Output dalam bentuk apa? (Output Format)
 
-Mental model: bayangkan Anda mendelegasikan pekerjaan ke **karyawan baru yang sangat cerdas, sangat cepat, tapi nol konteks tentang organisasi Anda**. Kalau briefing-nya kabur, hasil kabur.
+Mental model: bayangkan Anda mendelegasikan pekerjaan kepada **karyawan baru yang sangat cerdas dan sangat cepat, namun tanpa konteks mengenai organisasi Anda**. Jika briefing-nya kabur, hasilnya akan kabur pula.
 
 ```mermaid
 flowchart TB
@@ -51,7 +51,7 @@ flowchart TB
 
 ## 2. Komponen 1 — Role Prompting
 
-Role prompting adalah teknik menetapkan **persona / posisi profesional** model. Bukan kosmetik — ia mengaktifkan distribusi vocabulary dan style yang relevan.
+Role prompting adalah teknik menetapkan **persona atau posisi profesional** model. Teknik ini bukan sekadar kosmetik — ia mengaktifkan distribusi vocabulary dan style yang relevan.
 
 ### Pattern
 
@@ -70,15 +70,15 @@ tidak punya latar belakang teknis.
 
 ### Pitfall Role Prompting
 
-- **Persona terlalu generik** ("Anda adalah AI assistant") → tidak memberi sinyal apapun.
-- **Persona berlebihan / fantasi** ("Anda adalah dewa programming") → bisa memicu output yang over-confident.
-- **Persona yang tidak konsisten dengan task** ("Anda adalah penyair" → diminta menulis laporan finansial).
+- **Persona terlalu generik** ("Anda adalah AI assistant") → tidak memberikan sinyal apa pun.
+- **Persona berlebihan atau fantasi** ("Anda adalah dewa programming") → dapat memicu output yang over-confident.
+- **Persona yang tidak konsisten dengan task** (misalnya "Anda adalah penyair" lalu diminta menulis laporan finansial).
 
 ---
 
 ## 3. Komponen 2 — Context Engineering
 
-Context = semua informasi yang model butuhkan untuk menjawab dengan benar tetapi tidak ada di parametric memory-nya. Termasuk:
+Context adalah seluruh informasi yang dibutuhkan model untuk menjawab dengan benar namun tidak terdapat dalam parametric memory-nya. Termasuk di dalamnya:
 
 - Dokumen referensi (kebijakan, kontrak, transkrip).
 - Data terstruktur (tabel, JSON).
@@ -89,9 +89,9 @@ Context = semua informasi yang model butuhkan untuk menjawab dengan benar tetapi
 
 1. **Letakkan context di awal prompt** untuk dokumen panjang; sebagian besar arsitektur attention mendapat manfaat dari posisi awal.
 2. **Bungkus dengan tag XML** seperti `<document>`, `<context>`, `<example>` — Claude dilatih untuk memperhatikan struktur ini.
-3. **Pisahkan instruksi dari data** dengan tag yang jelas; jangan campur.
-4. **Hindari noise**: jangan tempel dokumen 50 halaman jika hanya 2 paragraf relevan.
-5. **State permission**: jelaskan apakah model boleh menggunakan knowledge umum atau hanya context.
+3. **Pisahkan instruksi dari data** dengan tag yang jelas; hindari mencampurnya.
+4. **Hindari noise**: jangan menempelkan dokumen 50 halaman jika hanya 2 paragraf yang relevan.
+5. **State permission**: jelaskan apakah model boleh menggunakan knowledge umum atau hanya menggunakan context.
 
 ### Contoh struktur
 
@@ -112,7 +112,7 @@ Context = semua informasi yang model butuhkan untuk menjawab dengan benar tetapi
 
 ### Contoh Prompt — Context Engineering dalam Praktik
 
-Berikut empat skenario nyata yang dapat langsung Anda coba di claude.ai (free tier sudah cukup).
+Berikut empat skenario nyata yang dapat langsung Anda coba di claude.ai (free tier sudah memadai).
 
 #### Contoh 1 — Tanya Jawab Berbasis Dokumen Kebijakan
 
@@ -253,15 +253,15 @@ Anda adalah supervisor CS. Tuliskan balasan kepada pelanggan yang:
 
 ---
 
-### Pola yang Bisa Anda Ambil
+### Pola yang Dapat Diterapkan
 
 Dari empat contoh di atas, perhatikan pola berulang yang sama:
 
 1. **`<context>` di awal** — apa yang harus model ketahui sebelum bertindak.
 2. **`<task>` jelas dan spesifik** — apa yang harus dihasilkan.
-3. **`<rules>` (opsional) bila perlu pagar** — batasan format, perilaku, atau cara menjawab.
+3. **`<rules>` (opsional) bila diperlukan pagar** — batasan format, perilaku, atau cara menjawab.
 
-Ketiga elemen ini bisa Anda terapkan untuk **hampir semua use case** — dari Q&A dokumen, ekstraksi data, ringkasan, sampai pembuatan balasan email.
+Ketiga elemen ini dapat Anda terapkan untuk **hampir seluruh use case** — mulai dari Q&A dokumen, ekstraksi data, ringkasan, hingga pembuatan balasan email.
 
 ---
 
@@ -290,7 +290,7 @@ Lakukan secara berurutan:
 
 ### Contoh Prompt — Task yang Baik dalam Praktik
 
-Berikut tiga skenario yang menunjukkan bagaimana instruksi yang spesifik mengarahkan model ke hasil yang berkualitas.
+Berikut tiga skenario yang menunjukkan bagaimana instruksi yang spesifik mengarahkan model menuju hasil yang berkualitas.
 
 #### Contoh 1 — Verb Action yang Jelas
 
@@ -313,7 +313,7 @@ Lakukan tiga hal berikut secara berurutan:
 **Mengapa contoh ini bagus:**
 - Verb action konkret: **identifikasi**, **tuliskan**, **prediksi** — bukan "bahas" atau "jelaskan" yang ambigu.
 - Granularitas jelas: 3 fakta, 1 kalimat, 30 kata.
-- Setiap langkah punya **output spesifik** yang bisa diverifikasi.
+- Setiap langkah memiliki **output spesifik** yang dapat diverifikasi.
 
 ---
 
@@ -347,9 +347,9 @@ Tabel markdown dengan kolom:
 ```
 
 **Mengapa contoh ini bagus:**
-- Task dipecah menjadi **4 langkah yang berurutan**, sehingga model tidak melompat ke kesimpulan.
-- Setiap langkah punya **scope sempit dan spesifik**.
-- Format output ditentukan terpisah agar mudah diverifikasi konsistensinya.
+- Task dipecah menjadi **4 langkah yang berurutan** sehingga model tidak melompat ke kesimpulan.
+- Setiap langkah memiliki **scope sempit dan spesifik**.
+- Format output ditentukan secara terpisah agar mudah diverifikasi konsistensinya.
 
 ---
 
@@ -413,7 +413,7 @@ Gunakan bahasa percakapan sehari-hari, seperti bicara dengan teman.
 
 ### Contoh Prompt — Constraint dalam Praktik
 
-Berikut tiga contoh yang menunjukkan bagaimana constraint membentuk output yang aman, konsisten, dan sesuai kebutuhan.
+Berikut tiga contoh yang menunjukkan bagaimana constraint membentuk output yang aman, konsisten, dan sesuai dengan kebutuhan.
 
 #### Contoh 1 — Constraint Length + Tone + Vocabulary
 
@@ -551,7 +551,7 @@ Untuk konsumsi sistem (Day 2+), gunakan JSON dengan schema eksplisit. Ini akan d
 
 ### Contoh Prompt — Output Format dalam Praktik
 
-Tiga contoh berikut menunjukkan kapan menggunakan format yang berbeda (markdown manusia, JSON terstruktur, dan format hibrida).
+Tiga contoh berikut menunjukkan kapan menggunakan format yang berbeda (markdown untuk konsumsi manusia, JSON terstruktur, dan format hibrida).
 
 #### Contoh 1 — Format Markdown untuk Konsumsi Manusia
 
@@ -598,8 +598,8 @@ Output dalam format markdown berikut, tepat sesuai struktur:
 ```
 
 **Mengapa contoh ini bagus:**
-- Struktur markdown jelas → mudah dibaca manusia langsung.
-- Setiap kandidat punya **slot yang sama** → mudah dibandingkan secara visual.
+- Struktur markdown jelas → mudah dibaca manusia secara langsung.
+- Setiap kandidat memiliki **slot yang sama** → mudah dibandingkan secara visual.
 - Rekomendasi diberi nomor prioritas → tidak ambigu.
 
 ---
@@ -643,9 +643,9 @@ ATURAN:
 ```
 
 **Mengapa contoh ini bagus:**
-- Schema JSON **eksplisit dan ketat** — setiap field punya tipe dan opsi yang dibatasi.
+- Schema JSON **eksplisit dan ketat** — setiap field memiliki tipe dan opsi yang dibatasi.
 - `null` diizinkan untuk field yang tidak ditemukan → tidak memaksa model mengarang.
-- "Output HANYA JSON valid, tanpa teks tambahan" → siap dipipa langsung ke parser.
+- "Output HANYA JSON valid, tanpa teks tambahan" → siap diteruskan langsung ke parser.
 
 ---
 
@@ -714,7 +714,7 @@ ATURAN:
 
 ## 7. Prompt Template Structure (Reusable)
 
-Template yang reusable memudahkan tim Anda standardize prompt lintas use case.
+Template yang reusable memudahkan tim Anda menstandardisasi prompt lintas use case.
 
 ### Template generik
 
@@ -757,9 +757,9 @@ Perlakukan prompt seperti kode:
 
 ---
 
-## Demo Live (15 menit)
+## Demonstrasi Mandiri (15 menit)
 
-**Skenario**: refactor prompt **balasan keluhan transaksi gagal** di customer service Jalin, dari "buruk" → "berproduksi".
+**Skenario**: refactor prompt **balasan keluhan transaksi gagal** di customer service Jalin, dari versi "buruk" menuju versi "siap produksi".
 
 ### Langkah
 
@@ -768,14 +768,14 @@ Perlakukan prompt seperti kode:
    ```text
    Balas keluhan nasabah ini: "Transfer saya gagal tapi saldo terdebit, sudah 2 hari"
    ```
-   Amati: respons terlalu generik, tidak menyebut prosedur Jalin, tidak ada SLA, tidak ada empati spesifik.
-3. **Iteration 2 — tambah Role + Context**:
+   Amati: respons terlalu generik, tidak menyebut prosedur Jalin, tidak ada SLA, dan tidak ada empati spesifik.
+3. **Iteration 2 — tambahkan Role + Context**:
    ```text
    Anda adalah Customer Service officer Jalin Pembayaran Nusantara,
    audiens nasabah ritel bank peserta.
    Balas keluhan: "Transfer saya gagal tapi saldo terdebit, sudah 2 hari"
    ```
-4. **Iteration 3 — tambah Task + Constraint + Format**:
+4. **Iteration 3 — tambahkan Task + Constraint + Format**:
    ```text
    Anda adalah Customer Service officer Jalin Pembayaran Nusantara.
 
@@ -797,7 +797,7 @@ Perlakukan prompt seperti kode:
 
    <message>Transfer saya gagal tapi saldo terdebit, sudah 2 hari</message>
    ```
-5. **Diskusi**: minta peserta menunjukkan komponen mana yang membuat output Iteration 3 jauh lebih baik — dan diskusikan komponen yang mungkin masih bisa diperketat (mis. menambah `<rules>` untuk **tidak** mengarang nomor tiket asli).
+5. **Refleksi**: identifikasi komponen mana yang membuat output Iteration 3 jauh lebih baik, kemudian pertimbangkan komponen yang masih dapat diperketat (misalnya menambahkan `<rules>` untuk **tidak** mengarang nomor tiket asli).
 
 ---
 
@@ -908,15 +908,15 @@ Tiket: "Server produksi down sejak 30 menit lalu"
 
 ---
 
-## Wrap-up & Q&A
+## Refleksi Akhir
 
 Pertanyaan refleksi:
 
-1. Dari 5 komponen anatomi, mana yang paling sering Anda lupakan dalam prompt sehari-hari? Mengapa?
-2. Apa beda "role prompting" yang efektif vs sekadar kosmetik?
+1. Dari 5 komponen anatomi, manakah yang paling sering Anda lupakan dalam prompt sehari-hari? Mengapa demikian?
+2. Apa perbedaan "role prompting" yang efektif dibanding yang sekadar kosmetik?
 3. Mengapa instruksi positif lebih reliable dibanding larangan?
-4. Bagaimana Anda akan men-version prompt di tim Anda — siapa yang menjaga "source of truth"?
-5. Apa risiko menulis prompt yang terlalu kaku/over-constrained?
+4. Bagaimana Anda akan melakukan versioning prompt di tim Anda — siapa yang menjaga "source of truth"?
+5. Apa risiko menulis prompt yang terlalu kaku atau over-constrained?
 
 ---
 

@@ -2,13 +2,13 @@
 
 **Durasi**: 90 menit
 **Posisi**: Modul ketiga Day 1; memperluas anatomi (Module 2) ke teknik lanjutan.
-**Mode**: Lecture + demo perbandingan + lab.
+**Format**: Baca konsep → telaah perbandingan → kerjakan Lab 02.
 
 ---
 
 ## Learning Outcomes
 
-Setelah modul ini, peserta mampu:
+Setelah modul ini, Anda mampu:
 
 1. **Membedakan** kapan menggunakan zero-shot, few-shot, dan chain-of-thought (CoT) berdasarkan kompleksitas task & ketersediaan contoh.
 2. **Menyusun** prompt few-shot dengan contoh berkualitas tinggi (diverse, balanced, formatted).
@@ -22,9 +22,9 @@ Setelah modul ini, peserta mampu:
 
 ### Apa Itu Spectrum Prompting?
 
-**Spectrum Prompting** adalah cara berpikir yang menempatkan berbagai teknik prompting dalam sebuah **rentang (spectrum)** — dari yang paling sederhana hingga paling kompleks. Tujuannya: agar Anda **tidak langsung menggunakan teknik kompleks** padahal teknik sederhana sudah cukup.
+**Spectrum Prompting** adalah cara berpikir yang menempatkan berbagai teknik prompting dalam sebuah **rentang (spectrum)** — dari yang paling sederhana hingga paling kompleks. Tujuannya agar Anda **tidak langsung menggunakan teknik kompleks** ketika teknik sederhana sudah memadai.
 
-Analoginya seperti memilih alat di kotak peralatan: untuk memasang paku, Anda tidak perlu palu godam — palu kecil sudah cukup. Begitu pula dengan prompt: untuk task sederhana, jangan langsung pakai teknik berlapis-lapis. Mulailah dari yang paling ringan.
+Analoginya seperti memilih alat di kotak peralatan: untuk memasang paku tidak diperlukan palu godam — palu kecil sudah memadai. Demikian pula dengan prompt: untuk task sederhana, hindari penggunaan teknik berlapis-lapis. Mulailah dari yang paling ringan.
 
 ```mermaid
 flowchart LR
@@ -43,7 +43,7 @@ Setiap teknik prompting memiliki **trade-off** antara tiga hal:
 2. **Latency** — prompt yang lebih panjang membutuhkan waktu pemrosesan yang lebih lama.
 3. **Akurasi & konsistensi** — teknik yang lebih kompleks umumnya menghasilkan output yang lebih konsisten untuk task yang rumit.
 
-Jika Anda langsung memilih teknik paling kompleks, Anda **membayar biaya tinggi tanpa selalu mendapatkan hasil yang lebih baik**. Sebaliknya, jika Anda menggunakan teknik terlalu sederhana untuk task kompleks, akurasi akan rendah dan Anda akan terus mengulang prompt.
+Jika Anda langsung memilih teknik paling kompleks, Anda **membayar biaya tinggi tanpa selalu memperoleh hasil yang lebih baik**. Sebaliknya, jika menggunakan teknik yang terlalu sederhana untuk task kompleks, akurasi akan rendah dan prompt akan terus perlu diulang.
 
 ### Empat Tingkat dalam Spectrum
 
@@ -54,16 +54,16 @@ Jika Anda langsung memilih teknik paling kompleks, Anda **membayar biaya tinggi 
 | **3** | **Chain-of-Thought (CoT)** | Few-shot + minta model menjelaskan reasoning | Sedang–tinggi |
 | **4** | **Structured Prompting** | Multi-section dengan peran, sumber, dan format yang dikombinasikan | Tertinggi |
 
-Catatan penting: angka tingkat **bukan** tingkat kualitas. Tingkat 4 bukan otomatis "lebih baik" dari tingkat 1 — ia hanya **lebih cocok untuk task yang lebih kompleks**.
+Catatan penting: angka tingkat **bukan** tingkat kualitas. Tingkat 4 tidak otomatis "lebih baik" dibanding tingkat 1 — ia hanya **lebih cocok untuk task yang lebih kompleks**.
 
 ### Aturan Naik Tingkat
 
-Pendekatan yang direkomendasikan: **mulai dari tingkat paling rendah, naik hanya jika hasilnya belum memadai.**
+Pendekatan yang direkomendasikan: **mulailah dari tingkat paling rendah, naik hanya jika hasilnya belum memadai.**
 
-1. **Mulai dengan Zero-Shot.** Coba lebih dulu — paling cepat, paling murah, dan banyak task umum yang sudah berhasil di tingkat ini.
+1. **Mulai dengan Zero-Shot.** Cobalah terlebih dahulu — paling cepat, paling ekonomis, dan banyak task umum yang sudah berhasil di tingkat ini.
 2. **Naik ke Few-Shot jika output tidak konsisten** atau format tidak sesuai harapan. Tambahkan 2–3 contoh untuk "mengunci" pola yang diinginkan.
 3. **Naik ke Chain-of-Thought jika task membutuhkan penalaran multi-step** — misalnya kalkulasi bertahap, analisis kausalitas, atau pengambilan keputusan dengan beberapa kriteria.
-4. **Naik ke Structured Prompting jika ada beberapa peran atau sumber** yang harus dikombinasikan — misalnya menggabungkan dokumen referensi, riwayat percakapan, dan aturan bisnis dalam satu prompt.
+4. **Naik ke Structured Prompting jika terdapat beberapa peran atau sumber** yang harus dikombinasikan — misalnya menggabungkan dokumen referensi, riwayat percakapan, dan aturan bisnis dalam satu prompt.
 
 ### Bagaimana Memutuskan Titik Awal?
 
@@ -78,7 +78,7 @@ Gunakan tiga pertanyaan diagnostik berikut:
 
 ### Prinsip Penting
 
-**Naik tingkat = naik biaya dan latency.** Karena itu, keputusan untuk naik tingkat harus berbasis **bukti dari evaluasi**, bukan asumsi. Module 4 (Structured Output & Evaluasi) akan membahas cara mengukur kualitas prompt secara objektif sehingga Anda tahu **kapan benar-benar perlu naik tingkat**, dan kapan teknik yang lebih sederhana sudah memadai.
+**Naik tingkat berarti naik biaya dan latency.** Oleh karena itu, keputusan untuk naik tingkat harus berbasis **bukti dari evaluasi**, bukan asumsi. Module 4 (Structured Output & Evaluasi) akan membahas cara mengukur kualitas prompt secara objektif sehingga Anda dapat menentukan **kapan benar-benar perlu naik tingkat** dan kapan teknik yang lebih sederhana sudah memadai.
 
 Bagian selanjutnya akan membahas masing-masing tingkat secara mendalam.
 
@@ -86,13 +86,13 @@ Bagian selanjutnya akan membahas masing-masing tingkat secara mendalam.
 
 ## 2. Zero-Shot Prompting
 
-Zero-shot = model diberi instruksi tanpa contoh. Modern LLM (Sonnet, Opus) sangat capable di zero-shot untuk task umum.
+Zero-shot adalah pendekatan ketika model diberi instruksi tanpa contoh. LLM modern (Sonnet, Opus) memiliki kapabilitas tinggi pada zero-shot untuk task umum.
 
 ### Kapan dipakai
 
 - Task umum yang well-documented (ringkasan, terjemahan, klasifikasi standar).
-- Eksplorasi awal sebelum investasi waktu menulis contoh.
-- Volume tinggi di mana setiap token contoh = biaya berlipat.
+- Eksplorasi awal sebelum berinvestasi waktu menulis contoh.
+- Volume tinggi di mana setiap token contoh berarti biaya yang berlipat.
 
 ### Contoh
 
@@ -112,7 +112,7 @@ Sentimen:
 
 ## 3. Few-Shot Prompting
 
-Few-shot = prompt menyertakan **2–8 contoh** input→output. Model belajar pattern dari contoh (in-context learning).
+Few-shot adalah pendekatan ketika prompt menyertakan **2–8 contoh** input→output. Model belajar pattern dari contoh tersebut (in-context learning).
 
 ### Prinsip Contoh yang Baik
 
@@ -155,14 +155,14 @@ Sentimen:
 
 ### Trade-off
 
-- Lebih banyak contoh ≠ selalu lebih baik. Setelah 5–8 contoh, marginal gain biasanya turun, tapi cost naik linear.
-- Bias contoh = bias output. Jika 4 dari 5 contoh POSITIF, model condong POSITIF.
+- Lebih banyak contoh tidak selalu berarti lebih baik. Setelah 5–8 contoh, marginal gain umumnya menurun, sementara cost meningkat linear.
+- Bias contoh menghasilkan bias output. Jika 4 dari 5 contoh berlabel POSITIF, model akan condong ke POSITIF.
 
 ---
 
 ## 4. Chain-of-Thought (CoT) — Step-by-Step Reasoning
 
-CoT = memaksa model menulis langkah berpikir sebelum jawaban akhir. Studi menunjukkan akurasi naik signifikan pada task matematika, logika, dan multi-hop reasoning.
+CoT adalah teknik yang memaksa model menulis langkah berpikir sebelum jawaban akhir. Studi menunjukkan akurasi naik signifikan pada task matematika, logika, dan multi-hop reasoning.
 
 ### Pola
 
@@ -193,7 +193,7 @@ Jawaban akhir dalam format: "Total revenue: Rp X"
 
 ### CoT + Structured
 
-Untuk audit, pisahkan reasoning dan jawaban:
+Untuk keperluan audit, pisahkan reasoning dan jawaban:
 
 ```text
 <thinking>
@@ -209,14 +209,14 @@ Ini memudahkan parsing dan logging untuk evaluasi.
 
 ### Catatan untuk Claude
 
-- Claude **Extended Thinking** (Sonnet/Opus 4.x) menyediakan CoT native dengan budget yang dapat dikontrol. Tidak perlu prompt CoT manual untuk task kompleks — cukup aktifkan extended thinking di Console.
-- Untuk Haiku, CoT manual via prompt tetap relevan.
+- Claude **Extended Thinking** (Sonnet/Opus 4.x) menyediakan CoT native dengan budget yang dapat dikontrol. Tidak diperlukan prompt CoT manual untuk task kompleks — cukup aktifkan extended thinking di Console.
+- Untuk Haiku, CoT manual melalui prompt tetap relevan.
 
 ---
 
 ## 5. Persona-Based Prompting
 
-Persona-based = role prompting tingkat lanjut yang membentuk **karakter konsisten** lintas turn (multi-turn conversation).
+Persona-based adalah role prompting tingkat lanjut yang membentuk **karakter konsisten** lintas turn (multi-turn conversation).
 
 ### Komponen Persona
 
@@ -245,7 +245,7 @@ Larangan:
 
 ## 6. Structured Prompting
 
-Structured prompting = prompt yang menggabungkan **multiple sections** dengan tag XML untuk skenario kompleks. Pattern ini menjadi tulang punggung Day 2–4.
+Structured prompting adalah prompt yang menggabungkan **multiple sections** dengan tag XML untuk skenario kompleks. Pattern ini menjadi tulang punggung Day 2–4.
 
 ### Template
 
@@ -373,7 +373,7 @@ balasan yang siap dikirim ke pelanggan.
 - **`<knowledge_base>`** memberi sumber resmi → tidak ada halusinasi.
 - **`<persona>`** memastikan suara brand konsisten.
 - **`<examples>`** mengunci pola balasan (sapaan, tips, penutup).
-- **`<rules>`** menyediakan **fallback** spesifik untuk kasus di luar knowledge base.
+- **`<rules>`** menyediakan **fallback** spesifik untuk kasus di luar cakupan knowledge base.
 
 ---
 
@@ -537,7 +537,7 @@ Akhiri dengan SINTESIS: rekomendasi prioritas perbaikan.
 ```
 
 **Mengapa contoh ini bagus:**
-- **Multi-persona** memungkinkan satu prompt menghasilkan **3 sudut pandang berbeda** tanpa harus run terpisah.
+- **Multi-persona** memungkinkan satu prompt menghasilkan **3 sudut pandang berbeda** tanpa harus dijalankan terpisah.
 - **Knowledge base proyek-spesifik** (Next.js + TypeScript + Supabase, convention internal) menyesuaikan saran.
 - **Rules anti-duplikasi** ("jangan ulang temuan yang sama di babak berbeda") mencegah noise.
 - **Sintesis akhir** mengubah 3 review terpisah menjadi prioritas tindakan yang dapat ditindaklanjuti.
@@ -555,7 +555,7 @@ Structured prompting adalah tingkat paling kompleks — gunakan **hanya jika** t
 | Output **dikonsumsi sistem produksi** | Chatbot enterprise, agent autonomous, workflow orkestrasi |
 | Persona dan knowledge base **harus konsisten lintas conversation** | Brand voice, compliance assistant |
 
-Jika task Anda hanya membutuhkan beberapa contoh dan instruksi sederhana, **few-shot atau CoT sudah cukup** — tidak perlu structured. Ingat aturan main spectrum: naik tingkat hanya jika ada bukti dibutuhkan.
+Jika task Anda hanya membutuhkan beberapa contoh dan instruksi sederhana, **few-shot atau CoT sudah memadai** — tidak diperlukan structured. Ingat aturan main spectrum: naik tingkat hanya jika terdapat bukti yang membenarkannya.
 
 ---
 
@@ -573,20 +573,20 @@ Jika task Anda hanya membutuhkan beberapa contoh dan instruksi sederhana, **few-
 
 ---
 
-## Demo Live (15 menit)
+## Demonstrasi Mandiri (15 menit)
 
-**Skenario**: bandingkan 3 teknik pada task klasifikasi sentimen tweet bahasa Indonesia bercampur slang.
+**Skenario**: bandingkan 3 teknik pada task klasifikasi sentimen tweet bahasa Indonesia yang bercampur slang.
 
 ### Langkah
 
-1. **Buka [Anthropic Console — Workbench](https://console.anthropic.com/workbench)**. Pilih model **Sonnet 4.x** dan set **`temperature = 0`** di panel kanan. Dengan temperature 0, eksperimen A/B menjadi deterministik — sangat penting untuk membandingkan kualitas antar teknik secara fair.
-2. Siapkan 5 tweet test (sertakan 1 sarkastik, 1 mixed sentiment, 1 slang berat).
-3. **Run zero-shot**: prompt klasifikasi dasar tanpa contoh.
-4. **Run few-shot**: tambahkan 5 contoh terbalanced.
-5. **Run CoT**: tambahkan instruksi "pikirkan langkah demi langkah, identifikasi kata kunci sentimen, baru beri label".
-6. Catat output ke tabel perbandingan. Diskusikan: kapan jump dari zero ke few-shot worth? Kapan CoT worth?
+1. **Buka [Anthropic Console — Workbench](https://console.anthropic.com/workbench)**. Pilih model **Sonnet 4.x** dan set **`temperature = 0`** di panel kanan. Dengan temperature 0, eksperimen A/B menjadi deterministik — sangat penting untuk membandingkan kualitas antar teknik secara objektif.
+2. Siapkan 5 tweet test (sertakan 1 yang bersifat sarkastik, 1 mixed sentiment, dan 1 dengan slang yang dominan).
+3. **Jalankan zero-shot**: prompt klasifikasi dasar tanpa contoh.
+4. **Jalankan few-shot**: tambahkan 5 contoh yang terdistribusi seimbang.
+5. **Jalankan CoT**: tambahkan instruksi "pikirkan langkah demi langkah, identifikasi kata kunci sentimen, kemudian berikan label".
+6. Catat output pada tabel perbandingan. Refleksi: kapan transisi dari zero ke few-shot bermanfaat? Kapan CoT bermanfaat?
 
-> 💰 **Akses Workbench**: berbeda dengan claude.ai yang gratis, Workbench memerlukan **kredit API** karena setiap "Run" memanggil endpoint Messages. Fasilitator membuat **Workspace pelatihan Jalin** di Anthropic Console dan mengundang seluruh peserta sebagai member. Selama sesi Module 3, pastikan dropdown workspace di kanan atas Console menunjuk ke workspace pelatihan — semua usage akan otomatis ditagih ke billing fasilitator, bukan ke akun pribadi Anda.
+> 💰 **Akses Workbench**: berbeda dengan claude.ai yang gratis, Workbench memerlukan **kredit API** karena setiap "Run" memanggil endpoint Messages. Fasilitator telah membuat **Workspace pelatihan Jalin** di Anthropic Console dan mengundang Anda sebagai member. Selama sesi Module 3, pastikan dropdown workspace di kanan atas Console menunjuk ke workspace pelatihan — seluruh usage akan otomatis ditagihkan ke billing pelatihan, bukan ke akun pribadi Anda.
 
 ---
 
@@ -735,13 +735,13 @@ Kenapa pengiriman saya lama?
 
 ---
 
-## Wrap-up & Q&A
+## Refleksi Akhir
 
-1. Kapan few-shot tidak worth dibanding zero-shot?
-2. Mengapa CoT bisa **menurunkan** kualitas untuk task tertentu? (hint: task sederhana)
-3. Apa risiko mempublikasikan reasoning chain ke end user?
-4. Bagaimana Anda memilih jumlah contoh few-shot — 2, 5, 8?
-5. Apa beda persona-based dengan system prompt biasa?
+1. Kapan few-shot tidak sepadan dibanding zero-shot?
+2. Mengapa CoT dapat **menurunkan** kualitas untuk task tertentu? (petunjuk: task sederhana)
+3. Apa risiko mempublikasikan reasoning chain kepada end user?
+4. Bagaimana Anda memilih jumlah contoh few-shot — 2, 5, atau 8?
+5. Apa perbedaan persona-based dengan system prompt biasa?
 
 ---
 

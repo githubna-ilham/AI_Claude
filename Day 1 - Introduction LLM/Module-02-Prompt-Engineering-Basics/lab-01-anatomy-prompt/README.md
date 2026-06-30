@@ -3,14 +3,14 @@
 **Modul**: Module 2 — Prompt Engineering Basics
 **Durasi**: 40 menit
 **Mode**: Individual atau berpasangan (maks 2 orang)
-**Tools**: claude.ai (free tier sudah cukup) + editor teks atau Google Docs
+**Tools**: claude.ai (free tier sudah memadai) + editor teks atau Google Docs
 **Output**: dokumen berisi 3–5 prompt hasil refactor + 2 screenshot output (sebelum vs sesudah)
 
 ---
 
 ## Tujuan
 
-Setelah lab ini, peserta mampu:
+Setelah lab ini, Anda mampu:
 
 1. Mengidentifikasi kelemahan prompt buruk berdasarkan 5 komponen anatomi (Role, Context, Task, Constraint, Output Format).
 2. Me-refactor prompt menjadi versi reliable yang siap dipakai di lingkungan kerja Jalin.
@@ -20,8 +20,8 @@ Setelah lab ini, peserta mampu:
 
 ## Prasyarat
 
-- Sudah mengikuti Module 1 (Introduction to LLM & Claude) dan Module 2 (Prompt Engineering Basics).
-- Akun **claude.ai** aktif (free tier cukup; Pro lebih nyaman karena rate limit lebih longgar).
+- Telah mengikuti Module 1 (Introduction to LLM & Claude) dan Module 2 (Prompt Engineering Basics).
+- Akun **claude.ai** aktif (free tier memadai; Pro lebih nyaman karena rate limit lebih longgar).
 - Editor teks lokal (VS Code / Notepad) atau Google Docs untuk menyimpan hasil.
 
 > ℹ️ **Catatan tool**: Lab ini sepenuhnya dapat dijalankan menggunakan **claude.ai gratis**. Tidak ada bagian lab yang mewajibkan akses Anthropic Console / Workbench berbayar.
@@ -32,7 +32,7 @@ Setelah lab ini, peserta mampu:
 
 ### Langkah 1 — Pilih Use Case (5 menit)
 
-Pilih **3 dari 5** use case di bawah. Jika waktu cukup, kerjakan kelima. Semua use case berlatar konteks operasional Jalin Pembayaran Nusantara.
+Pilih **3 dari 5** use case di bawah. Jika waktu memungkinkan, kerjakan kelima-limanya. Seluruh use case berlatar konteks operasional Jalin Pembayaran Nusantara.
 
 | # | Use Case                                            | Prompt Buruk (yang harus Anda refactor)                                                                                       |
 |---|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
@@ -56,7 +56,7 @@ Untuk setiap prompt buruk yang Anda pilih, isi tabel audit berikut. Tujuannya: m
 
 ### Langkah 3 — Refactor Prompt (20 menit)
 
-Tulis ulang setiap prompt buruk dengan template berikut. Tambahkan `<context>` yang masuk akal untuk konteks Jalin (mis. SOP fiktif penanganan dispute, tabel tarif transaksi, daftar bank peserta, dll). Jika Anda tidak yakin angka spesifik, **gunakan placeholder yang realistis** — yang penting struktur anatominya benar.
+Tulis ulang setiap prompt buruk dengan template berikut. Tambahkan `<context>` yang masuk akal untuk konteks Jalin (misalnya SOP fiktif penanganan dispute, tabel tarif transaksi, daftar bank peserta, dan sejenisnya). Jika Anda tidak yakin akan angka spesifik, **gunakan placeholder yang realistis** — hal terpenting adalah struktur anatominya benar.
 
 ```text
 <role>
@@ -85,7 +85,7 @@ Beri contoh field & isi jika perlu.}
 </output_format>
 ```
 
-> 💡 **Tips refactor**: Jangan over-prompt di percobaan pertama. Mulai dari versi minimum-viable, lalu **tambah constraint** kalau output masih kurang. Anda akan terkejut betapa sering 80% peningkatan datang dari menambah Role + Context saja.
+> 💡 **Tips refactor**: Hindari over-prompt pada percobaan pertama. Mulailah dari versi minimum-viable, lalu **tambahkan constraint** jika output masih kurang. Sering kali 80% peningkatan kualitas datang dari penambahan Role + Context saja.
 
 ### Langkah 4 — Verifikasi di claude.ai (10 menit)
 
@@ -94,10 +94,10 @@ Pilih **minimal 2 use case** dari yang Anda kerjakan, lalu lakukan A/B test beri
 1. Jalankan **prompt buruk original** di claude.ai → screenshot output.
 2. Jalankan **prompt hasil refactor** Anda → screenshot output.
 3. Catat perbandingan dalam 2–3 bullet:
-   - Apakah output lebih relevan ke konteks Jalin?
-   - Apakah format konsisten dan mudah diproses (manusia / sistem)?
-   - Apakah ada peningkatan empati / profesionalisme (untuk use case komunikasi)?
-   - Apakah ada hal yang justru menjadi lebih buruk setelah refactor? (Jujur saja — ini wajar dan bisa diperbaiki di iterasi berikutnya.)
+   - Apakah output lebih relevan dengan konteks Jalin?
+   - Apakah format konsisten dan mudah diproses (oleh manusia maupun sistem)?
+   - Apakah terdapat peningkatan empati atau profesionalisme (untuk use case komunikasi)?
+   - Apakah ada aspek yang justru menjadi lebih buruk setelah refactor? Hal ini wajar dan dapat diperbaiki pada iterasi berikutnya.
 
 ---
 
@@ -112,12 +112,12 @@ Pilih **minimal 2 use case** dari yang Anda kerjakan, lalu lakukan A/B test beri
 
 ## Tips Penting
 
-- **Jangan over-prompt** pada percobaan pertama. Mulai dari minimum viable, lalu tambah constraint kalau output masih kurang.
-- **Gunakan XML tags** (`<context>`, `<task>`, `<rules>`, dst.) untuk memisahkan instruksi dari data — Claude dilatih untuk memperhatikan struktur ini.
-- **Tulis prompt dalam Bahasa Indonesia** jika audiens lokal. Claude bilingual yang sangat baik — Anda tidak perlu menerjemahkan ke bahasa Inggris demi "kualitas".
-- **Coba 2–3 variasi** untuk satu use case dan bandingkan. Salah satunya pasti lebih baik dari yang Anda kira awal.
-- Jika output JSON tidak konsisten, **jangan panik** — topik tersebut akan dibahas mendalam di Module 4 (Structured Output). Fokus dulu pada anatomi prompt.
-- Bila Anda merasa salah satu use case "tidak tahu apa SOP-nya di dunia nyata" — itu **OK**. Buat SOP fiktif yang masuk akal. Tujuan lab ini adalah melatih **kerangka berpikir**, bukan menghafal prosedur internal.
+- **Hindari over-prompt** pada percobaan pertama. Mulailah dari minimum viable, lalu tambahkan constraint jika output masih kurang.
+- **Gunakan XML tags** (`<context>`, `<task>`, `<rules>`, dan sejenisnya) untuk memisahkan instruksi dari data — Claude dilatih untuk memperhatikan struktur ini.
+- **Tulis prompt dalam Bahasa Indonesia** jika audiens lokal. Claude memiliki kemampuan bilingual yang sangat baik — tidak diperlukan penerjemahan ke bahasa Inggris demi "kualitas".
+- **Cobalah 2–3 variasi** untuk satu use case lalu bandingkan. Salah satu variasi umumnya akan menghasilkan output yang lebih baik dari perkiraan awal.
+- Jika output JSON tidak konsisten, hal tersebut wajar — topik tersebut akan dibahas secara mendalam pada Module 4 (Structured Output). Fokuskan terlebih dahulu pada anatomi prompt.
+- Jika Anda merasa salah satu use case tidak memiliki SOP referensi di dunia nyata, hal tersebut tidak menjadi masalah. Buat SOP fiktif yang masuk akal. Tujuan lab ini adalah melatih **kerangka berpikir**, bukan menghafal prosedur internal.
 
 ---
 
@@ -151,10 +151,10 @@ Kirim ke fasilitator via channel yang ditentukan (LMS / Slack / Telegram).
 
 ## Catatan Penutup
 
-Lab ini adalah **fondasi paling penting** sepanjang pelatihan. Anatomi prompt yang Anda kuasai di sini akan dipakai berulang di:
+Lab ini merupakan **fondasi paling penting** sepanjang pelatihan. Anatomi prompt yang dikuasai di sini akan dipakai berulang pada:
 
 - **Module 3 (Day 1)** — Anda akan menambahkan teknik lanjutan (few-shot, chain-of-thought) di atas anatomi yang sama.
-- **Module 4 (Day 2 — pembuka)** — Anda akan memperketat **Output Format** menjadi JSON yang valid dan dapat dievaluasi otomatis.
-- **Day 2+** — Saat menulis prompt untuk fitur AI di `fin-app` (Next.js + Supabase), anatomi yang sama akan menjadi struktur dasar dari setiap prompt yang Anda definisikan dalam kode.
+- **Module 4 (Day 2 — pembuka)** — Anda akan memperketat **Output Format** menjadi JSON yang valid dan dapat dievaluasi secara otomatis.
+- **Day 2 dan seterusnya** — Saat menulis prompt untuk fitur AI di `fin-app` (Next.js + Supabase), anatomi yang sama akan menjadi struktur dasar dari setiap prompt yang Anda definisikan dalam kode.
 
-Investasi waktu di sini akan terasa manfaatnya selama 3 hari ke depan.
+Investasi waktu pada lab ini akan terasa manfaatnya selama 3 hari ke depan.
