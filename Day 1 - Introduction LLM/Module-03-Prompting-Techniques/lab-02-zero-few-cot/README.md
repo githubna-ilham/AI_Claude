@@ -1,17 +1,18 @@
 # Lab 02 — Zero-Shot, Few-Shot, Chain-of-Thought
 
 **Modul**: Module 3 — Prompting Techniques
-**Durasi**: 45 menit
-**Mode**: Individual; peer comparison di 5 menit terakhir.
-**Tools**: **Anthropic Console — Workbench** (https://console.anthropic.com/workbench). Lab ini memerlukan kontrol parameter `temperature=0` agar A/B test antar teknik fair. Anda akan login menggunakan **akun Anthropic Console pribadi** Anda yang sudah diundang ke **Workspace pelatihan** oleh fasilitator (lihat Prasyarat di bawah).
-**Output**: tabel evaluasi 3 teknik × 3 task + insight 3-5 bullet.
+**Durasi**: 45 menit (3 task × ~15 menit)
+**Mode**: Individual
+**Tools**: **Anthropic Console — Workbench** (https://console.anthropic.com/workbench) + Google Spreadsheet
+**Output**: Spreadsheet berisi output 3 teknik × 3 task + insight singkat per task
 
 ---
 
 ## Tujuan
 
 Setelah lab ini Anda mampu:
-1. Membandingkan akurasi, persepsi latency, dan token usage dari 3 teknik prompting pada task yang identik.
+
+1. Membandingkan akurasi 3 teknik prompting (zero-shot, few-shot, CoT) pada task yang identik.
 2. Memilih teknik yang tepat untuk masing-masing task berdasarkan data, bukan opini.
 3. Mengidentifikasi kapan CoT membantu dan kapan justru menjadi overhead yang tidak perlu.
 
@@ -19,166 +20,53 @@ Setelah lab ini Anda mampu:
 
 ## Prasyarat
 
-- Telah menyelesaikan Module 3 (materi & demo).
+- Telah menyelesaikan Module 3 (materi).
 - Akun **Anthropic Console** pribadi aktif (https://console.anthropic.com).
-- Anda telah menerima **undangan email** untuk bergabung ke **Workspace pelatihan Jalin** yang disiapkan oleh fasilitator. Setelah menerima undangan, Anda dapat memilih workspace tersebut dari dropdown kanan atas Console.
-- Seluruh usage di Workbench selama lab ini akan **otomatis ditagihkan ke billing pelatihan** — Anda tidak perlu melakukan top-up pribadi.
-- Spreadsheet atau tabel kosong untuk mencatat hasil.
+- Anda telah menerima undangan untuk bergabung ke **Workspace pelatihan Jalin** yang disiapkan fasilitator. Seluruh usage Workbench selama lab ini akan otomatis ditagihkan ke billing pelatihan.
+- Google Spreadsheet kosong untuk mencatat hasil.
 
-> ℹ️ **Belum menerima undangan?** Hubungi fasilitator. Pastikan email yang Anda berikan saat registrasi pelatihan sama dengan email yang digunakan pada Anthropic Console.
-
-> ℹ️ **Mengapa Workbench, bukan claude.ai?** Untuk Lab 02 ini Anda perlu menetapkan **`temperature=0`** agar hasil eksperimen reproducible — yaitu output yang sama setiap kali prompt dijalankan ulang. claude.ai tidak mengekspos parameter `temperature`, sedangkan Workbench memberikan kontrol penuh. Hal ini krusial saat Anda ingin membandingkan kualitas zero-shot vs few-shot vs CoT secara objektif.
+> ℹ️ **Mengapa Workbench, bukan claude.ai?** Lab 02 memerlukan parameter **`temperature=0`** agar hasil eksperimen reproducible — output yang sama setiap kali prompt dijalankan ulang. claude.ai tidak mengekspos parameter `temperature`, sedangkan Workbench memberikan kontrol penuh. Hal ini krusial saat membandingkan kualitas zero-shot vs few-shot vs CoT secara objektif.
 
 ---
 
-## Mengenal Workbench (Tur Singkat 3 Menit)
+## Setup Workbench (3 menit)
 
-Sebelum memulai eksperimen, kenali terlebih dahulu UI Workbench. Buka https://console.anthropic.com/workbench (pastikan dropdown workspace di kanan atas menunjuk ke **"Pelatihan Jalin 2026-06"**).
-
-### Layout UI
-
-Workbench dibagi menjadi 3 area utama:
-
-```
-┌─────────────────────────────────────┬──────────────────────────┐
-│  AREA KIRI — Prompt Editor          │  PANEL KANAN — Parameter │
-│                                     │                          │
-│  [ System Prompt    (opsional)  ]   │  Model    [Sonnet 4.x ▼] │
-│                                     │                          │
-│  [ User message (instruksi Anda) ]  │  Temperature   [ 0.0  ]  │
-│                                     │  Max tokens    [ 1024 ]  │
-│  [ Assistant (prefill, opsional) ]  │  Top P         [ 1.0  ]  │
-│                                     │                          │
-│                                     │  ▶ Run                   │
-└─────────────────────────────────────┴──────────────────────────┘
-                  │
-                  ▼
-       AREA BAWAH — Output Response + token usage
-```
-
-### Elemen yang Akan Anda Pakai di Lab Ini
-
-| Elemen | Fungsi | Yang Anda lakukan |
-|--------|--------|-------------------|
-| **System Prompt** (atas) | Instruksi tetap untuk role/context — opsional | Kosongkan terlebih dahulu untuk lab ini |
-| **User message** (tengah) | Tempat menulis prompt Anda | Tempel prompt zero-shot / few-shot / CoT di sini |
-| **Assistant prefill** (opsional) | Awalan jawaban yang dipaksakan ke model | Tidak digunakan pada lab ini (dibahas di Module 4) |
-| **Model dropdown** (kanan) | Pilih `claude-sonnet-4-5`, `haiku`, atau `opus` | Set ke `claude-sonnet-4-5` |
-| **Temperature** | 0 = deterministik (paling konsisten), 1 = paling kreatif | Set ke **`0`** |
-| **Max tokens** | Batas panjang output | `1024` sudah memadai |
-| **Run button** (▶) | Eksekusi prompt → memanggil API | Klik untuk memperoleh output |
-| **Output area** (bawah) | Menampilkan response + jumlah token input/output | Salin output ke spreadsheet evaluasi Anda |
-
-### 6 Langkah Menjalankan Prompt Pertama
-
-1. **Klik area "User"** di tengah → kursor akan masuk ke text box besar.
-2. **Tempel atau ketik prompt** Anda. Contoh uji cepat:
-
-   ```
-   Klasifikasikan sentimen kalimat berikut sebagai POSITIF, NEGATIF, atau NETRAL.
-
-   Kalimat: "Aplikasi makin enak dipakai setelah update."
-   Sentimen:
-   ```
-
-3. **Periksa panel kanan**: pastikan Model = `claude-sonnet-4-5`, Temperature = `0`, Max tokens = `1024`.
-4. **Klik tombol "Run"** (▶) di panel kanan.
-5. **Tunggu 2–5 detik**. Output akan muncul di bawah area prompt. Akan tampak:
-   - **Response text** (jawaban model).
-   - **Usage** (di footer area output): jumlah token input + output → berguna untuk estimasi biaya nanti.
-   - **Latency** (durasi eksekusi).
-6. **Catat hasil** pada spreadsheet evaluasi Anda.
-
-### Teknik yang Berguna
-
-- **Edit ulang prompt**: cukup ubah teks di area User, klik Run kembali → output baru akan muncul (tidak menimpa, terdapat history).
-- **Reset percakapan**: tombol **"Clear"** atau ikon trash di area prompt.
-- **Save prompt**: tombol **"Save"** di kanan atas → beri nama (misalnya `M3-Lab02-ZeroShot-Sentimen`) → Anda dapat memuatnya kembali nanti tanpa menulis ulang.
-- **Bandingkan side-by-side**: gunakan tombol **"+"** atau **"Compare"** (jika tersedia pada UI Anda) untuk membuka 2 panel prompt sekaligus → eksperimen A/B menjadi lebih cepat.
-- **Periksa API code**: tombol **"Get code"** atau **"View code"** menampilkan snippet TypeScript/Python yang setara dengan prompt Anda di Workbench — berguna untuk Day 2 saat memulai integrasi via SDK.
-
-### Hal yang Perlu Diingat
-
-- Setiap klik **"Run"** = 1 API call = **memotong saldo Workspace pelatihan**. Hemat run dengan cara: (1) menyusun draft prompt terlebih dahulu pada editor teks, (2) baru menempelkannya ke Workbench saat siap dieksekusi.
-- Jika output salah atau tidak sesuai → **perbaiki prompt-nya** terlebih dahulu sebelum berpindah ke model yang lebih mahal. Hindari berpindah langsung dari Sonnet ke Opus hanya karena Sonnet pernah satu kali menghasilkan output yang keliru.
-- Jika UI Anda berbeda dengan deskripsi di atas (Anthropic memperbarui UI secara berkala) → konsep utama (System / User / Run / parameter di kanan) tetap sama. Konsultasikan kepada fasilitator jika menemukan elemen yang berbeda.
-
----
-
-## Dataset Lab
-
-### Task 1 — Klasifikasi Sentimen (5 sampel)
-
-Klasifikasikan ke `POSITIF`, `NEGATIF`, `NETRAL`.
-
-```
-S1: "Aplikasi makin enak dipakai setelah update."
-S2: "Customer service-nya jutek banget, males balik."
-S3: "Pengiriman tepat waktu, sesuai jadwal."
-S4: "Awalnya excited tapi ternyata fiturnya minim banget."
-S5: "Mantap jiwa nih layanannya /sarcasm"
-```
-
-**Ground truth** (untuk evaluasi sendiri di akhir):
-S1: POSITIF, S2: NEGATIF, S3: NETRAL, S4: NEGATIF, S5: NEGATIF (sarkasme).
-
-### Task 2 — Reasoning Matematika (3 sampel)
-
-```
-M1: Sebuah toko menjual 4 jenis produk:
-- Kaos: 120 unit @ Rp 75.000
-- Celana: 80 unit @ Rp 150.000
-- Topi: 200 unit @ Rp 35.000
-- Sepatu: 50 unit @ Rp 250.000
-Berapa total revenue, dan produk apa yang revenue-nya paling besar?
-
-M2: Andi pinjam 5 juta dengan bunga sederhana 12% per tahun, jangka 6 bulan.
-Berapa total yang harus dibayar di akhir periode?
-
-M3: Sebuah tim project punya 5 task. Task A & B masing-masing 3 hari, dapat
-dikerjakan paralel. Task C butuh A & B selesai, durasi 2 hari. Task D & E
-masing-masing 4 hari dan dapat dikerjakan paralel setelah C selesai.
-Berapa total waktu minimum project?
-```
-
-**Ground truth** (untuk evaluasi sendiri di akhir):
-- **M1**: Total revenue = **Rp 40.500.000** (Kaos 9 juta + Celana 12 juta + Topi 7 juta + Sepatu 12,5 juta). Revenue tertinggi = **Sepatu (Rp 12.500.000)**.
-- **M2**: Total yang harus dibayar = **Rp 5.300.000** (pokok 5 juta + bunga sederhana 5 juta × 12% × 6/12 = 300 ribu).
-- **M3**: Total waktu minimum project = **9 hari** (A&B paralel 3 hari → C 2 hari → D&E paralel 4 hari).
-
-### Task 3 — Klasifikasi Sentimen Konteks Jalin (5 sampel)
-
-Sama dengan Task 1 (label: `POSITIF`, `NEGATIF`, `NETRAL`), namun dengan domain yang berbeda — kalimat berikut adalah komentar nasabah mengenai layanan pembayaran. Tujuannya untuk menilai apakah teknik yang unggul pada Task 1 (komentar aplikasi umum) tetap unggul pada domain finansial dengan istilah teknis (BI-FAST, ATM Link, dispute, dan sejenisnya).
-
-```
-J1: "Transfer via BI-FAST cepat banget, sampai dalam 2 detik, mantap!"
-J2: "Sudah seminggu komplain dispute saldo terdebit tapi belum diproses, kecewa."
-J3: "Aplikasinya update lagi, layoutnya berubah, tapi fungsi utamanya masih sama."
-J4: "Awalnya senang karena ATM Link gratis tarik tunai, tapi ternyata limitnya kecil banget."
-J5: "Wah keren ya tiap mau transfer harus loading 30 detik, hemat waktu sekali /sarcasm"
-```
-
-**Ground truth** (untuk evaluasi sendiri di akhir):
-J1: POSITIF, J2: NEGATIF, J3: NETRAL, J4: NEGATIF (mixed sentiment dengan letdown), J5: NEGATIF (sarkasme).
-
----
-
-## Langkah
-
-### Langkah 1 — Setup (5 menit)
-
-1. Login ke **Anthropic Console** di https://console.anthropic.com menggunakan akun pribadi Anda.
-2. Pada dropdown **workspace** (pojok kanan atas), pilih **"Pelatihan Jalin"** (atau nama workspace yang diinformasikan oleh fasilitator). Pastikan Anda **berpindah ke workspace pelatihan** — bukan workspace pribadi default.
+1. Login ke https://console.anthropic.com.
+2. Pada dropdown **workspace** (pojok kanan atas), pilih workspace pelatihan yang diinformasikan fasilitator.
 3. Buka tab **Workbench** dari sidebar kiri.
-4. Pilih model **`claude-sonnet-4-5`** di panel kanan.
-5. Set parameter pada panel kanan:
-   - **`temperature`** = `0` (paling penting — agar output deterministik).
-   - **`max_tokens`** = `1024` (memadai untuk seluruh task lab ini).
-6. Siapkan dokumen atau spreadsheet dengan tabel evaluasi (template di bawah).
+4. Pada panel kanan, set:
+   - **Model**: `claude-sonnet-4-5`
+   - **Temperature**: `0`
+   - **Max tokens**: `1024`
+5. Kosongkan **System Prompt**. Seluruh prompt lab ini ditempel ke kolom **User**.
+6. Setiap klik **Run** = 1 API call = memotong saldo workspace pelatihan. Susun draft prompt di editor teks dulu, baru tempel ke Workbench saat siap dieksekusi.
 
-### Langkah 2 — Run 3 Teknik untuk Task 1 (10 menit)
+---
 
-#### Zero-Shot Template
+## Task 1 — Klasifikasi Sentimen Komentar Nasabah Jalin
+
+### 1.1 Dataset
+
+Klasifikasikan ke `POSITIF`, `NEGATIF`, atau `NETRAL`.
+
+```
+S1: "Transfer via BI-FAST cepat banget, sampai dalam 2 detik, mantap!"
+S2: "Sudah seminggu komplain dispute saldo terdebit tapi belum diproses, kecewa."
+S3: "Aplikasinya update lagi, layoutnya berubah, tapi fungsi utamanya masih sama."
+S4: "Awalnya senang karena ATM Link gratis tarik tunai, tapi ternyata limitnya kecil banget."
+S5: "Wah keren ya tiap mau transfer harus loading 30 detik, hemat waktu sekali /sarcasm"
+```
+
+**Ground truth** (untuk self-check):
+S1 POSITIF | S2 NEGATIF | S3 NETRAL | S4 NEGATIF (mixed dengan letdown) | S5 NEGATIF (sarkasme).
+
+### 1.2 Prompt Templates
+
+Jalankan ketiga template berikut untuk S1–S5. Ganti `{kalimat}` dengan tiap sampel.
+
+<details>
+<summary>👉 Zero-Shot Template</summary>
+
 ```text
 Klasifikasikan sentimen kalimat berikut sebagai POSITIF, NEGATIF, atau NETRAL.
 
@@ -186,24 +74,24 @@ Kalimat: "{kalimat}"
 Sentimen:
 ```
 
-#### Few-Shot Template
+</details>
+
+<details>
+<summary>👉 Few-Shot Template</summary>
+
 ```text
 Klasifikasikan sentimen kalimat sebagai POSITIF, NEGATIF, atau NETRAL.
 
 <example>
-Kalimat: "Produknya membantu banget."
+Kalimat: "Aplikasi makin enak dipakai setelah update."
 Sentimen: POSITIF
 </example>
 <example>
-Kalimat: "Kecewa, fiturnya tidak sesuai janji."
+Kalimat: "Customer service-nya jutek banget, males balik."
 Sentimen: NEGATIF
 </example>
 <example>
 Kalimat: "Aplikasi berfungsi sebagaimana mestinya."
-Sentimen: NETRAL
-</example>
-<example>
-Kalimat: "Bagus sih, tapi mahal."
 Sentimen: NETRAL
 </example>
 <example>
@@ -215,7 +103,11 @@ Kalimat: "{kalimat}"
 Sentimen:
 ```
 
-#### Chain-of-Thought Template
+</details>
+
+<details>
+<summary>👉 Chain-of-Thought Template</summary>
+
 ```text
 Klasifikasikan sentimen kalimat sebagai POSITIF, NEGATIF, atau NETRAL.
 
@@ -236,40 +128,93 @@ Sentimen: {LABEL}
 Kalimat: "{kalimat}"
 ```
 
-Jalankan ketiga template untuk S1–S5. Catat output pada tabel.
+</details>
 
-### Langkah 3 — Run 3 Teknik untuk Task 2 — Reasoning Matematika (10 menit)
+### 1.3 Spreadsheet Task 1
 
-Gunakan 3 template di bawah. Ganti placeholder `{soal}` dengan teks M1, M2, atau M3 dari Dataset Lab.
+| Sampel | Ground Truth | Output Zero-Shot | Z benar? | Output Few-Shot | F benar? | Output CoT | CoT benar? |
+|--------|--------------|------------------|----------|-----------------|----------|------------|------------|
+| S1     | POSITIF      |                  |          |                 |          |            |            |
+| S2     | NEGATIF      |                  |          |                 |          |            |            |
+| S3     | NETRAL       |                  |          |                 |          |            |            |
+| S4     | NEGATIF      |                  |          |                 |          |            |            |
+| S5     | NEGATIF      |                  |          |                 |          |            |            |
+| **Akurasi (%)** | —    |                  |          |                 |          |            |            |
 
-#### Zero-Shot Template
+### 1.4 Insight Task 1
+
+Tulis 1–2 kalimat: teknik mana yang paling akurat, dan mengapa?
+
+---
+
+## Task 2 — Reasoning Matematika (Kalkulasi Biaya Transaksi)
+
+### 2.1 Dataset
+
+```
+M1: Seorang nasabah melakukan 4 transaksi dalam satu hari:
+- 3× transfer Rp 5.000.000 ke bank lain via BI-FAST (biaya Rp 2.500/transaksi)
+- 2× tarik tunai Rp 1.000.000 di ATM Bank lain via Link (biaya Rp 7.500/transaksi)
+- 5× cek saldo di ATM bank lain via Link (biaya Rp 4.000/transaksi)
+- 1× transfer Rp 25.000.000 ke bank lain via BI-FAST (biaya Rp 2.500/transaksi)
+Berapa total biaya yang dibebankan ke nasabah?
+
+M2: Andi pinjam Rp 5.000.000 dengan bunga sederhana 12% per tahun, jangka 6 bulan.
+Berapa total yang harus dibayar di akhir periode?
+
+M3: Tim project switching punya 5 task. Task A & B masing-masing 3 hari, dapat
+dikerjakan paralel. Task C butuh A & B selesai, durasi 2 hari. Task D & E
+masing-masing 4 hari dan dapat dikerjakan paralel setelah C selesai.
+Berapa total waktu minimum project?
+```
+
+**Ground truth** (untuk self-check):
+- **M1**: Total biaya = **Rp 45.000** (BI-FAST: 4 × 2.500 = 10.000; Link tarik tunai: 2 × 7.500 = 15.000; Link cek saldo: 5 × 4.000 = 20.000).
+- **M2**: Total = **Rp 5.300.000** (bunga = 5.000.000 × 12% × 6/12 = 300.000).
+- **M3**: Total waktu minimum = **9 hari** (A & B paralel 3 hari → C 2 hari → D & E paralel 4 hari).
+
+### 2.2 Prompt Templates
+
+Ganti `{soal}` dengan teks M1, M2, atau M3.
+
+<details>
+<summary>👉 Zero-Shot Template</summary>
+
 ```text
-Selesaikan soal matematika berikut. Berikan jawaban akhirnya secara singkat.
+Selesaikan soal berikut. Berikan jawaban akhirnya secara singkat.
 
 Soal: "{soal}"
 Jawaban:
 ```
 
-#### Few-Shot Template
+</details>
+
+<details>
+<summary>👉 Few-Shot Template</summary>
+
 ```text
-Selesaikan soal matematika berikut. Berikan jawaban akhirnya secara singkat.
+Selesaikan soal berikut. Berikan jawaban akhirnya secara singkat.
 
 <example>
 Soal: "Bu Sari membeli 3 kg apel @ Rp 25.000/kg dan 2 kg jeruk @ Rp 30.000/kg. Berapa total yang harus dibayar?"
-Jawaban: Apel 3 × 25.000 = 75.000; Jeruk 2 × 30.000 = 60.000; Total = 135.000.
+Jawaban: Apel 3 × 25.000 = 75.000; Jeruk 2 × 30.000 = 60.000; Total = Rp 135.000.
 </example>
 <example>
 Soal: "Pak Budi menabung Rp 50 juta di deposito dengan bunga sederhana 5% per tahun selama 2 tahun. Berapa saldo akhir?"
-Jawaban: Bunga = 50 juta × 5% × 2 = 5 juta. Saldo akhir = 50 juta + 5 juta = 55 juta.
+Jawaban: Bunga = 50 juta × 5% × 2 = 5 juta. Saldo akhir = Rp 55 juta.
 </example>
 
 Soal: "{soal}"
 Jawaban:
 ```
 
-#### Chain-of-Thought Template
+</details>
+
+<details>
+<summary>👉 Chain-of-Thought Template</summary>
+
 ```text
-Selesaikan soal matematika berikut. Pikirkan langkah demi langkah.
+Selesaikan soal berikut. Pikirkan langkah demi langkah.
 
 Langkah berpikir:
 1. Identifikasi data yang diketahui dari soal.
@@ -288,101 +233,174 @@ Jawaban: {jawaban akhir}
 Soal: "{soal}"
 ```
 
-**Ekspektasi tiap teknik**:
-- **Zero-shot**: jawaban langsung tanpa menyebutkan langkah secara eksplisit → risiko error tinggi pada soal multi-step.
-- **Few-shot**: contoh soal beserta solusi memandu pola pikir model.
-- **CoT**: model menulis langkah 1 → 2 → 3 → … sebelum jawaban akhir. Untuk M3 (project scheduling dengan dependensi paralel), pendekatan ini hampir wajib.
+</details>
 
-Jalankan ketiga template untuk M1, M2, M3. Catat output pada tabel.
+### 2.3 Spreadsheet Task 2
 
-### Langkah 4 — Run 3 Teknik untuk Task 3 — Sentimen Konteks Jalin (5 menit)
+| Sampel | Ground Truth     | Output Zero-Shot | Z benar? | Output Few-Shot | F benar? | Output CoT | CoT benar? |
+|--------|------------------|------------------|----------|-----------------|----------|------------|------------|
+| M1     | Rp 45.000        |                  |          |                 |          |            |            |
+| M2     | Rp 5.300.000     |                  |          |                 |          |            |            |
+| M3     | 9 hari           |                  |          |                 |          |            |            |
+| **Akurasi (%)** | —     |                  |          |                 |          |            |            |
 
-**Gunakan kembali 3 template Task 1** tanpa modifikasi — Anda hanya perlu mengganti `{kalimat}` dengan J1–J5. Tujuannya untuk melihat apakah teknik yang unggul pada Task 1 (domain umum) **tetap konsisten** ketika domain berubah ke konteks finansial (BI-FAST, ATM Link, dispute).
+### 2.4 Insight Task 2
 
-Jalankan ketiga template untuk J1–J5. Catat output pada tabel.
-
-> 💡 **Observasi yang diharapkan**: Sarkasme pada J5 (mirip pola S5 pada Task 1) seharusnya tetap sulit ditangani zero-shot. Mixed sentiment J4 (mirip S4) akan menguji apakah CoT konsisten lintas domain.
-
-### Langkah 5 — Tabulasi & Peer Compare (5 menit)
-
-Isi tabel evaluasi (template di bawah), kemudian bandingkan hasil dengan 1 rekan.
+Tulis 1–2 kalimat: pada soal mana CoT memberikan keunggulan paling nyata? Mengapa?
 
 ---
 
-## Template Tabel Evaluasi
+## Task 3 — Klasifikasi Tiket Incident Sistem Pembayaran
 
-| Task   | Sampel | Ground truth | Zero-shot output | Z benar? | Few-shot output | F benar? | CoT output | CoT benar? | Catatan       |
-|--------|--------|--------------|------------------|----------|-----------------|----------|------------|------------|---------------|
-| Task 1 | S1     |              |                  |          |                 |          |            |            |               |
-| Task 1 | S2     |              |                  |          |                 |          |            |            |               |
-| Task 1 | S3     |              |                  |          |                 |          |            |            |               |
-| Task 1 | S4     |              |                  |          |                 |          |            |            |               |
-| Task 1 | S5     |              |                  |          |                 |          |            |            |               |
-| Task 2 | M1     |              |                  |          |                 |          |            |            |               |
-| Task 2 | M2     |              |                  |          |                 |          |            |            |               |
-| Task 2 | M3     |              |                  |          |                 |          |            |            |               |
-| Task 3 | J1     |              |                  |          |                 |          |            |            |               |
-| Task 3 | J2     |              |                  |          |                 |          |            |            |               |
-| Task 3 | J3     |              |                  |          |                 |          |            |            |               |
-| Task 3 | J4     |              |                  |          |                 |          |            |            |               |
-| Task 3 | J5     |              |                  |          |                 |          |            |            |               |
+### 3.1 Dataset
 
-Hitung **akurasi per teknik per task** (%):
+Klasifikasikan tiket ke salah satu kategori berikut:
 
-| Task   | Zero-shot acc | Few-shot acc | CoT acc | Winner |
-|--------|---------------|--------------|---------|--------|
-| Task 1 |               |              |         |        |
-| Task 2 |               |              |         |        |
-| Task 3 |               |              |         |        |
+| Kategori                              | Deskripsi                                                  |
+|---------------------------------------|------------------------------------------------------------|
+| `ATM_DISPENSE_ERROR_FALSE_SUCCESS`    | Uang tidak keluar tetapi sistem mencatat sukses.           |
+| `ATM_NETWORK_TIMEOUT`                 | Koneksi ke switch terputus saat transaksi.                 |
+| `ATM_RECEIPT_PRINTER_ISSUE`           | Mesin gagal mencetak struk.                                |
+| `BIFAST_REVERSAL_DELAY`               | Reversal BI-FAST melewati SLA.                             |
+| `OTHER`                               | Tidak masuk kategori di atas.                              |
+
+```
+T1: "Transaksi tarik tunai di ATM Link Bank C gagal sejak pukul 22.00 kemarin,
+     namun mesin tetap mengeluarkan struk SUKSES. Saldo nasabah terdebit."
+
+T2: "Nasabah komplain transfer BI-FAST Rp 2 juta gagal 5 hari lalu,
+     reversal belum masuk hingga sekarang."
+
+T3: "ATM di cabang Jakarta Selatan tidak mengeluarkan struk transaksi,
+     padahal transaksi dispense uang berhasil."
+
+T4: "Beberapa transaksi di ATM Bank D timeout terus sejak 30 menit lalu,
+     diduga koneksi ke switch bermasalah."
+
+T5: "Aplikasi mobile banking saya error saat buka menu QRIS."
+```
+
+**Ground truth** (untuk self-check):
+T1 `ATM_DISPENSE_ERROR_FALSE_SUCCESS` | T2 `BIFAST_REVERSAL_DELAY` | T3 `ATM_RECEIPT_PRINTER_ISSUE` | T4 `ATM_NETWORK_TIMEOUT` | T5 `OTHER`.
+
+### 3.2 Prompt Templates
+
+Ganti `{tiket}` dengan T1–T5.
+
+<details>
+<summary>👉 Zero-Shot Template</summary>
+
+```text
+Klasifikasikan tiket berikut ke salah satu kategori:
+ATM_DISPENSE_ERROR_FALSE_SUCCESS, ATM_NETWORK_TIMEOUT,
+ATM_RECEIPT_PRINTER_ISSUE, BIFAST_REVERSAL_DELAY, OTHER.
+
+Tiket: "{tiket}"
+Kategori:
+```
+
+</details>
+
+<details>
+<summary>👉 Few-Shot Template</summary>
+
+```text
+Klasifikasikan tiket berikut ke salah satu kategori:
+ATM_DISPENSE_ERROR_FALSE_SUCCESS, ATM_NETWORK_TIMEOUT,
+ATM_RECEIPT_PRINTER_ISSUE, BIFAST_REVERSAL_DELAY, OTHER.
+
+<example>
+Tiket: "ATM Bank A keluar struk gagal padahal nasabah sudah terima uang."
+Kategori: ATM_RECEIPT_PRINTER_ISSUE
+</example>
+<example>
+Tiket: "Transfer BI-FAST 7 hari lalu gagal, dana belum kembali ke saldo."
+Kategori: BIFAST_REVERSAL_DELAY
+</example>
+<example>
+Tiket: "Koneksi ATM ke switch putus sejak pagi tadi."
+Kategori: ATM_NETWORK_TIMEOUT
+</example>
+
+Tiket: "{tiket}"
+Kategori:
+```
+
+</details>
+
+<details>
+<summary>👉 Chain-of-Thought Template</summary>
+
+```text
+Klasifikasikan tiket berikut ke salah satu kategori:
+ATM_DISPENSE_ERROR_FALSE_SUCCESS, ATM_NETWORK_TIMEOUT,
+ATM_RECEIPT_PRINTER_ISSUE, BIFAST_REVERSAL_DELAY, OTHER.
+
+Langkah berpikir:
+1. Identifikasi gejala utama dari tiket (apa yang gagal? di mana?).
+2. Cocokkan gejala dengan deskripsi tiap kategori.
+3. Pilih kategori yang paling sesuai. Jika tidak ada yang cocok, pilih OTHER.
+
+<thinking>
+{tulis langkah di sini}
+</thinking>
+
+<answer>
+Kategori: {LABEL}
+</answer>
+
+Tiket: "{tiket}"
+```
+
+</details>
+
+### 3.3 Spreadsheet Task 3
+
+| Sampel | Ground Truth                         | Output Zero-Shot | Z benar? | Output Few-Shot | F benar? | Output CoT | CoT benar? |
+|--------|--------------------------------------|------------------|----------|-----------------|----------|------------|------------|
+| T1     | ATM_DISPENSE_ERROR_FALSE_SUCCESS     |                  |          |                 |          |            |            |
+| T2     | BIFAST_REVERSAL_DELAY                |                  |          |                 |          |            |            |
+| T3     | ATM_RECEIPT_PRINTER_ISSUE            |                  |          |                 |          |            |            |
+| T4     | ATM_NETWORK_TIMEOUT                  |                  |          |                 |          |            |            |
+| T5     | OTHER                                |                  |          |                 |          |            |            |
+| **Akurasi (%)** | —                          |                  |          |                 |          |            |            |
+
+### 3.4 Insight Task 3
+
+Tulis 1–2 kalimat: apakah few-shot sudah cukup untuk task taxonomy-driven seperti ini, atau CoT masih memberi nilai tambah?
 
 ---
 
-## Insight Writing (5 menit)
+## Insight Akhir (5 menit)
 
-Tulis 3–5 bullet menjawab:
+Setelah ketiga task selesai, tulis 3–5 bullet menjawab:
 
-- Teknik mana yang unggul pada setiap task? Mengapa?
-- Apakah terdapat task di mana zero-shot sudah memadai? Mengapa few-shot tidak memberi gain?
-- Apakah terdapat task di mana CoT justru **memperburuk** output? (over-reasoning, hallucinated step)
-- Estimasi token cost: kira-kira berapa kali lipat few-shot dibanding zero-shot?
-- Rekomendasi praktis: untuk masing-masing dari 3 task, teknik mana yang akan Anda pilih untuk produksi?
-- **Konsistensi domain**: apakah teknik unggulan pada Task 1 (sentimen umum) sama dengan teknik unggulan pada Task 3 (sentimen Jalin)? Jika berbeda, mengapa?
+- Pada task mana zero-shot sudah memadai? Mengapa few-shot tidak memberi gain berarti?
+- Pada task mana CoT memberikan keunggulan paling nyata?
+- Adakah task di mana CoT justru memperburuk output (over-reasoning, langkah halusinasi)?
+- Untuk masing-masing 3 task, teknik mana yang akan Anda pilih untuk produksi? Dengan alasan apa?
 
 ---
 
-## Kriteria Selesai
+## Kriteria Selesai (Definition of Done)
 
-- [ ] 3 teknik × 3 task = 9 kombinasi telah dijalankan (Task 1: 5 sampel, Task 2: 3 sampel, Task 3: 5 sampel — total ~39 run).
-- [ ] Tabel evaluasi terisi penuh untuk minimal 2 task (idealnya 3).
-- [ ] Akurasi per teknik per task dihitung.
-- [ ] Insight 3-5 bullet ditulis.
-- [ ] Peer review dilakukan (minimal 1 rekan).
-
----
-
-## Rubrik
-
-| Kriteria                                    | 0      | 2                 | 4                                  |
-|---------------------------------------------|--------|-------------------|------------------------------------|
-| Kelengkapan eksperimen                      | < 3 kombinasi | 4–6 kombinasi | 7–9 kombinasi penuh                |
-| Konsistensi setup (format prompt, jumlah run per teknik) | Tidak konsisten | Sebagian konsisten | Sepenuhnya konsisten   |
-| Kualitas tabulasi & perhitungan akurasi     | Tidak ada | Ada tapi salah hitung | Lengkap & benar                |
-| Insight (bukti-based, bukan opini)          | Tidak ada | Generik           | Spesifik, kuantitatif, actionable  |
-
-**Total maks**: 16. Target: 10+.
+- [ ] 3 task × 3 teknik = 9 kombinasi telah dijalankan di Workbench.
+- [ ] Spreadsheet evaluasi terisi untuk seluruh sampel di setiap task (5 + 3 + 5 = 13 baris × 3 teknik).
+- [ ] Akurasi per teknik per task dihitung (gunakan `=COUNTIF` di Google Sheets).
+- [ ] Insight per task ditulis (1–2 kalimat tiap task).
+- [ ] Insight akhir (3–5 bullet) ditulis.
 
 ---
 
 ## Tips
 
-- Dengan `temperature=0`, output yang sama akan keluar setiap kali Anda klik "Run" — manfaatkan hal ini untuk eksperimen yang reproducible.
-- Untuk sarkasme (S5), CoT sangat membantu apabila Anda menyebutkan "periksa sarkasme" secara eksplisit.
-- Pada Task 2 M3 (project scheduling), CoT hampir wajib. Zero-shot kerap menghasilkan jawaban yang salah.
-- Pastikan untuk **menyimpan prompt** Anda di Workbench (tombol "Save" di kanan atas) — Anda dapat membandingkan versi-versi prompt nanti tanpa harus menulis ulang.
-- Jika prompt menghasilkan output yang inkonsisten meskipun `temperature=0`, kemungkinan besar **prompt-nya yang ambigu** — bukan modelnya. Hal tersebut merupakan sinyal untuk memperketat instruksi.
+- Dengan `temperature=0`, output yang sama akan keluar setiap kali Anda klik Run — manfaatkan untuk eksperimen reproducible.
+- Pada Task 1 S5 (sarkasme) dan Task 2 M3 (project scheduling dengan dependensi paralel), CoT sangat membantu apabila langkah berpikir dirumuskan secara eksplisit.
+- Simpan prompt yang berhasil di Workbench (tombol **Save** di kanan atas) agar dapat dimuat ulang tanpa menulis ulang.
+- Jika output inkonsisten meskipun `temperature=0`, biasanya **prompt-nya yang ambigu** — bukan modelnya. Perketat instruksi sebelum berpindah ke model yang lebih mahal.
 
 ---
 
 ## Deliverable
 
-Simpan dalam dokumen (Google Sheet / Excel / Markdown) dengan tabel evaluasi lengkap + insight section. Kirim ke fasilitator via channel pelatihan.
+Satu Google Spreadsheet berisi 3 sheet (Task 1, Task 2, Task 3) sesuai template di atas + 1 sheet "Insight Akhir". Atur sharing ke **"Anyone with the link — Viewer"**, kirim tautannya ke channel pelatihan.

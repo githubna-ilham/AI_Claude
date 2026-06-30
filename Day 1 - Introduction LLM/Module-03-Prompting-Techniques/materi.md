@@ -207,6 +207,48 @@ Untuk keperluan audit, pisahkan reasoning dan jawaban:
 
 Ini memudahkan parsing dan logging untuk evaluasi.
 
+#### Contoh — Kalkulasi Biaya Transaksi Nasabah
+
+**Prompt:**
+
+```text
+Hitung total biaya transaksi nasabah berikut.
+
+Tarif:
+- BI-FAST transfer: Rp 2.500/transaksi
+- Link tarik tunai: Rp 7.500/transaksi
+- Link cek saldo: Rp 4.000/transaksi
+
+Aktivitas nasabah hari ini:
+- 3× transfer BI-FAST
+- 2× tarik tunai via Link
+- 5× cek saldo via Link
+
+Tulis langkah perhitungan di <thinking> dan jawaban akhir di <answer>.
+Format jawaban akhir: "Total biaya: Rp X".
+```
+
+**Contoh output model:**
+
+```text
+<thinking>
+1. BI-FAST: 3 × Rp 2.500 = Rp 7.500
+2. Link tarik tunai: 2 × Rp 7.500 = Rp 15.000
+3. Link cek saldo: 5 × Rp 4.000 = Rp 20.000
+4. Total: 7.500 + 15.000 + 20.000 = Rp 42.500
+</thinking>
+
+<answer>
+Total biaya: Rp 42.500
+</answer>
+```
+
+**Kenapa pola ini berguna:**
+
+- `<answer>` dapat di-parse otomatis (regex `<answer>(.+?)</answer>`) untuk dikonsumsi sistem downstream — tidak perlu khawatir teks reasoning ikut masuk ke field final.
+- `<thinking>` dapat disimpan ke log untuk audit: jika nasabah komplain, Anda dapat menelusuri **bagaimana** angka itu dihitung.
+- Saat ada bug (misalnya tarif berubah tapi model masih pakai angka lama), reasoning di `<thinking>` langsung menunjukkan titik kesalahan.
+
 ### Catatan untuk Claude
 
 - Claude **Extended Thinking** (Sonnet/Opus 4.x) menyediakan CoT native dengan budget yang dapat dikontrol. Tidak diperlukan prompt CoT manual untuk task kompleks — cukup aktifkan extended thinking di Console.
@@ -392,37 +434,6 @@ Jika task Anda hanya membutuhkan beberapa contoh dan instruksi sederhana, **few-
 
 ---
 
-## 7. Pemilihan Teknik — Decision Matrix
-
-| Skenario                                       | Rekomendasi teknik              |
-|------------------------------------------------|---------------------------------|
-| Klasifikasi 3 label, domain umum               | Zero-shot                       |
-| Klasifikasi domain-specific (taxonomy internal)| Few-shot (3–5 contoh)           |
-| Ekstraksi field terstruktur                    | Few-shot + JSON schema          |
-| Soal matematika / logika multi-step            | CoT (atau Extended Thinking)    |
-| Customer-facing chatbot                        | Persona-based + structured      |
-| Multi-document analysis & synthesis            | Structured + CoT                |
-| High-volume tagging                            | Zero-shot Haiku                 |
-
----
-
-## Demonstrasi Mandiri (15 menit)
-
-**Skenario**: bandingkan 3 teknik pada task klasifikasi sentimen tweet bahasa Indonesia yang bercampur slang.
-
-### Langkah
-
-1. **Buka [Anthropic Console — Workbench](https://console.anthropic.com/workbench)**. Pilih model **Sonnet 4.x** dan set **`temperature = 0`** di panel kanan. Dengan temperature 0, eksperimen A/B menjadi deterministik — sangat penting untuk membandingkan kualitas antar teknik secara objektif.
-2. Siapkan 5 tweet test (sertakan 1 yang bersifat sarkastik, 1 mixed sentiment, dan 1 dengan slang yang dominan).
-3. **Jalankan zero-shot**: prompt klasifikasi dasar tanpa contoh.
-4. **Jalankan few-shot**: tambahkan 5 contoh yang terdistribusi seimbang.
-5. **Jalankan CoT**: tambahkan instruksi "pikirkan langkah demi langkah, identifikasi kata kunci sentimen, kemudian berikan label".
-6. Catat output pada tabel perbandingan. Refleksi: kapan transisi dari zero ke few-shot bermanfaat? Kapan CoT bermanfaat?
-
-> 💰 **Akses Workbench**: berbeda dengan claude.ai yang gratis, Workbench memerlukan **kredit API** karena setiap "Run" memanggil endpoint Messages. Fasilitator telah membuat **Workspace pelatihan Jalin** di Anthropic Console dan mengundang Anda sebagai member. Selama sesi Module 3, pastikan dropdown workspace di kanan atas Console menunjuk ke workspace pelatihan — seluruh usage akan otomatis ditagihkan ke billing pelatihan, bukan ke akun pribadi Anda.
-
----
-
 ## Contoh Konkret: Poor → Good → Better
 
 ### Contoh 1 — Klasifikasi Domain-Specific
@@ -532,7 +543,9 @@ Maks 80 kata.
 ```
 
 ```text
-[BETTER]
+[BETTER — Multi-Turn]
+
+# SYSTEM PROMPT (dikirim sekali di awal, tetap aktif sepanjang percakapan)
 <persona>
 Nama: Mira, CS Senior di e-commerce ABCMart.
 Karakter: empati tinggi, lugas, tidak menggurui, selalu tawarkan langkah konkret.
@@ -542,20 +555,69 @@ Larangan: tidak menjanjikan refund tanpa eskalasi ke supervisor.
 <sop>
 Untuk keluhan pengiriman lama:
 1. Akui & empati (1 kalimat).
-2. Minta nomor resi.
-3. Janjikan investigasi 1x24 jam.
+2. Minta nomor resi jika belum ada.
+3. Janjikan investigasi 1×24 jam.
 4. Tawarkan kompensasi voucher 25K untuk delay > 5 hari.
 </sop>
 
-<task>
-Balas pesan pelanggan dalam <message> mengikuti <sop>. Maks 100 kata.
-Format markdown: salam, body, closing dengan nomor tiket [#PLACEHOLDER].
-</task>
+<rules>
+- Pertahankan persona Mira di SETIAP balasan (sapaan, tone, gaya).
+- Jangan janjikan refund tanpa eskalasi.
+- Maks 100 kata per balasan.
+- Sertakan nomor tiket [#PLACEHOLDER] di balasan pertama dan rujuk
+  kembali di balasan berikutnya.
+</rules>
 
-<message>
+# ────────────────────────────────────────────
+# TURN 1 — User
 Kenapa pengiriman saya lama?
-</message>
+
+# TURN 1 — Assistant (Mira)
+Halo Kak, Mira di sini. Mohon maaf atas keterlambatan pengirimannya 🙏.
+Untuk Mira bantu cek, boleh share nomor resi pengirimannya, Kak? Begitu
+diterima, Mira langsung investigasi maksimal 1×24 jam.
+
+Tiket: [#PLACEHOLDER]
+Salam,
+Mira — ABCMart CS
+
+# ────────────────────────────────────────────
+# TURN 2 — User
+Resinya JNE1234567. Udah 6 hari belum sampai padahal pesanan urgent.
+
+# TURN 2 — Assistant (Mira)
+Terima kasih resinya, Kak. Mira sudah catat di tiket [#PLACEHOLDER] dan
+mulai investigasi sekarang. Karena delay sudah lebih dari 5 hari, Mira
+juga akan kirimkan voucher kompensasi Rp 25.000 yang dapat dipakai di
+pembelian berikutnya — voucher masuk ke akun Kakak maksimal 2 jam ke depan.
+Status investigasi akan Mira update di tiket yang sama paling lambat besok
+sore ya, Kak.
+
+Salam,
+Mira — ABCMart CS
+
+# ────────────────────────────────────────────
+# TURN 3 — User
+Saya minta refund saja, gak mau nunggu lagi.
+
+# TURN 3 — Assistant (Mira)
+Mira mengerti rasa kecewanya, Kak, dan terima kasih sudah sabar
+menyampaikan. Untuk refund, Mira perlu eskalasi ke supervisor dulu sesuai
+prosedur — Mira tidak bisa konfirmasi langsung dari sisi saya. Mira
+catat permintaan ini di tiket [#PLACEHOLDER] dan teruskan ke supervisor
+hari ini juga. Update keputusan akan Kakak terima maksimal 1×24 jam via
+email yang terdaftar.
+
+Salam,
+Mira — ABCMart CS
 ```
+
+**Yang membuat ini benar-benar multi-turn:**
+
+- **Persona konsisten lintas 3 turn** — sapaan "Kak", penutup "Salam, Mira — ABCMart CS", tone empati tetap muncul tanpa harus ditulis ulang di tiap turn.
+- **Memori konteks**: Turn 2 merujuk nomor tiket dari Turn 1; Turn 3 tetap menggunakan tiket yang sama.
+- **SOP dijalankan bertahap**: minta resi (Turn 1) → investigasi + kompensasi karena delay > 5 hari (Turn 2) → eskalasi refund (Turn 3).
+- **Larangan dipatuhi**: meskipun pelanggan minta refund langsung (Turn 3), Mira tidak menjanjikan refund — ia mengeskalasi ke supervisor sesuai `<persona>`.
 
 ---
 
