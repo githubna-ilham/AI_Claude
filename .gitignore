@@ -30,13 +30,16 @@ playground/
 Day-2-AI-Workflow-Agent/
 Day-3-AI-App-RAG/
 Day-4-Product-Governance-Capstone/
+Day 2 - Road To AI Apps/
+Day 3 - System Prompt Engineering/
+Day 4 - AI Agent & Tools/
 
-# Posttest belum siap untuk publik (akan dibuka bersama Day 4 / capstone)
+# Pretest & Posttest belum siap untuk publik
+pretest/
 posttest/
 
 # Resources belum siap untuk publik (akan dibuka setelah migrasi penuh ke stack JS)
 resources/
 
-# Module 06, 07 — disembunyikan sementara dari repository
-Day 3 - System Prompt Engineering/Module-06-Embedding/
-Day 3 - System Prompt Engineering/Module-07-RAG/
+# Eksperimen lokal
+experiments/
