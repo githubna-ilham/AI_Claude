@@ -342,73 +342,6 @@ Pada Module 02 ini fokusnya adalah **fundamental** — pemahaman yang kuat di si
 
 ---
 
-## 7. Etika dan Batasan AI-Assisted Coding
-
-Bagian terakhir ini — kerap diabaikan namun penting — membahas **kapan sebaiknya Anda TIDAK pakai AI assist**, bagaimana Anda tetap bertanggung jawab atas kode yang dihasilkan, dan risiko apa yang harus diwaspadai.
-
-### 7.1 Kapan Sebaiknya TIDAK Pakai AI Assist
-
-Tidak semua situasi cocok untuk AI assist. Beberapa di antaranya:
-
-| Situasi | Alasan |
-|---|---|
-| **Logic bisnis kritis yang Anda belum pahami** | Anda perlu menderita sedikit untuk benar-benar paham; AI mempercepat output tanpa memperdalam pemahaman |
-| **Code review atas kerja orang lain** | Tugas review menuntut judgment manusia; AI dapat membantu *spot*, tetapi tidak boleh menggantikan reviewer |
-| **Security-sensitive code** (auth, kriptografi, payment) | AI dapat menghasilkan kode yang *terlihat* benar tetapi punya kerentanan halus |
-| **Hal yang akan langsung di-deploy ke production tanpa review** | Selalu ada tahap review; AI tidak menggantikan code review |
-| **Saat Anda lelah dan tidak fokus** | Anda perlu *bisa membaca dan menilai* output — apabila terlalu lelah untuk itu, sebaiknya berhenti |
-
-### 7.2 Tanggung Jawab Tetap di Tangan Anda
-
-Hal ini mungkin terdengar seperti formalitas, tetapi penting untuk ditegaskan:
-
-> **Kode yang masuk ke project Anda adalah tanggung jawab Anda — bukan AI, bukan vendor AI.**
-
-Itu artinya:
-- Apabila ada bug, **Anda** yang memperbaikinya.
-- Apabila ada security incident, **Anda** yang akuntabel.
-- Apabila ada licensing issue, **Anda** yang memikul konsekuensinya.
-
-AI assist mempercepat output, tetapi tidak memindahkan tanggung jawab. Pendekatan yang sehat: **review setiap perubahan seperti Anda akan menjelaskan ke manajer mengapa baris ini ada di sini**.
-
-### 7.3 Risiko Halusinasi dan Cara Menghadapinya
-
-**Halusinasi** dalam coding context berarti: Claude memanggil fungsi yang tidak ada, menggunakan API yang sudah deprecated, atau mengimpor package fiktif.
-
-Mitigasi yang efektif:
-
-1. **Jalankan kode** — apabila halusinasi, biasanya langsung error.
-2. **Periksa import** — apabila Claude mengimpor sesuatu yang Anda tidak kenal, cari dulu apakah package itu ada.
-3. **Gunakan tipe ketat** (TypeScript strict) — type-checker akan menangkap banyak halusinasi.
-4. **Hindari API yang sangat baru** atau sangat niche — Claude lebih sering halusinasi di area ini karena training data terbatas.
-5. **Selalu baca dokumentasi resmi** ketika ragu — jangan andalkan ingatan Claude.
-
-### 7.4 Risiko Over-Reliance & Kehilangan Pemahaman
-
-Risiko jangka panjang yang sering tidak disadari: **terlalu sering pakai AI assist dapat mengikis pemahaman fundamental Anda**.
-
-Tanda-tanda peringatan:
-- Anda lupa cara menulis loop sederhana tanpa Claude.
-- Anda tidak dapat menjelaskan kode Anda sendiri saat ditanya.
-- Anda kesulitan debug ketika Claude tidak tersedia.
-
-Mitigasi:
-- **Sesekali coding tanpa AI** — pertahankan otot dasar.
-- **Pahami output Claude** — jangan asal terima.
-- **Belajar konsep secara mandiri** — baca dokumentasi, ikuti kursus, dan sebagainya.
-
-> 💡 Anggap AI assist seperti kalkulator: tools yang sangat berguna, tetapi Anda tetap perlu paham matematika dasar untuk tahu kapan jawabannya masuk akal.
-
-### 7.5 Privasi dan Data Sensitif
-
-Saat Anda menggunakan Claude Code, **isi file yang Claude baca berpotensi dikirim ke server Anthropic** sebagai bagian dari context. Beberapa pertimbangan:
-
-- **Jangan paste kredensial** ke prompt (API key, password, dan sebagainya).
-- **Hati-hati dengan data customer / PII** — apabila Anda bekerja di domain regulated, konsultasikan dulu kebijakan privasi tim Anda.
-- **Periksa kebijakan Anthropic** terkait data retention dan training data — kebijakan dapat berubah; periksa dokumentasi terbaru di [anthropic.com/legal](https://anthropic.com/legal).
-
----
-
 ## Recap & Langkah Selanjutnya
 
 Pada modul ini Anda telah:
@@ -418,7 +351,6 @@ Pada modul ini Anda telah:
 3. Mempelajari pola **prompting yang efektif** beserta anti-pattern yang sering dijumpai.
 4. Mengenali empat workflow umum: eksplorasi, fitur, refactor, debug.
 5. Mendapat preview tentang fitur lanjutan Claude Code yang akan dibahas di modul-modul setelahnya.
-6. Memahami sisi etika & batasan AI-assisted coding — agar pendekatan Anda *responsible*, bukan asal cepat.
 
 Lanjutkan ke **`latihan.md`** di folder ini untuk **dua latihan praktis**: (1) generate dokumentasi `docs/PROJECT.md`, dan (2) membangun fitur CRUD halaman Transactions.
 
