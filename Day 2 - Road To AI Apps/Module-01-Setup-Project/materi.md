@@ -405,7 +405,6 @@ Dua teks dengan **makna yang serupa** akan menghasilkan vector yang **berdekatan
 
 3. **Index ANN** (Approximate Nearest Neighbor):
    - **HNSW** — *Hierarchical Navigable Small World*. Cepat dan akurat. Inilah yang digunakan di project ini.
-   - **IVFFlat** — proses build lebih cepat, namun memerlukan tuning parameter `lists`.
 
    Tanpa index, semantic search pada 1 juta baris berarti scan satu per satu (lambat). Dengan HNSW, kompleksitasnya menjadi O(log n) — hanya beberapa millisecond.
 
