@@ -172,16 +172,6 @@ Claude Code menjaga seluruh percakapan Anda dalam satu sesi sebagai *context win
 - Tetapi setelah compaction, *detail spesifik* dari awal sesi mungkin sudah tidak akurat. Apabila Anda butuh detail awal, sebaiknya simpan di file (bukan di percakapan).
 - Memulai sesi baru kadang lebih baik daripada melanjutkan sesi yang sudah sangat panjang dengan banyak topik berbeda.
 
-### 2.5 File `CLAUDE.md` dan `AGENTS.md`
-
-Kedua file ini berperan sebagai **instruksi persisten** yang otomatis terbaca Claude di setiap sesi.
-
-Pada project Fin-App Anda akan menemui:
-- `CLAUDE.md` di root — biasanya berisi `@AGENTS.md` (referensi).
-- `AGENTS.md` — berisi peringatan tentang Next.js 16 yang punya breaking changes.
-
-> 💡 Apabila ada konvensi spesifik project Anda (misalnya "selalu pakai TypeScript strict", "jangan modifikasi folder `/dist`"), tambahkan ke `CLAUDE.md` agar Claude konsisten mengikutinya tanpa perlu diingatkan setiap kali.
-
 ---
 
 ## 3. Prompting Efektif untuk Coding
@@ -235,7 +225,7 @@ Contoh konkret menghilangkan ambiguitas.
 
 ### 3.4 Pola "Iteratif, Bukan Sekali Tembak"
 
-Pemula sering mencoba menulis satu prompt panjang berisi spesifikasi lengkap, berharap mendapat output sempurna. Pendekatan ini jarang berhasil dan menghabiskan token.
+Banyak orang tergoda menuangkan seluruh spesifikasi ke dalam satu prompt panjang, dengan harapan Claude langsung memberi hasil yang sempurna. Kenyataannya, pendekatan seperti ini jarang berhasil: output cenderung meleset dari ekspektasi, sulit dikoreksi, dan boros token.
 
 **Pendekatan iteratif** justru lebih produktif:
 
