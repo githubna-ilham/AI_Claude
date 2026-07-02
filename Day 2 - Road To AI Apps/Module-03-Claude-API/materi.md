@@ -384,7 +384,7 @@ Anda telah:
 1. **[Latihan 1 — Koneksi Pertama Claude API](./latihan.md)** *(±30 menit)*
    Eksperimen ringan untuk memperkuat pemahaman koneksi pertama: ganti prompt, atur `max_tokens`, bandingkan model, hitung estimasi biaya, dan tangani error. **Wajib selesai sebelum lanjut ke Latihan 2.**
 
-2. **[Latihan 2 — Bangun Panel UI Chatbot AI Financial Advisor](./latihan-2-ui-chatbot.md)** *(±45–60 menit)*
+2. **[Latihan 2 — Bangun Panel UI Chatbot AI Financial Advisor](../../Day 3 - System Prompt Engineering/Module-03-UI-Chatbot/latihan.md)** *(±45–60 menit)*
    Latihan pure-UI tanpa logic API. Output: panel chatbot kosong di Fin-App yang siap dihubungkan ke Claude API di **Module 04**. Tidak memerlukan API key.
 
 > 💡 Urutan ini disengaja: Latihan 1 memastikan koneksi & konsep API solid, baru Latihan 2 menyiapkan permukaan UI sebagai jembatan ke modul berikutnya.

@@ -1,6 +1,6 @@
 # Module 03 — Latihan 1: Koneksi Pertama ke Claude API
 
-> **Urutan**: Ini latihan **pertama** Module 03. Setelah selesai, lanjutkan ke **[Latihan 2 — UI Chatbot](./latihan-2-ui-chatbot.md)**.
+> **Urutan**: Ini latihan **pertama** Module 03. Setelah selesai, lanjutkan ke **[Latihan 2 — UI Chatbot](../../Day 3 - System Prompt Engineering/Module-03-UI-Chatbot/latihan.md)**.
 
 > Latihan untuk memperdalam pemahaman dari section pertama `materi.md`. Setiap eksperimen sederhana, dapat selesai dalam beberapa menit, dan langsung menghasilkan **bukti pemahaman** di terminal Anda.
 >
@@ -178,5 +178,5 @@ Untuk sekarang, pastikan koneksi pertama Anda sudah solid. Selamat — Anda suda
 
 ## Lanjut ke Latihan 2 — Persiapan Module 04
 
-- **[Latihan 2 — Bangun Panel UI Chatbot AI Financial Advisor](./latihan-2-ui-chatbot.md)** (45–60 menit)
+- **[Latihan 2 — Bangun Panel UI Chatbot AI Financial Advisor](../../Day 3 - System Prompt Engineering/Module-03-UI-Chatbot/latihan.md)** (45–60 menit)
   Latihan pure-UI tanpa logic API. Hasilnya jadi panel chatbot kosong yang siap dihubungkan ke Claude API di Module 04.

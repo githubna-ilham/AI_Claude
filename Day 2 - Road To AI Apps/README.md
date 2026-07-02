@@ -65,6 +65,5 @@ Day 2 - Road To AI Apps/
 └── Module-03-Claude-API/                           ✅ siap
     ├── materi.md                                   (koneksi pertama via SDK + console output)
     ├── latihan.md                                  (Latihan 1 — 6 eksperimen: prompt, max_tokens, model, biaya, error)
-    ├── materi-ui-chatbot.md                        (materi pendamping Latihan 2)
-    └── latihan-2-ui-chatbot.md                     (Latihan 2 — 5 prompt UI Chatbot, prasyarat Day 3 Module 04)
+    └── [Latihan 2 & Materi UI Chatbot → Day 3 Module-03-UI-Chatbot]
 ```
