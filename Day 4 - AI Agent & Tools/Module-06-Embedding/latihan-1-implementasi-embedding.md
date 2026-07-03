@@ -147,13 +147,13 @@ Sebelum copy-paste prompt ke Claude, pahami dulu struktur file `src/lib/embeddin
 
 📂 **File baru**: `src/lib/embeddings.ts`
 
-**1. Directive `"server-only"` di baris pertama**
+**1. Directive `'use server'` di baris pertama**
 
-📍 Lokasi: **baris 1** file. Memaksa bundler Next.js melempar error kalau file ini terimport dari client component.
+📍 Lokasi: **baris 1** file. Menandai file ini sebagai server-only — Next.js memastikan kode ini tidak masuk ke client bundle.
 
 ```ts
 // src/lib/embeddings.ts — baris 1
-import "server-only";
+'use server';
 ```
 
 **2. Import + singleton client**
@@ -208,7 +208,7 @@ export async function embedBatch(texts: string[]): Promise<number[][]> {
 ### Verifikasi setelah file dibuat
 
 1. File `src/lib/embeddings.ts` ada dengan dua export: `embed` dan `embedBatch`.
-2. Baris pertama: `import "server-only";`.
+2. Baris pertama: `'use server';`.
 3. `npx tsc --noEmit` clean (tanpa error TypeScript).
 4. Tidak ada hard-coded API key di file — semua via `process.env.VOYAGE_API_KEY`.
 5. Coba import dari client component → harusnya gagal build (itu yang kita mau).
@@ -223,7 +223,7 @@ seluruh aplikasi.
 
 GOAL:
 - Buat file baru src/lib/embeddings.ts.
-- Mulai dengan import "server-only" di baris pertama untuk
+- Mulai dengan 'use server' di baris pertama untuk
   cegah bundle ke client.
 - Ekspor dua function:
   
@@ -253,7 +253,7 @@ GUARDRAIL:
 **Verifikasi:**
 
 1. File `src/lib/embeddings.ts` ada dengan dua export: `embed` dan `embedBatch`.
-2. Baris pertama: `import "server-only";`.
+2. Baris pertama: `'use server';`.
 3. Tidak ada error TypeScript saat `npx tsc --noEmit`.
 4. Tidak ada hard-coded API key di file.
 
@@ -388,7 +388,7 @@ GUARDRAIL:
 
 - [ ] Package `voyageai` terinstall.
 - [ ] `.env.local` punya `VOYAGE_API_KEY` valid, `.env.example` punya placeholder.
-- [ ] `src/lib/embeddings.ts` punya `embed()` + `embedBatch()` + import `"server-only"`.
+- [ ] `src/lib/embeddings.ts` punya `embed()` + `embedBatch()` + directive `'use server'`.
 - [ ] Test similarity matrix menunjukkan kategori makanan mengelompok terpisah dari kategori investasi.
 - [ ] `npx tsc --noEmit` clean.
 
@@ -396,7 +396,7 @@ GUARDRAIL:
 
 1. Berapa skor cosine similarity tertinggi yang Anda dapat antara dua kalimat lintas kategori? Apakah itu mengejutkan?
 2. Apabila Anda mengubah satu kata di kalimat (mis. "kopi" → "teh"), seberapa besar perubahan skor similarity?
-3. Mengapa import `"server-only"` penting di `src/lib/embeddings.ts`? Apa risiko kalau di-skip?
+3. Mengapa directive `'use server'` penting di `src/lib/embeddings.ts`? Apa risiko kalau di-skip?
 4. Berapa estimasi biaya kalau Anda embed 10.000 deskripsi transaksi (asumsi ~20 token per deskripsi)?
 
 ---

@@ -129,7 +129,7 @@ Ada tiga jalur utama untuk mendapatkan embedding teks:
 Buat file `src/lib/embeddings.ts` (server-only) dengan dua function:
 
 ```ts
-import "server-only";
+'use server';
 import { VoyageAIClient } from "voyageai";
 
 const client = new VoyageAIClient({
@@ -157,7 +157,7 @@ export async function embedBatch(texts: string[]): Promise<number[][]> {
 
 Karakter penting:
 
-- `"server-only"` — pastikan API key tidak bocor ke client bundle.
+- `'use server'` — pastikan file ini hanya berjalan di server, API key tidak bocor ke client bundle.
 - **Batch version** untuk efisiensi — sekali request bisa embed banyak teks (cek limit provider, biasanya 128–1000 per batch).
 - Return `number[]` agar mudah disisipkan ke SQL pgvector (cast `vector(1024)`).
 

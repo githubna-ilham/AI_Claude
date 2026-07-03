@@ -323,7 +323,7 @@ Sekarang fondasi siap: ALTER + index + function (Section 2) + auto-embed di quic
 
 **1. Helper `searchTransactions` (untuk dipakai dari Server Action)**
 
-📍 Lokasi: file baru `src/features/search-transactions.ts`. `"use server"` karena pakai `embed()` (server-only).
+📍 Lokasi: file baru `src/features/search-transactions.ts`. `'use server'` di baris pertama karena pakai `embed()` yang server-only.
 
 ```ts
 // src/features/search-transactions.ts
@@ -552,7 +552,7 @@ GOAL:
   scripts/test-search.ts
 
   Flag --conditions=react-server diperlukan karena
-  src/lib/embeddings.ts pakai `import "server-only"`.
+  src/lib/embeddings.ts pakai directive `'use server'`.
 
 CONTEXT:
 - Function match_transactions sudah ada di Supabase (Section 2).
