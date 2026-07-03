@@ -25,8 +25,9 @@ Setelah menyelesaikan materi ini, peserta diharapkan mampu:
 | **07** | **RAG** — 3 section: Retrieval Helper → Implementasi RAG di Chatbot (prompt builder + route handler + verifikasi) → Mode Toggle (Personal vs General) | 2,5–3 jam |
 | **08** | **AI Agent** — Konsep ReAct + Multi-Tool di quick-add bertahap: definisi tools (save+delete+update) → wire single → upgrade ke parallel (3 prompt) | 2–2,5 jam |
 | **09** | **Multimodal & Document Understanding** — 3 section: Vision API basics → Upload UI + base64 pipeline → Receipt extraction + auto-insert ke `transactions` | 2,5–3 jam |
+| **09a** | **Generative Dashboard** — Natural Language → Chart: user ketik instruksi bebas → Claude analisis + query Supabase via tools → app render chart (pie/bar/line/area) dinamis di Dashboard (3 prompt) | 2–3 jam |
 
-Total estimasi: **±9–11 jam efektif** untuk Module 06–09 (di luar break & diskusi).
+Total estimasi: **±11–14 jam efektif** untuk Module 06–09a (di luar break & diskusi).
 
 > ⚠️ Section implementasi lanjutan di Module 08 (ReAct loop konkret, multi-tool, memory, error recovery, multi-agent coordination) akan ditambah di iterasi berikutnya.
 
@@ -60,12 +61,15 @@ Day 4 - AI Agent & Tools/
 ├── Module-08-AI-Agent/                    ✅ siap (Section 3+ menyusul)
 │   ├── materi.md                          (Konsep AI Agent + ReAct + Tools & Function Calling)
 │   └── latihan.md                         (3 prompt progresif — Prompt 1: definisi tools delete+update. Prompt 2: wire ke quick-add (single). Prompt 3: upgrade ke parallel)
-└── Module-09-Multimodal/                  ✅ siap (3 section)
-    ├── materi.md                          (Konsep multimodal + vision API + use case Fin-App)
-    ├── latihan.md                         (index 3 section)
-    ├── latihan-1-vision-basics.md         (Section 1 — script PoC vision via terminal)
-    ├── latihan-2-upload-ui.md             (Section 2 — komponen UploadKwitansi + base64 pipeline)
-    └── latihan-3-receipt-extraction.md    (Section 3 — Claude vision + tool save_receipt_transactions + insert paralel)
+├── Module-09-Multimodal/                  ✅ siap (3 section)
+│   ├── materi.md                          (Konsep multimodal + vision API + use case Fin-App)
+│   ├── latihan.md                         (index 3 section)
+│   ├── latihan-1-vision-basics.md         (Section 1 — script PoC vision via terminal)
+│   ├── latihan-2-upload-ui.md             (Section 2 — komponen UploadKwitansi + base64 pipeline)
+│   └── latihan-3-receipt-extraction.md    (Section 3 — Claude vision + tool save_receipt_transactions + insert paralel)
+└── Module-09a-Generative-Dashboard/       ✅ siap (3 prompt)
+    ├── materi.md                          (Konsep Generative UI + arsitektur 2-tool + Recharts)
+    └── latihan.md                         (3 prompt: tools + server action → komponen → wire ke Dashboard)
 ```
 
 ## Alur Belajar
@@ -81,6 +85,8 @@ Day 4 Module 08 — AI Agent (Konsep + Parallel + Multi-Tool di quick-add)
         ↓  quick-add bisa handle multi-save + delete + mixed dalam 1 kalimat
 Day 4 Module 09 — Multimodal & Document Understanding
         ↓  upload foto kwitansi → auto-extract → insert ke transactions
+Day 4 Module 09a — Generative Dashboard
+        ↓  user ketik instruksi → Claude query DB via tools → render chart dinamis
 Section 3+ Module 08 menyusul
         → implementasi ReAct loop konkret runtime
         → memory + error recovery
