@@ -22,7 +22,7 @@ Setelah lab ini Anda mampu:
 
 - Telah menyelesaikan Module 3 (materi).
 - Akun **Anthropic Console** pribadi aktif (https://console.anthropic.com).
-- Anda telah menerima undangan untuk bergabung ke **Workspace pelatihan Jalin** yang disiapkan fasilitator. Seluruh usage Workbench selama lab ini akan otomatis ditagihkan ke billing pelatihan.
+- Anda telah menerima undangan untuk bergabung ke **Workspace pelatihan BPJS Ketenagakerjaan** yang disiapkan fasilitator. Seluruh usage Workbench selama lab ini akan otomatis ditagihkan ke billing pelatihan.
 - Google Spreadsheet kosong untuk mencatat hasil.
 
 > ℹ️ **Mengapa Workbench, bukan claude.ai?** Lab 02 memerlukan parameter **`temperature=0`** agar hasil eksperimen reproducible — output yang sama setiap kali prompt dijalankan ulang. claude.ai tidak mengekspos parameter `temperature`, sedangkan Workbench memberikan kontrol penuh. Hal ini krusial saat membandingkan kualitas zero-shot vs few-shot vs CoT secara objektif.
@@ -43,22 +43,22 @@ Setelah lab ini Anda mampu:
 
 ---
 
-## Task 1 — Klasifikasi Sentimen Komentar Nasabah Jalin
+## Task 1 — Klasifikasi Sentimen Komentar Peserta BPJS
 
 ### 1.1 Dataset
 
 Klasifikasikan ke `POSITIF`, `NEGATIF`, atau `NETRAL`.
 
 ```
-S1: "Transfer via BI-FAST cepat banget, sampai dalam 2 detik, mantap!"
-S2: "Sudah seminggu komplain dispute saldo terdebit tapi belum diproses, kecewa."
-S3: "Aplikasinya update lagi, layoutnya berubah, tapi fungsi utamanya masih sama."
-S4: "Awalnya senang karena ATM Link gratis tarik tunai, tapi ternyata limitnya kecil banget."
-S5: "Wah keren ya tiap mau transfer harus loading 30 detik, hemat waktu sekali /sarcasm"
+S1: "Klaim JHT saya cair dalam 3 hari kerja setelah dokumen lengkap, pelayanannya cepat dan responsif!"
+S2: "Sudah 2 minggu dokumen lengkap tapi klaim belum diproses, sudah hubungi 175 berkali-kali tidak ada solusi."
+S3: "Proses pendaftaran peserta baru di SIPP sekarang sudah bisa online, tidak perlu datang ke kantor seperti dulu."
+S4: "Awalnya semangat pakai JMO karena katanya mudah, tapi fitur verifikasi wajah selalu gagal di HP saya."
+S5: "Wah mantap, appnya crash tiap hari tapi iuran tetap dipotong rutin, profesional sekali!"
 ```
 
 **Ground truth** (untuk self-check):
-S1 POSITIF | S2 NEGATIF | S3 NETRAL | S4 NEGATIF (mixed dengan letdown) | S5 NEGATIF (sarkasme).
+S1 POSITIF | S2 NEGATIF | S3 NETRAL | S4 NEGATIF (mixed letdown) | S5 NEGATIF (sarkasme).
 
 ### 1.2 Prompt Templates
 
@@ -83,19 +83,19 @@ Sentimen:
 Klasifikasikan sentimen kalimat sebagai POSITIF, NEGATIF, atau NETRAL.
 
 <example>
-Kalimat: "Aplikasi makin enak dipakai setelah update."
+Kalimat: "Klaim JKK saya diproses cepat, dokter yang ditunjuk juga profesional."
 Sentimen: POSITIF
 </example>
 <example>
-Kalimat: "Customer service-nya jutek banget, males balik."
+Kalimat: "Data saya salah di sistem BPJS, sudah lapor 3 kali tapi tidak diperbaiki juga."
 Sentimen: NEGATIF
 </example>
 <example>
-Kalimat: "Aplikasi berfungsi sebagaimana mestinya."
+Kalimat: "Kantor cabang BPJS buka sesuai jam operasional yang tertera di website."
 Sentimen: NETRAL
 </example>
 <example>
-Kalimat: "Wah keren bisa ngabisin kuota saya, makasih ya /sarcasm"
+Kalimat: "Wah hebat ya, saldo JHT tidak bisa dilihat padahal iuran rajin dibayar /sarcasm"
 Sentimen: NEGATIF
 </example>
 
@@ -147,30 +147,35 @@ Tulis 1–2 kalimat: teknik mana yang paling akurat, dan mengapa?
 
 ---
 
-## Task 2 — Reasoning Matematika (Kalkulasi Biaya Transaksi)
+## Task 2 — Perhitungan Iuran BPJS Ketenagakerjaan
 
 ### 2.1 Dataset
 
 ```
-M1: Seorang nasabah melakukan 4 transaksi dalam satu hari:
-- 3× transfer Rp 5.000.000 ke bank lain via BI-FAST (biaya Rp 2.500/transaksi)
-- 2× tarik tunai Rp 1.000.000 di ATM Bank lain via Link (biaya Rp 7.500/transaksi)
-- 5× cek saldo di ATM bank lain via Link (biaya Rp 4.000/transaksi)
-- 1× transfer Rp 25.000.000 ke bank lain via BI-FAST (biaya Rp 2.500/transaksi)
-Berapa total biaya yang dibebankan ke nasabah?
+M1: Sebuah perusahaan memiliki karyawan dengan upah Rp 8.000.000/bulan
+(gaji pokok + tunjangan tetap). Tingkat risiko pekerjaan: menengah (JKK 0,54%).
+Hitung total iuran yang ditanggung pemberi kerja per bulan:
+- JHT pemberi kerja: 3,7%
+- JKK: 0,54%
+- JKM: 0,3%
+- JP pemberi kerja: 2% (upah aktual, karena di bawah batas maks Rp 9.559.600)
 
-M2: Andi pinjam Rp 5.000.000 dengan bunga sederhana 12% per tahun, jangka 6 bulan.
-Berapa total yang harus dibayar di akhir periode?
+M2: Seorang peserta JHT berencana mencairkan sebagian saldo untuk keperluan
+perumahan. Saldo JHT saat ini: Rp 45.000.000. Ketentuan: pencairan sebagian
+maksimal 30% dari saldo. Dari nominal yang dicairkan, dikenakan pajak 5%
+(masa kepesertaan ≥ 10 tahun). Berapa nominal bersih yang diterima peserta?
 
-M3: Tim project switching punya 5 task. Task A & B masing-masing 3 hari, dapat
-dikerjakan paralel. Task C butuh A & B selesai, durasi 2 hari. Task D & E
-masing-masing 4 hari dan dapat dikerjakan paralel setelah C selesai.
-Berapa total waktu minimum project?
+M3: Tim IT BPJS punya 5 task untuk migrasi sistem SIPP. Task A (persiapan data)
+& B (konfigurasi server) masing-masing 3 hari, dapat dikerjakan paralel.
+Task C (migrasi database) butuh A & B selesai dulu, durasi 2 hari.
+Task D (testing UAT) & E (training operator) masing-masing 4 hari dan
+dapat dikerjakan paralel setelah C selesai.
+Berapa total waktu minimum proyek?
 ```
 
 **Ground truth** (untuk self-check):
-- **M1**: Total biaya = **Rp 45.000** (BI-FAST: 4 × 2.500 = 10.000; Link tarik tunai: 2 × 7.500 = 15.000; Link cek saldo: 5 × 4.000 = 20.000).
-- **M2**: Total = **Rp 5.300.000** (bunga = 5.000.000 × 12% × 6/12 = 300.000).
+- **M1**: JHT = 3,7% × 8.000.000 = 296.000; JKK = 0,54% × 8.000.000 = 43.200; JKM = 0,3% × 8.000.000 = 24.000; JP = 2% × 8.000.000 = 160.000; Total = **Rp 523.200**.
+- **M2**: Pencairan maks = 30% × 45.000.000 = 13.500.000; Pajak = 5% × 13.500.000 = 675.000; Diterima = **Rp 12.825.000**.
 - **M3**: Total waktu minimum = **9 hari** (A & B paralel 3 hari → C 2 hari → D & E paralel 4 hari).
 
 ### 2.2 Prompt Templates
@@ -196,12 +201,12 @@ Jawaban:
 Selesaikan soal berikut. Berikan jawaban akhirnya secara singkat.
 
 <example>
-Soal: "Bu Sari membeli 3 kg apel @ Rp 25.000/kg dan 2 kg jeruk @ Rp 30.000/kg. Berapa total yang harus dibayar?"
-Jawaban: Apel 3 × 25.000 = 75.000; Jeruk 2 × 30.000 = 60.000; Total = Rp 135.000.
+Soal: "Seorang karyawan dengan upah Rp 5.000.000/bulan. Hitung iuran JHT pekerja (2%) per bulan."
+Jawaban: Iuran JHT pekerja = 2% × 5.000.000 = Rp 100.000 per bulan.
 </example>
 <example>
-Soal: "Pak Budi menabung Rp 50 juta di deposito dengan bunga sederhana 5% per tahun selama 2 tahun. Berapa saldo akhir?"
-Jawaban: Bunga = 50 juta × 5% × 2 = 5 juta. Saldo akhir = Rp 55 juta.
+Soal: "Perusahaan A membayar iuran JP untuk karyawan dengan upah Rp 12.000.000/bulan. Tarif JP pemberi kerja 2%, batas upah JP Rp 9.559.600. Berapa iuran JP yang dibayar?"
+Jawaban: Upah digunakan = min(12.000.000, 9.559.600) = 9.559.600. Iuran JP = 2% × 9.559.600 = Rp 191.192.
 </example>
 
 Soal: "{soal}"
@@ -237,12 +242,12 @@ Soal: "{soal}"
 
 ### 2.3 Spreadsheet Task 2
 
-| Sampel | Ground Truth     | Output Zero-Shot | Z benar? | Output Few-Shot | F benar? | Output CoT | CoT benar? |
-|--------|------------------|------------------|----------|-----------------|----------|------------|------------|
-| M1     | Rp 45.000        |                  |          |                 |          |            |            |
-| M2     | Rp 5.300.000     |                  |          |                 |          |            |            |
-| M3     | 9 hari           |                  |          |                 |          |            |            |
-| **Akurasi (%)** | —     |                  |          |                 |          |            |            |
+| Sampel | Ground Truth | Output Zero-Shot | Z benar? | Output Few-Shot | F benar? | Output CoT | CoT benar? |
+|--------|--------------|------------------|----------|-----------------|----------|------------|------------|
+| M1     | Rp 523.200   |                  |          |                 |          |            |            |
+| M2     | Rp 12.825.000 |                 |          |                 |          |            |            |
+| M3     | 9 hari       |                  |          |                 |          |            |            |
+| **Akurasi (%)** | —    |                  |          |                 |          |            |            |
 
 ### 2.4 Insight Task 2
 
@@ -250,38 +255,38 @@ Tulis 1–2 kalimat: pada soal mana CoT memberikan keunggulan paling nyata? Meng
 
 ---
 
-## Task 3 — Klasifikasi Tiket Incident Sistem Pembayaran
+## Task 3 — Klasifikasi Tiket Layanan BPJS Ketenagakerjaan
 
 ### 3.1 Dataset
 
 Klasifikasikan tiket ke salah satu kategori berikut:
 
-| Kategori                              | Deskripsi                                                  |
-|---------------------------------------|------------------------------------------------------------|
-| `ATM_DISPENSE_ERROR_FALSE_SUCCESS`    | Uang tidak keluar tetapi sistem mencatat sukses.           |
-| `ATM_NETWORK_TIMEOUT`                 | Koneksi ke switch terputus saat transaksi.                 |
-| `ATM_RECEIPT_PRINTER_ISSUE`           | Mesin gagal mencetak struk.                                |
-| `BIFAST_REVERSAL_DELAY`               | Reversal BI-FAST melewati SLA.                             |
-| `OTHER`                               | Tidak masuk kategori di atas.                              |
+| Kategori | Deskripsi |
+|----------|-----------|
+| `DATA_PESERTA_TIDAK_DITEMUKAN` | Nomor KPJ/NIK tidak terdaftar atau tidak ditemukan di sistem |
+| `KLAIM_JHT_DOKUMEN_TIDAK_LENGKAP` | Pengajuan klaim ditolak karena dokumen tidak memenuhi persyaratan |
+| `KEPESERTAAN_TIDAK_AKTIF` | Status kepesertaan non-aktif karena iuran tidak dibayar |
+| `APLIKASI_JMO_ERROR` | Gangguan teknis pada aplikasi Jamsostek Mobile |
+| `OTHER` | Tidak masuk kategori di atas |
 
 ```
-T1: "Transaksi tarik tunai di ATM Link Bank C gagal sejak pukul 22.00 kemarin,
-     namun mesin tetap mengeluarkan struk SUKSES. Saldo nasabah terdebit."
+T1: "Peserta mencoba login JMO tapi selalu muncul notifikasi 'NIK tidak terdaftar',
+     padahal perusahaan sudah mendaftarkan 3 tahun lalu dan iuran rutin dibayar."
 
-T2: "Nasabah komplain transfer BI-FAST Rp 2 juta gagal 5 hari lalu,
-     reversal belum masuk hingga sekarang."
+T2: "Pengajuan klaim JHT peserta ditolak sistem dengan keterangan dokumen tidak
+     lengkap — peserta merasa sudah mengunggah semua persyaratan yang diminta."
 
-T3: "ATM di cabang Jakarta Selatan tidak mengeluarkan struk transaksi,
-     padahal transaksi dispense uang berhasil."
+T3: "Notifikasi dari sistem bahwa kepesertaan peserta berstatus non-aktif karena
+     iuran bulan April–Juni belum dibayarkan oleh perusahaan pemberi kerja."
 
-T4: "Beberapa transaksi di ATM Bank D timeout terus sejak 30 menit lalu,
-     diduga koneksi ke switch bermasalah."
+T4: "Aplikasi JMO peserta crash setiap kali membuka menu 'Lihat Saldo JHT'
+     sejak pembaruan ke versi terbaru."
 
-T5: "Aplikasi mobile banking saya error saat buka menu QRIS."
+T5: "Peserta ingin mengganti nomor rekening bank tujuan pencairan JHT."
 ```
 
 **Ground truth** (untuk self-check):
-T1 `ATM_DISPENSE_ERROR_FALSE_SUCCESS` | T2 `BIFAST_REVERSAL_DELAY` | T3 `ATM_RECEIPT_PRINTER_ISSUE` | T4 `ATM_NETWORK_TIMEOUT` | T5 `OTHER`.
+T1 `DATA_PESERTA_TIDAK_DITEMUKAN` | T2 `KLAIM_JHT_DOKUMEN_TIDAK_LENGKAP` | T3 `KEPESERTAAN_TIDAK_AKTIF` | T4 `APLIKASI_JMO_ERROR` | T5 `OTHER`.
 
 ### 3.2 Prompt Templates
 
@@ -292,8 +297,8 @@ Ganti `{tiket}` dengan T1–T5.
 
 ```text
 Klasifikasikan tiket berikut ke salah satu kategori:
-ATM_DISPENSE_ERROR_FALSE_SUCCESS, ATM_NETWORK_TIMEOUT,
-ATM_RECEIPT_PRINTER_ISSUE, BIFAST_REVERSAL_DELAY, OTHER.
+DATA_PESERTA_TIDAK_DITEMUKAN, KLAIM_JHT_DOKUMEN_TIDAK_LENGKAP,
+KEPESERTAAN_TIDAK_AKTIF, APLIKASI_JMO_ERROR, OTHER.
 
 Tiket: "{tiket}"
 Kategori:
@@ -306,20 +311,20 @@ Kategori:
 
 ```text
 Klasifikasikan tiket berikut ke salah satu kategori:
-ATM_DISPENSE_ERROR_FALSE_SUCCESS, ATM_NETWORK_TIMEOUT,
-ATM_RECEIPT_PRINTER_ISSUE, BIFAST_REVERSAL_DELAY, OTHER.
+DATA_PESERTA_TIDAK_DITEMUKAN, KLAIM_JHT_DOKUMEN_TIDAK_LENGKAP,
+KEPESERTAAN_TIDAK_AKTIF, APLIKASI_JMO_ERROR, OTHER.
 
 <example>
-Tiket: "ATM Bank A keluar struk gagal padahal nasabah sudah terima uang."
-Kategori: ATM_RECEIPT_PRINTER_ISSUE
+Tiket: "Peserta mendaftar JHT tahun lalu tapi namanya tidak muncul di portal SIPP."
+Kategori: DATA_PESERTA_TIDAK_DITEMUKAN
 </example>
 <example>
-Tiket: "Transfer BI-FAST 7 hari lalu gagal, dana belum kembali ke saldo."
-Kategori: BIFAST_REVERSAL_DELAY
+Tiket: "Dana JHT peserta belum cair meski 10 hari sejak pengajuan, padahal dokumen sudah lengkap."
+Kategori: KLAIM_JHT_DOKUMEN_TIDAK_LENGKAP
 </example>
 <example>
-Tiket: "Koneksi ATM ke switch putus sejak pagi tadi."
-Kategori: ATM_NETWORK_TIMEOUT
+Tiket: "Iuran bulan Maret tidak terbayar oleh HRD, kepesertaan kini non-aktif."
+Kategori: KEPESERTAAN_TIDAK_AKTIF
 </example>
 
 Tiket: "{tiket}"
@@ -333,8 +338,8 @@ Kategori:
 
 ```text
 Klasifikasikan tiket berikut ke salah satu kategori:
-ATM_DISPENSE_ERROR_FALSE_SUCCESS, ATM_NETWORK_TIMEOUT,
-ATM_RECEIPT_PRINTER_ISSUE, BIFAST_REVERSAL_DELAY, OTHER.
+DATA_PESERTA_TIDAK_DITEMUKAN, KLAIM_JHT_DOKUMEN_TIDAK_LENGKAP,
+KEPESERTAAN_TIDAK_AKTIF, APLIKASI_JMO_ERROR, OTHER.
 
 Langkah berpikir:
 1. Identifikasi gejala utama dari tiket (apa yang gagal? di mana?).
@@ -356,14 +361,14 @@ Tiket: "{tiket}"
 
 ### 3.3 Spreadsheet Task 3
 
-| Sampel | Ground Truth                         | Output Zero-Shot | Z benar? | Output Few-Shot | F benar? | Output CoT | CoT benar? |
-|--------|--------------------------------------|------------------|----------|-----------------|----------|------------|------------|
-| T1     | ATM_DISPENSE_ERROR_FALSE_SUCCESS     |                  |          |                 |          |            |            |
-| T2     | BIFAST_REVERSAL_DELAY                |                  |          |                 |          |            |            |
-| T3     | ATM_RECEIPT_PRINTER_ISSUE            |                  |          |                 |          |            |            |
-| T4     | ATM_NETWORK_TIMEOUT                  |                  |          |                 |          |            |            |
-| T5     | OTHER                                |                  |          |                 |          |            |            |
-| **Akurasi (%)** | —                          |                  |          |                 |          |            |            |
+| Sampel | Ground Truth | Output Zero-Shot | Z benar? | Output Few-Shot | F benar? | Output CoT | CoT benar? |
+|--------|--------------|------------------|----------|-----------------|----------|------------|------------|
+| T1     | DATA_PESERTA_TIDAK_DITEMUKAN |  |  |  |  |  |  |
+| T2     | KLAIM_JHT_DOKUMEN_TIDAK_LENGKAP |  |  |  |  |  |  |
+| T3     | KEPESERTAAN_TIDAK_AKTIF |  |  |  |  |  |  |
+| T4     | APLIKASI_JMO_ERROR |  |  |  |  |  |  |
+| T5     | OTHER |  |  |  |  |  |  |
+| **Akurasi (%)** | — |  |  |  |  |  |  |
 
 ### 3.4 Insight Task 3
 

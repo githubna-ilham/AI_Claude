@@ -25,15 +25,13 @@ scratch/
 playground/
 
 # Days yang belum siap untuk publik
-# Pelatihan cohort ini hanya mempublikasikan Day 1 di repo.
-# Day 2-4 akan dibuka kembali setelah rombak lengkap (stack JS + konteks Jalin).
+# Fokus saat ini: Day 1. Day 2-4 akan dibuka kembali setelah konteks disesuaikan.
 Day-2-AI-Workflow-Agent/
 Day-3-AI-App-RAG/
 Day-4-Product-Governance-Capstone/
-Day 2 - Road To AI Apps/Module-03-Claude-API/materi-ui-chatbot.md
-Day 2 - Road To AI Apps/Module-03-Claude-API/latihan-2-ui-chatbot.md
-Day 2 - Road To AI Apps/Module-03-Claude-API/assets/
-Day 3 - System Prompt Engineering/README.md
+Day 2 - Road To AI Apps/
+Day 3 - System Prompt Engineering/
+Day 4 - AI Agent & Tools/
 
 # Pretest & Posttest belum siap untuk publik
 pretest/

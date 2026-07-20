@@ -1,4 +1,4 @@
-# Lab 01 — Anatomy of a Prompt (Konteks Jalin)
+# Lab 01 — Anatomy of a Prompt (Konteks BPJS Ketenagakerjaan)
 
 **Modul**: Module 2 — Prompt Engineering Basics
 **Durasi**: 60 menit (4 use case × ~15 menit)
@@ -32,26 +32,26 @@ Setelah lab ini, Anda mampu:
 
 Untuk setiap use case Anda akan menjalankan 4 tahap berikut:
 
-1. **Baca konteks** — situasi operasional di Jalin.
+1. **Baca konteks** — situasi operasional di BPJS Ketenagakerjaan.
 2. **Lihat output target** — contoh konkret jawaban "baik" yang harus didekati.
 3. **Tahap A — Percobaan Mandiri**: Anda menulis prompt sendiri untuk mencoba menghasilkan output yang **mirip** dengan target. Jalankan di claude.ai, screenshot.
 4. **Tahap B — Prompt Anatomi**: jalankan prompt referensi yang sudah disusun mengikuti template 5 komponen. Bandingkan hasilnya dengan Tahap A dan dengan output target.
 
 ---
 
-## Use Case 1 — Balasan Keluhan Nasabah (Transaksi Gagal)
+## Use Case 1 — Balasan Keluhan Peserta (Klaim JHT Terlambat)
 
 ### 1.1 Konteks
 
-Nasabah Bank A bernama **Bapak Andi** mengirim keluhan ke kanal CS Jalin pada **27 Juni 2026**:
+Peserta **Ibu Sari** mengirim keluhan via kanal CS BPJS Ketenagakerjaan pada **10 Juli 2026**:
 
-> "Saya transfer Rp 5.000.000 ke rekening anak saya di Bank B via BI-FAST tanggal 24 Juni. Transaksi gagal, tapi saldo saya sudah terdebit. Sudah 3 hari belum kembali. Mohon segera diproses, ini untuk biaya sekolah."
+> "Saya mengajukan klaim JHT sejak 1 Juli 2026. Semua dokumen sudah diunggah di aplikasi JMO dan dinyatakan lengkap. Sudah lebih dari 2 minggu belum ada konfirmasi pencairan. Dana ini saya butuhkan untuk modal usaha setelah resign."
 
-Asumsi SOP internal Jalin (untuk keperluan latihan):
+Asumsi SOP BPJS Ketenagakerjaan (untuk keperluan latihan):
 
-- SLA reversal transaksi BI-FAST gagal: **1×24 jam hingga 7 hari kerja**, tergantung verifikasi bank tujuan.
-- CS officer **tidak diperbolehkan** menjanjikan tanggal pasti pengembalian dana atau kompensasi finansial di luar reversal nominal.
-- Setiap balasan wajib mencantumkan **nomor tiket** (gunakan placeholder `[NO_TIKET]`) dan saluran eskalasi (`cs@jalin.co.id` / `1500-XXX`).
+- SLA pemrosesan klaim JHT online via JMO: maksimal **5 hari kerja** setelah dokumen dinyatakan lengkap.
+- CS tidak diperbolehkan menjanjikan tanggal pencairan atau kompensasi bunga.
+- Setiap balasan wajib menyertakan **nomor tiket** (gunakan placeholder `[NO_TIKET]`) dan saluran eskalasi (`care@bpjsketenagakerjaan.go.id` / `175`).
 
 ### 1.2 Output Target
 
@@ -59,31 +59,30 @@ Output "baik" untuk kasus ini memenuhi kriteria berikut:
 
 - **Tone**: empatik namun profesional, panjang 100–150 kata.
 - **Struktur**: pembuka (akui & minta maaf) → penjelasan SLA → langkah berikutnya → nomor tiket & kontak eskalasi → penutup.
-- **Akurasi**: menyebut SLA 1×24 jam – 7 hari kerja, **tidak** menjanjikan kompensasi.
+- **Akurasi**: menyebut SLA 5 hari kerja, **tidak** menjanjikan kompensasi.
 - **Format**: paragraf utuh siap-tempel (bukan bullet-point).
 
 Contoh output target (referensi):
 
 ```
-Yth. Bapak Andi,
+Yth. Ibu Sari,
 
-Kami memohon maaf atas ketidaknyamanan yang Bapak alami terkait transfer
-sebesar Rp 5.000.000 pada tanggal 24 Juni 2026 yang belum berhasil
-dikembalikan. Kami memahami urgensi dana tersebut untuk keperluan biaya
-sekolah putra/putri Bapak.
+Kami mohon maaf atas ketidaknyamanan yang Ibu alami terkait proses
+klaim Jaminan Hari Tua (JHT) yang diajukan sejak 1 Juli 2026. Kami
+memahami pentingnya dana tersebut untuk keperluan modal usaha Ibu.
 
-Berdasarkan SOP penanganan reversal BI-FAST, proses pengembalian dana
-membutuhkan waktu 1×24 jam hingga 7 hari kerja tergantung verifikasi
-dari bank tujuan. Tim kami telah mencatat keluhan Bapak dengan nomor
-tiket [NO_TIKET] dan saat ini sedang melakukan koordinasi dengan
-Bank B untuk mempercepat proses.
+Berdasarkan SOP layanan klaim JHT online melalui aplikasi JMO,
+proses verifikasi dan pencairan membutuhkan waktu maksimal 5 hari
+kerja terhitung sejak dokumen dinyatakan lengkap. Tim kami telah
+mencatat keluhan Ibu dengan nomor tiket [NO_TIKET] dan sedang
+melakukan penelusuran status pengajuan Ibu secara prioritas.
 
-Untuk pembaruan status atau eskalasi, Bapak dapat menghubungi kami
-melalui email cs@jalin.co.id atau hotline 1500-XXX dengan menyebutkan
-nomor tiket di atas.
+Untuk pembaruan status atau eskalasi lebih lanjut, Ibu dapat
+menghubungi kami melalui email care@bpjsketenagakerjaan.go.id
+atau hotline 175 dengan menyebutkan nomor tiket di atas.
 
 Hormat kami,
-Tim Customer Service Jalin
+Tim Customer Care BPJS Ketenagakerjaan
 ```
 
 ### 1.3 Tahap A — Percobaan Mandiri
@@ -107,33 +106,33 @@ Salin prompt berikut **apa adanya** ke claude.ai (percakapan baru), kemudian jal
 
 ```text
 <role>
-Anda adalah CS Officer Jalin Pembayaran Nusantara.
+Anda adalah Customer Care Officer BPJS Ketenagakerjaan.
 </role>
 
 <context>
-Keluhan dari Bapak Andi, 27 Juni 2026:
-"Saya transfer Rp 5.000.000 ke rekening anak saya di Bank B via BI-FAST
-tanggal 24 Juni. Transaksi gagal, tapi saldo saya sudah terdebit. Sudah
-3 hari belum kembali."
+Keluhan dari Ibu Sari, 10 Juli 2026:
+"Saya mengajukan klaim JHT sejak 1 Juli 2026. Semua dokumen sudah
+diunggah di JMO dan dinyatakan lengkap. Sudah lebih dari 2 minggu
+belum ada konfirmasi pencairan. Dana ini untuk modal usaha setelah resign."
 
-SLA reversal BI-FAST gagal: 1×24 jam – 7 hari kerja.
-CS tidak boleh menjanjikan kompensasi.
+SLA klaim JHT online via JMO: maksimal 5 hari kerja sejak dokumen lengkap.
+CS tidak boleh menjanjikan kompensasi atau tanggal pasti pencairan.
 </context>
 
 <task>
-Tulis balasan resmi untuk Bapak Andi.
+Tulis balasan resmi untuk Ibu Sari.
 </task>
 
 <rules>
 - Tone empatik & profesional, 100–150 kata, format paragraf.
-- Sebut SLA 1×24 jam – 7 hari kerja.
-- Sertakan nomor tiket [NO_TIKET] dan kontak cs@jalin.co.id / 1500-XXX.
-- Jangan menjanjikan kompensasi.
+- Sebut SLA 5 hari kerja.
+- Sertakan nomor tiket [NO_TIKET] dan kontak care@bpjsketenagakerjaan.go.id / 175.
+- Jangan menjanjikan kompensasi atau tanggal pasti.
 </rules>
 
 <output_format>
-Balasan email dibuka "Yth. Bapak Andi," dan ditutup
-"Hormat kami, Tim Customer Service Jalin".
+Balasan dibuka "Yth. Ibu Sari," dan ditutup
+"Hormat kami, Tim Customer Care BPJS Ketenagakerjaan".
 </output_format>
 ```
 
@@ -145,41 +144,39 @@ Screenshot output dan simpan berdampingan dengan output Tahap A.
 
 Isi tabel berikut:
 
-| Aspek                                 | Tahap A (Anda) | Tahap B (Anatomi) | Output Target |
-|---------------------------------------|----------------|-------------------|---------------|
-| Tone empatik & profesional            |                |                   | ✅             |
-| Panjang 100–150 kata                  |                |                   | ✅             |
-| Format paragraf (bukan bullet)        |                |                   | ✅             |
-| Menyebut SLA 1×24 jam – 7 hari kerja  |                |                   | ✅             |
-| Tidak menjanjikan kompensasi          |                |                   | ✅             |
-| Menyertakan [NO_TIKET] + kontak       |                |                   | ✅             |
+| Aspek | Tahap A (Anda) | Tahap B (Anatomi) | Output Target |
+|-------|----------------|-------------------|---------------|
+| Tone empatik & profesional | | | ✅ |
+| Panjang 100–150 kata | | | ✅ |
+| Format paragraf (bukan bullet) | | | ✅ |
+| Menyebut SLA 5 hari kerja | | | ✅ |
+| Tidak menjanjikan kompensasi/tanggal pasti | | | ✅ |
+| Menyertakan [NO_TIKET] + kontak | | | ✅ |
 
 Tulis 2–3 kalimat refleksi: komponen mana di prompt Tahap A yang **hilang** sehingga outputnya menyimpang dari target?
 
 ---
 
-## Use Case 2 — Klasifikasi Tiket Incident Sistem Pembayaran
+## Use Case 2 — Klasifikasi Tiket Layanan Peserta
 
 ### 2.1 Konteks
 
-Tiket masuk ke sistem ITSM Jalin:
+Tiket masuk ke helpdesk BPJS Ketenagakerjaan:
 
-> "Transaksi tarik tunai di ATM Link Bank C gagal sejak pukul 22.00 kemarin,
-> namun mesin tetap mengeluarkan struk dengan status SUKSES. Saldo nasabah
-> terdebit. Sudah ada 47 keluhan dari beberapa cabang."
+> "Peserta melaporkan bahwa nomor KPJ (Kartu Peserta Jamsostek) mereka tidak ditemukan saat mencoba mengakses saldo JHT di aplikasi JMO. Perusahaan pemberi kerja sudah mendaftarkan peserta sejak 3 tahun lalu dan iuran rutin dibayar setiap bulan."
 
 Asumsi taksonomi internal (untuk keperluan latihan):
 
-| Kategori                          | Deskripsi singkat                                              |
-|-----------------------------------|----------------------------------------------------------------|
-| `ATM_DISPENSE_ERROR_FALSE_SUCCESS`| Uang tidak keluar tetapi sistem mencatat sukses.               |
-| `ATM_NETWORK_TIMEOUT`             | Koneksi ke switch terputus saat transaksi.                     |
-| `ATM_RECEIPT_PRINTER_ISSUE`       | Mesin gagal mencetak struk.                                    |
-| `BIFAST_REVERSAL_DELAY`           | Reversal BI-FAST melewati SLA.                                 |
-| `OTHER`                           | Tidak masuk kategori di atas.                                  |
+| Kategori | Deskripsi |
+|----------|-----------|
+| `DATA_PESERTA_TIDAK_DITEMUKAN` | Nomor KPJ/NIK tidak terdaftar atau tidak ditemukan di sistem |
+| `KLAIM_JHT_DOKUMEN_TIDAK_LENGKAP` | Pengajuan klaim ditolak karena dokumen tidak memenuhi persyaratan |
+| `KEPESERTAAN_TIDAK_AKTIF` | Status kepesertaan non-aktif karena iuran tidak dibayar |
+| `APLIKASI_JMO_ERROR` | Gangguan teknis pada aplikasi Jamsostek Mobile |
+| `OTHER` | Tidak masuk kategori di atas |
 
 Severity scale: `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`.
-Routing team: `ATM_OPS`, `NETWORK`, `BIFAST_OPS`, `MERCHANT_QRIS`.
+Routing team: `CS_ONLINE`, `DATA_MASTER`, `KLAIM_OPS`, `IT_SUPPORT`.
 
 ### 2.2 Output Target
 
@@ -187,10 +184,10 @@ Output yang diharapkan adalah **JSON valid** dengan struktur:
 
 ```json
 {
-  "category": "ATM_DISPENSE_ERROR_FALSE_SUCCESS",
+  "category": "DATA_PESERTA_TIDAK_DITEMUKAN",
   "severity": "HIGH",
-  "route_to": "ATM_OPS",
-  "reasoning": "Mesin mencetak struk SUKSES padahal dispensing gagal, saldo nasabah terdebit, dan terdapat 47 keluhan multi-cabang dalam waktu singkat."
+  "route_to": "DATA_MASTER",
+  "reasoning": "Nomor KPJ tidak ditemukan di sistem meskipun kepesertaan sudah 3 tahun dan iuran rutin dibayar, mengindikasikan potensi masalah migrasi atau input data di sisi pemberi kerja."
 }
 ```
 
@@ -215,19 +212,19 @@ Salin prompt berikut ke claude.ai (percakapan baru):
 
 ```text
 <role>
-Anda adalah Incident Triage Engineer di tim ITSM Jalin.
+Anda adalah Helpdesk Triage Analyst di BPJS Ketenagakerjaan.
 </role>
 
 <context>
 Tiket:
-"Transaksi tarik tunai di ATM Link Bank C gagal sejak pukul 22.00 kemarin,
-namun mesin tetap mengeluarkan struk SUKSES. Saldo nasabah terdebit.
-Ada 47 keluhan dari beberapa cabang."
+"Peserta melaporkan bahwa nomor KPJ mereka tidak ditemukan saat
+mengakses saldo JHT di JMO. Perusahaan sudah mendaftarkan sejak
+3 tahun lalu dan iuran rutin dibayar setiap bulan."
 
-Pilihan category: ATM_DISPENSE_ERROR_FALSE_SUCCESS, ATM_NETWORK_TIMEOUT,
-ATM_RECEIPT_PRINTER_ISSUE, BIFAST_REVERSAL_DELAY, OTHER.
+Pilihan category: DATA_PESERTA_TIDAK_DITEMUKAN, KLAIM_JHT_DOKUMEN_TIDAK_LENGKAP,
+KEPESERTAAN_TIDAK_AKTIF, APLIKASI_JMO_ERROR, OTHER.
 Pilihan severity: LOW, MEDIUM, HIGH, CRITICAL.
-Pilihan route_to: ATM_OPS, NETWORK, BIFAST_OPS, MERCHANT_QRIS.
+Pilihan route_to: CS_ONLINE, DATA_MASTER, KLAIM_OPS, IT_SUPPORT.
 </context>
 
 <task>
@@ -256,28 +253,28 @@ Screenshot output dan simpan berdampingan dengan Tahap A.
 
 ### 2.5 Perbandingan
 
-| Aspek                                  | Tahap A (Anda) | Tahap B (Anatomi) | Output Target |
-|----------------------------------------|----------------|-------------------|---------------|
-| Output adalah JSON valid               |                |                   | ✅             |
-| `category` sesuai taksonomi (5 pilihan) |                |                   | ✅             |
-| `severity` muncul & valid              |                |                   | ✅             |
-| `route_to` muncul & valid              |                |                   | ✅             |
-| `reasoning` ada & relevan              |                |                   | ✅             |
+| Aspek | Tahap A (Anda) | Tahap B (Anatomi) | Output Target |
+|-------|----------------|-------------------|---------------|
+| Output adalah JSON valid | | | ✅ |
+| `category` sesuai taksonomi (5 pilihan) | | | ✅ |
+| `severity` muncul & valid | | | ✅ |
+| `route_to` muncul & valid | | | ✅ |
+| `reasoning` ada & relevan | | | ✅ |
 
 Tulis 2–3 kalimat refleksi: komponen mana di prompt Tahap A yang membuat output sulit diproses sistem otomatis?
 
 ---
 
-## Use Case 3 — Email Pemberitahuan Maintenance Window
+## Use Case 3 — Email Pemberitahuan Maintenance SIPP Online
 
 ### 3.1 Konteks
 
-Tim Network Operations Jalin akan melakukan maintenance pada **switch ATM Link** dengan rincian:
+Tim IT BPJS Ketenagakerjaan akan melakukan maintenance pada **SIPP Online (Sistem Informasi Pelaporan Peserta)**:
 
-- **Jadwal**: Minggu, 5 Juli 2026, pukul **00.30 – 04.30 WIB** (4 jam).
-- **Dampak**: Transaksi tarik tunai, transfer, dan cek saldo lintas-bank via ATM Link **tidak tersedia** selama jendela maintenance. Transaksi via BI-FAST dan QRIS tidak terdampak.
-- **PIC eskalasi**: NOC Jalin, `noc@jalin.co.id`, hotline `+62-21-XXXXXXX` (24 jam).
-- **Audiens**: bank peserta jaringan ATM Link (BNI, BRI, Mandiri, BTN, dan bank lainnya).
+- **Jadwal**: Sabtu, 12 Juli 2026, pukul **23.00 – 03.00 WIB** (4 jam).
+- **Dampak**: Pelaporan iuran, pendaftaran peserta baru, dan perubahan data peserta via SIPP Online **tidak tersedia** selama jendela maintenance. Layanan klaim via JMO dan pelayanan di kantor cabang tidak terdampak.
+- **PIC eskalasi**: Helpdesk BPJS Ketenagakerjaan, `care@bpjsketenagakerjaan.go.id`, hotline `175` (24 jam).
+- **Audiens**: perusahaan pemberi kerja (pengguna aktif SIPP Online).
 
 ### 3.2 Output Target
 
@@ -291,29 +288,27 @@ Output "baik" adalah email berbahasa Indonesia formal yang memenuhi:
 Contoh ringkas output target (referensi):
 
 ```
-Subjek: [Pemberitahuan] Maintenance Switch ATM Link — Minggu, 5 Juli 2026
+Subjek: [Pemberitahuan] Maintenance SIPP Online — Sabtu, 12 Juli 2026
 
-Yth. Bapak/Ibu Mitra Bank Peserta Jaringan ATM Link,
+Yth. Bapak/Ibu Pimpinan Perusahaan Peserta BPJS Ketenagakerjaan,
 
-Bersama ini kami informasikan bahwa PT Jalin Pembayaran Nusantara akan
-melakukan pemeliharaan terjadwal pada switch ATM Link dengan rincian:
+Bersama ini kami informasikan bahwa BPJS Ketenagakerjaan akan melakukan
+pemeliharaan terjadwal pada sistem SIPP Online dengan rincian:
 
-- Jadwal     : Minggu, 5 Juli 2026, pukul 00.30 – 04.30 WIB
-- Durasi     : 4 jam
-- Dampak     : Layanan tarik tunai, transfer, dan cek saldo lintas-bank
-               via ATM Link tidak tersedia selama jendela tersebut.
-- Tidak terdampak : Transaksi BI-FAST dan QRIS.
+- Jadwal      : Sabtu, 12 Juli 2026, pukul 23.00 – 03.00 WIB
+- Durasi      : 4 jam
+- Dampak      : Pelaporan iuran, pendaftaran peserta baru, dan perubahan
+                data peserta via SIPP Online tidak tersedia selama jendela tersebut.
+- Tidak terdampak : Layanan klaim via JMO dan pelayanan di kantor cabang.
 
-Kami menyarankan Bapak/Ibu untuk menginformasikan kepada nasabah dan
-menyiapkan kanal alternatif (mobile banking / BI-FAST) selama jendela
-maintenance.
+Kami menyarankan Bapak/Ibu untuk menyelesaikan kebutuhan pelaporan iuran
+sebelum pukul 23.00 WIB atau setelah pukul 03.00 WIB pada tanggal tersebut.
 
-Untuk eskalasi dan koordinasi teknis, silakan menghubungi NOC Jalin
-di noc@jalin.co.id atau +62-21-XXXXXXX (24 jam).
+Untuk eskalasi dan informasi lebih lanjut, silakan menghubungi Helpdesk
+BPJS Ketenagakerjaan di care@bpjsketenagakerjaan.go.id atau hotline 175 (24 jam).
 
 Hormat kami,
-Tim Network Operations
-PT Jalin Pembayaran Nusantara
+Tim IT BPJS Ketenagakerjaan
 ```
 
 ### 3.3 Tahap A — Percobaan Mandiri
@@ -329,33 +324,34 @@ Tulis prompt versi Anda sendiri agar Claude menghasilkan email yang sedekat mung
 
 ```text
 <role>
-Anda adalah Network Operations Lead di Jalin Pembayaran Nusantara.
+Anda adalah IT Communications Officer di BPJS Ketenagakerjaan.
 </role>
 
 <context>
-Maintenance switch ATM Link:
-- Jadwal: Minggu, 5 Juli 2026, 00.30 – 04.30 WIB (4 jam)
-- Dampak: tarik tunai, transfer, cek saldo via ATM Link tidak tersedia
-- Tidak terdampak: BI-FAST dan QRIS
-- PIC: NOC Jalin — noc@jalin.co.id / +62-21-XXXXXXX
+Maintenance SIPP Online:
+- Jadwal: Sabtu, 12 Juli 2026, 23.00 – 03.00 WIB (4 jam)
+- Dampak: pelaporan iuran, pendaftaran peserta baru, perubahan data via SIPP Online tidak tersedia
+- Tidak terdampak: layanan klaim via JMO dan kantor cabang
+- PIC: Helpdesk BPJS Ketenagakerjaan — care@bpjsketenagakerjaan.go.id / 175
 
-Audiens: bank peserta jaringan ATM Link.
+Audiens: perusahaan pemberi kerja (pengguna aktif SIPP Online).
 </context>
 
 <task>
-Susun email pemberitahuan maintenance untuk bank peserta.
+Susun email pemberitahuan maintenance untuk perusahaan pemberi kerja.
 </task>
 
 <rules>
 - Tone formal B2B, ringkas.
 - Sebut jadwal, dampak, dan layanan TIDAK terdampak.
-- Sertakan saran kanal alternatif dan PIC NOC.
+- Sertakan saran penyelesaian pelaporan sebelum/sesudah jendela maintenance.
+- Sertakan kontak Helpdesk.
 - Jangan tambahkan layanan yang tidak ada di context.
 </rules>
 
 <output_format>
 Email lengkap dengan subjek, salam, isi, dan penutup
-"Hormat kami, Tim Network Operations PT Jalin Pembayaran Nusantara".
+"Hormat kami, Tim IT BPJS Ketenagakerjaan".
 </output_format>
 ```
 
@@ -363,45 +359,45 @@ Email lengkap dengan subjek, salam, isi, dan penutup
 
 ### 3.5 Perbandingan
 
-| Aspek                                                  | Tahap A (Anda) | Tahap B (Anatomi) | Output Target |
-|--------------------------------------------------------|----------------|-------------------|---------------|
-| Subjek email jelas & informatif                        |                |                   | ✅             |
-| Tone formal B2B (tidak meminta maaf berlebihan)        |                |                   | ✅             |
-| Menyebut jadwal, durasi, dampak                        |                |                   | ✅             |
-| Menyebut layanan TIDAK terdampak (BI-FAST/QRIS)        |                |                   | ✅             |
-| Tidak mengarang layanan tambahan                       |                |                   | ✅             |
-| Menyertakan saran kanal alternatif                     |                |                   | ✅             |
-| Menyertakan PIC eskalasi NOC                           |                |                   | ✅             |
+| Aspek | Tahap A (Anda) | Tahap B (Anatomi) | Output Target |
+|-------|----------------|-------------------|---------------|
+| Subjek email jelas & informatif | | | ✅ |
+| Tone formal B2B | | | ✅ |
+| Menyebut jadwal, durasi, dampak | | | ✅ |
+| Menyebut layanan TIDAK terdampak (JMO/cabang) | | | ✅ |
+| Tidak mengarang layanan tambahan | | | ✅ |
+| Saran waktu pelaporan alternatif | | | ✅ |
+| Menyertakan kontak Helpdesk | | | ✅ |
 
 Tulis 2–3 kalimat refleksi.
 
 ---
 
-## Use Case 4 — Ringkasan Notulen Rapat Operasional Switching
+## Use Case 4 — Ringkasan Notulen Rapat Evaluasi Klaim JHT
 
 ### 4.1 Konteks
 
-Berikut transkrip ringkas rapat operasional Network Switching Jalin tanggal **26 Juni 2026** (peserta: Andi — NOC Lead, Budi — Switching Engineer, Cindy — Product Ops, Dewi — Compliance):
+Berikut transkrip rapat evaluasi **18 Juli 2026** (peserta: Andi — Kepala Divisi Klaim, Budi — IT Support, Cindy — Customer Care, Dewi — Kepatuhan):
 
 ```
-Andi   : "Insiden kemarin malam, switch ATM Link sempat down 12 menit dari
-         22.07 – 22.19. Failover ke node sekunder berjalan tapi terlambat
-         3 menit dari SLA internal."
-Budi   : "Root cause sementara: memory leak di service routing v2.4.1.
-         Vendor sudah dihubungi, patch v2.4.2 dijadwalkan diuji minggu depan
-         di staging."
-Cindy  : "Dampak ke bank peserta: 47 keluhan masuk via CS, mayoritas dari
-         Bank C. Tidak ada kerugian finansial nasabah karena reversal
-         otomatis berhasil semua."
-Dewi   : "Dari sisi compliance, insiden ini perlu dilaporkan ke BI dalam
-         3×24 jam karena durasi melebihi 10 menit. Saya akan siapkan draft
-         laporan, butuh data teknis dari Budi paling lambat besok sore."
-Andi   : "Action items: (1) Budi siapkan data teknis sebelum 27 Juni 17.00,
-         (2) Dewi finalisasi laporan BI sebelum 28 Juni 12.00, (3) saya
-         koordinasi dengan vendor untuk percepatan patch v2.4.2."
-Budi   : "Risiko terbuka: jika patch v2.4.2 tidak lulus QA staging, kita
-         harus pertimbangkan rollback ke v2.3.8 yang stabil tapi tidak
-         mendukung BI-FAST routing terbaru."
+Andi   : "Sejak kebijakan pencairan JHT sebagian berlaku per 1 Juli, volume klaim
+          masuk melonjak 340%. Sistem antrian di portal JMO sempat overload selama
+          3 jam pada tanggal 3 Juli."
+Budi   : "Root cause sementara: kapasitas server antrian klaim tidak diperbesar
+          sebelum kebijakan efektif. Tim infrastruktur sedang mengajukan proposal
+          peningkatan kapasitas, dijadwalkan selesai 25 Juli."
+Cindy  : "Dari sisi Customer Care, ada 2.847 tiket masuk dalam 2 minggu pertama
+          Juli, mayoritas pertanyaan status klaim. Rata-rata waktu respons naik
+          dari 2 jam ke 6 jam."
+Dewi   : "Untuk sisi kepatuhan, SLA 5 hari kerja harus tetap terpenuhi. Dari
+          sampling 100 klaim, ada 12 yang melewati SLA — perlu dilaporkan ke
+          manajemen paling lambat minggu ini."
+Andi   : "Action items: (1) Budi selesaikan proposal infrastruktur sebelum 22 Juli
+          pukul 17.00, (2) Dewi siapkan laporan deviasi SLA ke manajemen sebelum
+          23 Juli pukul 12.00, (3) Cindy tambah resource CS sementara hingga
+          volume klaim stabil."
+Budi   : "Risiko terbuka: jika peningkatan kapasitas terlambat dari jadwal 25 Juli,
+          potensi overload kedua pada puncak klaim akhir bulan."
 ```
 
 ### 4.2 Output Target
@@ -417,23 +413,23 @@ Output "baik" adalah ringkasan terstruktur dengan **5 bagian wajib**:
 Contoh output target (referensi):
 
 ```markdown
-## Notulen Rapat Operasional Switching — 26 Juni 2026
+## Notulen Rapat Evaluasi Klaim JHT — 18 Juli 2026
 
-**Peserta**: Andi (NOC Lead), Budi (Switching Engineer),
-Cindy (Product Ops), Dewi (Compliance)
+**Peserta**: Andi (Kepala Divisi Klaim), Budi (IT Support),
+Cindy (Customer Care), Dewi (Kepatuhan)
 
 ### Keputusan Utama
-- Root cause insiden 25 Juni: memory leak service routing v2.4.1.
-- Patch v2.4.2 akan diuji di staging minggu depan.
-- Insiden wajib dilaporkan ke BI dalam 3×24 jam.
+- Volume klaim JHT melonjak 340% sejak kebijakan pencairan sebagian berlaku 1 Juli.
+- Root cause overload: kapasitas server antrian tidak ditingkatkan sebelum kebijakan efektif.
+- Terdapat 12 dari 100 klaim sampel yang melewati SLA 5 hari kerja — wajib dilaporkan ke manajemen.
 
 ### Action Items
-- [Budi] Siapkan data teknis insiden — deadline 27 Juni 17.00.
-- [Dewi] Finalisasi draft laporan ke BI — deadline 28 Juni 12.00.
-- [Andi] Koordinasi dengan vendor untuk percepatan patch v2.4.2 — tanpa deadline eksplisit.
+- [Budi] Selesaikan proposal peningkatan kapasitas infrastruktur — deadline 22 Juli 17.00.
+- [Dewi] Siapkan laporan deviasi SLA ke manajemen — deadline 23 Juli 12.00.
+- [Cindy] Tambah resource CS sementara hingga volume klaim stabil — tanpa deadline eksplisit.
 
 ### Risiko Terbuka
-- Jika patch v2.4.2 tidak lulus QA staging, opsi rollback ke v2.3.8 berisiko karena tidak mendukung BI-FAST routing terbaru.
+- Jika peningkatan kapasitas terlambat dari jadwal 25 Juli, potensi overload kedua saat puncak klaim akhir bulan.
 ```
 
 ### 4.3 Tahap A — Percobaan Mandiri
@@ -449,11 +445,11 @@ Tulis prompt versi Anda sendiri agar Claude menghasilkan ringkasan yang sedekat 
 
 ```text
 <role>
-Anda adalah Notulis di tim Operations Jalin.
+Anda adalah Notulis di tim Operasional BPJS Ketenagakerjaan.
 </role>
 
 <context>
-Transkrip rapat Network Switching, 26 Juni 2026:
+Transkrip rapat Evaluasi Klaim JHT, 18 Juli 2026:
 
 """
 [tempel transkrip dari bagian 4.1 di sini]
@@ -471,7 +467,7 @@ Action Items, Risiko Terbuka.
 </rules>
 
 <output_format>
-Markdown dengan heading "## Notulen Rapat Operasional Switching — {tanggal}"
+Markdown dengan heading "## Notulen Rapat Evaluasi Klaim JHT — {tanggal}"
 dan sub-bagian: Peserta, Keputusan Utama, Action Items, Risiko Terbuka.
 </output_format>
 ```
@@ -480,15 +476,15 @@ dan sub-bagian: Peserta, Keputusan Utama, Action Items, Risiko Terbuka.
 
 ### 4.5 Perbandingan
 
-| Aspek                                              | Tahap A (Anda) | Tahap B (Anatomi) | Output Target |
-|----------------------------------------------------|----------------|-------------------|---------------|
-| Tanggal rapat ditulis eksplisit                    |                |                   | ✅             |
-| Peserta + peran tercantum lengkap                  |                |                   | ✅             |
-| Keputusan Utama ada                                |                |                   | ✅             |
-| Action Items menyebut PIC + deadline               |                |                   | ✅             |
-| Risiko Terbuka ada                                 |                |                   | ✅             |
-| Tidak menambah informasi di luar transkrip         |                |                   | ✅             |
-| Format markdown sesuai struktur output_format      |                |                   | ✅             |
+| Aspek | Tahap A (Anda) | Tahap B (Anatomi) | Output Target |
+|-------|----------------|-------------------|---------------|
+| Tanggal rapat ditulis eksplisit | | | ✅ |
+| Peserta + peran tercantum lengkap | | | ✅ |
+| Keputusan Utama ada | | | ✅ |
+| Action Items menyebut PIC + deadline | | | ✅ |
+| Risiko Terbuka ada | | | ✅ |
+| Tidak menambah informasi di luar transkrip | | | ✅ |
+| Format markdown sesuai struktur output_format | | | ✅ |
 
 Tulis 2–3 kalimat refleksi.
 
@@ -519,12 +515,12 @@ Seluruh hasil lab disimpan dalam **satu Google Spreadsheet** per peserta. Setela
 
 Template kolom (header pada baris 1, satu baris per use case):
 
-| Use Case                              | Prompt Mandiri | Output Mandiri | Prompt Anatomi | Output Anatomi |
-|---------------------------------------|----------------|----------------|----------------|----------------|
-| 1 — Balasan Keluhan Nasabah           |                |                |                |                |
-| 2 — Klasifikasi Tiket Incident        |                |                |                |                |
-| 3 — Email Maintenance Window          |                |                |                |                |
-| 4 — Ringkasan Notulen Rapat Switching |                |                |                |                |
+| Use Case | Prompt Mandiri | Output Mandiri | Prompt Anatomi | Output Anatomi |
+|----------|----------------|----------------|----------------|----------------|
+| 1 — Balasan Keluhan Peserta (Klaim JHT) | | | | |
+| 2 — Klasifikasi Tiket Layanan Peserta | | | | |
+| 3 — Email Maintenance SIPP Online | | | | |
+| 4 — Ringkasan Notulen Rapat Evaluasi Klaim JHT | | | | |
 
 Konvensi pengisian:
 
@@ -540,5 +536,7 @@ Lab ini merupakan **fondasi paling penting** sepanjang pelatihan. Anatomi prompt
 - **Module 3 (Day 1)** — Anda akan menambahkan teknik lanjutan (few-shot, chain-of-thought) di atas anatomi yang sama.
 - **Module 4 (Day 2 — pembuka)** — Anda akan memperketat **Output Format** menjadi JSON yang valid dan dapat dievaluasi secara otomatis.
 - **Day 2 dan seterusnya** — Saat menulis prompt untuk fitur AI di `fin-app` (Next.js + Supabase), anatomi yang sama akan menjadi struktur dasar dari setiap prompt yang Anda definisikan dalam kode.
+
+Use case BPJS Ketenagakerjaan yang dipakai di lab ini — balasan keluhan peserta, klasifikasi tiket, pemberitahuan maintenance, dan notulen rapat — mencerminkan skenario nyata yang dapat langsung diadaptasi untuk kebutuhan operasional sehari-hari.
 
 Investasi waktu pada lab ini akan terasa manfaatnya selama 3 hari ke depan.
