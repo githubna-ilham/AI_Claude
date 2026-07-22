@@ -17,13 +17,12 @@ Setelah menyelesaikan materi ini, peserta diharapkan mampu:
 
 | Modul | Judul | Estimasi |
 |---|---|---|
-| **01** | Setup Project & Claude Code (+ Supabase + migration + sample data) | 90 menit |
-| **02** | AI-Assisted Coding (konsep) + Latihan: Generate Dokumentasi + Build CRUD Transactions | 180 menit |
-| **03** | Claude API — Koneksi Pertama (SDK + file eksperimen + console output) + Latihan UI Chatbot (prasyarat Day 3) | 30–90 menit |
+| **04** | Setup Project & Claude Code (+ Supabase + migration + sample data) | 90 menit |
+| **05** | AI-Assisted Coding (konsep) + Latihan: Generate Dokumentasi + Build CRUD Transactions | 180 menit |
 
-Total estimasi: **±5–6 jam efektif** untuk Module 01–03 (di luar break & diskusi).
+Total estimasi: **±4–5 jam efektif** untuk Module 04–05 (di luar break & diskusi).
 
-> ➡️ **Lanjutan**: Module 04 (Content Generation) dan Module 05 (Prompt Engineering) ada di **[Day 3 — System Prompt Engineering](../Day%203%20-%20System%20Prompt%20Engineering/)**.
+> ➡️ **Lanjutan**: Module 06 (Claude API) dan seterusnya ada di **[Day 3 — System Prompt Engineering](../Day%203%20-%20System%20Prompt%20Engineering/)**.
 
 ## Stack Hasil Akhir
 
@@ -56,14 +55,12 @@ github.com/githubna-ilham/fina-app-starter
 ```
 Day 2 - Road To AI Apps/
 ├── README.md                                       (file ini)
-├── Module-01-Setup-Project/                        ✅ siap
+├── Module-04-Setup-Project/                        ✅ siap
 │   ├── materi.md                                   (setup + Supabase + migration + sample data)
 │   └── latihan.md                                  (verifikasi + eksplorasi + eksperimen data)
-├── Module-02-AI-Assisted-Coding/                   ✅ siap
-│   ├── materi.md                                   (konsep AI-assisted coding + anatomi Claude + prompting + etika)
-│   └── latihan.md                                  (Latihan 1: Generate Dokumentasi · Latihan 2: Build CRUD)
-└── Module-03-Claude-API/                           ✅ siap
-    ├── materi.md                                   (koneksi pertama via SDK + console output)
-    ├── latihan.md                                  (Latihan 1 — 6 eksperimen: prompt, max_tokens, model, biaya, error)
-    └── [Latihan 2 & Materi UI Chatbot → Day 3 Module-03-UI-Chatbot]
+└── Module-05-AI-Assisted-Coding/                   ✅ siap
+    ├── materi.md                                   (konsep AI-assisted coding + anatomi Claude + prompting + etika)
+    └── latihan.md                                  (Latihan 1: Generate Dokumentasi · Latihan 2: Build CRUD)
 ```
+
+> ➡️ **Lanjutan Day 3**: Module 06 (Claude API) + Module 07 (UI Chatbot) + Module 08 (Content Generation) + Module 09 (Prompt Engineering) ada di **[Day 3 — System Prompt Engineering](../Day%203%20-%20System%20Prompt%20Engineering/)**.

@@ -1,6 +1,6 @@
 # Pelatihan Prompt Engineering, AI Agent & AI App Development with Claude
 
-> Pelatihan 4 hari (40 jam) dari **Multimatics** untuk membangun solusi AI modern berbasis Claude — mulai dari **fondasi LLM & prompt engineering** (Day 1), **setup project Next.js + Supabase dan koneksi Claude API** (Day 2), **system prompt engineering untuk produk** (Day 3), hingga **fitur AI lanjutan: Embedding, RAG, AI Agent, & Multimodal** di atas project `fin-app` (Day 4).
+> Pelatihan 5 hari (50 jam) dari **Multimatics** untuk membangun solusi AI modern berbasis Claude — mulai dari **fondasi LLM & prompt engineering** (Day 1), **setup project Next.js + Supabase** (Day 2), **Claude API & system prompt engineering** (Day 3), **Embedding, RAG, & AI Agent** (Day 4), hingga **Multimodal & Generative Dashboard** (Day 5) di atas project `fin-app`.
 
 ---
 
@@ -37,22 +37,23 @@ Setelah mengikuti pelatihan ini, peserta mampu:
 - Familiar dengan workflow digital bisnis
 - Laptop minimal 8 GB RAM, koneksi internet stabil
 - Anthropic API key (disediakan fasilitator atau peserta mendaftar di console.anthropic.com)
-- Akun Supabase (free tier) untuk Day 2–4
+- Akun Supabase (free tier) untuk Day 2–5
 - Akun Voyage AI (free tier) untuk Day 4 (Embedding & RAG)
 - Sudah mengisi **[Pretest](pretest/PRETEST-AI-Claude.md)** sebelum hari pertama
 
 ---
 
-## Struktur Pelatihan (4 Hari)
+## Struktur Pelatihan (5 Hari)
 
 | Hari      | Fokus                                                                  | Module per Hari                                                                 |
 | --------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | **Day 1 — Introduction LLM**         | Fondasi LLM, dasar prompt engineering, dan teknik prompting           | M01 Introduction LLM Claude · M02 Prompt Engineering Basics · M03 Prompting Techniques |
-| **Day 2 — Road To AI Apps**          | Setup project Next.js + Supabase, AI-assisted coding, koneksi pertama ke Claude API | M01 Setup Project (Next.js + Supabase + pgvector) · M02 AI-Assisted Coding · M03 Claude API |
-| **Day 3 — System Prompt Engineering**| System prompt untuk produk: content generation & advanced prompt engineering pada aplikasi nyata | M04 Content Generation · M05 Prompt Engineering                                 |
-| **Day 4 — AI Agent & Tools**         | Bangun fitur AI di Fin-App: Embedding, RAG, AI Agent (tool use), Multimodal | M06 Embedding · M07 RAG · M08 AI Agent · M09 Multimodal                          |
+| **Day 2 — Road To AI Apps**          | Setup project Next.js + Supabase, AI-assisted coding | M04 Setup Project (Next.js + Supabase + pgvector) · M05 AI-Assisted Coding |
+| **Day 3 — System Prompt Engineering**| Claude API, UI Chatbot, content generation & advanced prompt engineering pada aplikasi nyata | M06 Claude API · M07 UI Chatbot · M08 Content Generation · M09 Prompt Engineering |
+| **Day 4 — AI Agent & Tools**         | Bangun pipeline data + retrieval dan AI Agent otonom di Fin-App | M10 Embedding · M11 RAG · M12 AI Agent |
+| **Day 5 — Multimodal & Generative**  | Pemrosesan gambar/dokumen dan Generative Dashboard berbasis natural language | M13 Multimodal · M14 Generative Dashboard |
 
-> Catatan penomoran: Day 1 dan Day 2 masing-masing memiliki modul **M01–M03** dengan topik berbeda. Day 3 melanjutkan penomoran dari **M04**, dan Day 4 dari **M06** — karena Day 3–4 bekerja di atas project `fin-app` yang sama yang sudah dibangun di Day 2.
+> Penomoran modul bersifat **sekuensial** dari M01 sampai M14 — berurutan lintas hari tanpa reset.
 
 Metodologi: **30% concept — 60% hands-on — 5% case study — 5% discussion**.
 
@@ -80,9 +81,10 @@ AI_Claude/
 ├── pretest/                                   # profiling peserta
 ├── posttest/                                  # evaluasi akhir
 ├── Day 1 - Introduction LLM/                  # M01 Intro LLM · M02 Prompt Eng Basics · M03 Prompting Techniques
-├── Day 2 - Road To AI Apps/                   # M01 Setup Project · M02 AI-Assisted Coding · M03 Claude API
-├── Day 3 - System Prompt Engineering/         # M04 Content Generation · M05 Prompt Engineering
-├── Day 4 - AI Agent & Tools/                  # M06 Embedding · M07 RAG · M08 AI Agent · M09 Multimodal
+├── Day 2 - Road To AI Apps/                   # M04 Setup Project · M05 AI-Assisted Coding
+├── Day 3 - System Prompt Engineering/         # M06 Claude API · M07 UI Chatbot · M08 Content Generation · M09 Prompt Engineering
+├── Day 4 - AI Agent & Tools/                  # M10 Embedding · M11 RAG · M12 AI Agent
+├── Day 5 - Multimodal & Generative/           # M13 Multimodal · M14 Generative Dashboard
 └── resources/                                 # templates, starter code, cheatsheet
     ├── claude-api-cheatsheet.md
     ├── prompt-templates/
