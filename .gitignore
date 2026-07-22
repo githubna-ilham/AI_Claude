@@ -25,12 +25,11 @@ scratch/
 playground/
 
 # Days yang belum siap untuk publik
-# Fokus saat ini: Day 1. Day 2-4 akan dibuka kembali setelah konteks disesuaikan.
 Day-2-AI-Workflow-Agent/
 Day-3-AI-App-RAG/
 Day-4-Product-Governance-Capstone/
-Day 3 - System Prompt Engineering/
 Day 4 - AI Agent & Tools/
+Day 5 - Multimodal & Generative/
 
 # Bonus modules (belum siap publish)
 Bonus - Claude Code 101/
